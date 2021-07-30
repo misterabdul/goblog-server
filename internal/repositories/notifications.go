@@ -1,4 +1,4 @@
-package notifications
+package repositories
 
 // Get single notification
 func GetNotification(dbConn interface{}, query string) interface{} {

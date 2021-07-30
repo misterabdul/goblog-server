@@ -1,4 +1,4 @@
-package posts
+package repositories
 
 // Get single comment
 func GetComment(dbConn interface{}, query string) interface{} {

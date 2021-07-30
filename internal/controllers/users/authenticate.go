@@ -11,7 +11,6 @@ import (
 
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"
-	"github.com/misterabdul/goblog-server/internal/repositories/users"
 	"github.com/misterabdul/goblog-server/internal/requests"
 	"github.com/misterabdul/goblog-server/internal/responses"
 	"github.com/misterabdul/goblog-server/pkg/hash"
@@ -34,7 +33,7 @@ func SignIn(c *gin.Context) {
 		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-	if user, err = users.GetUser(ctx, dbConn, bson.M{"$or": []bson.M{
+	if user, err = repositories.GetUser(ctx, dbConn, bson.M{"$or": []bson.M{
 		{"username": input.Username},
 		{"email": input.Username}}}); err != nil {
 		responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "Wrong username or password."})

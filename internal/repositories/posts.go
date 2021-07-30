@@ -1,4 +1,4 @@
-package posts
+package repositories
 
 // Get single post
 func GetPost(dbConn interface{}, query string) interface{} {

@@ -1,4 +1,4 @@
-package refreshtokens
+package repositories
 
 // Get single token
 func GetToken(dbConn interface{}, query string) interface{} {

@@ -1,4 +1,4 @@
-package categories
+package repositories
 
 // Get single category
 func GetCategory(dbConn interface{}, query string) interface{} {

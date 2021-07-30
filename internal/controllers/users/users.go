@@ -12,7 +12,6 @@ import (
 
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"
-	"github.com/misterabdul/goblog-server/internal/repositories/users"
 	"github.com/misterabdul/goblog-server/internal/responses"
 )
 
@@ -35,7 +34,7 @@ func GetPublicUser(c *gin.Context) {
 		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-	if userData, err = users.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
+	if userData, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
 		responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
 		return
 	}
@@ -56,7 +55,7 @@ func GetPublicUsers(c *gin.Context) {
 		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
-	if usersData, err = users.GetUsers(ctx, dbConn, bson.M{}, 10, "createdAt", false); err != nil {
+	if usersData, err = repositories.GetUsers(ctx, dbConn, bson.M{}, 10, "createdAt", false); err != nil {
 		responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
 		return
 	}
