@@ -18,7 +18,7 @@ func getUserCollection(dbConn *mongo.Database) *mongo.Collection {
 }
 
 // Get single user
-func GetUser(ctx context.Context, dbConn *mongo.Database, filter bson.M) (*models.UserModel, error) {
+func GetUser(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.UserModel, error) {
 	var user models.UserModel
 	if err := getUserCollection(dbConn).FindOne(ctx, filter).Decode(&user); err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func GetUser(ctx context.Context, dbConn *mongo.Database, filter bson.M) (*model
 }
 
 // Get multiple users
-func GetUsers(ctx context.Context, dbConn *mongo.Database, filter bson.M, show int, order string, asc bool) ([]*models.UserModel, error) {
+func GetUsers(ctx context.Context, dbConn *mongo.Database, filter interface{}, show int, order string, asc bool) ([]*models.UserModel, error) {
 	cursor, err := getUserCollection(dbConn).Find(ctx, filter)
 	if err != nil {
 		return nil, err

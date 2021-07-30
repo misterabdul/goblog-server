@@ -12,3 +12,8 @@ type UserModel struct {
 	UpdatedAt interface{}        `json:"updatedAt"`
 	DeletedAt interface{}        `json:"deletedAt"`
 }
+
+type SignInModel struct {
+	Username string `form:"username" json:"username" xml:"username" binding:"required"`
+	Password string `form:"password" json:"password" xml:"password" binding:"required"`
+}
