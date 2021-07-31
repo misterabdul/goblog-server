@@ -33,6 +33,10 @@ func ConsolePrintColor(str string, color string) (int, error) {
 	return fmt.Println(getColor(color), str)
 }
 
+func ConsolePrintWhite(str string) (int, error) {
+	return ConsolePrintColor(str, "white")
+}
+
 func ConsolePrintYellow(str string) (int, error) {
 	return ConsolePrintColor(str, "yellow")
 }

@@ -6,6 +6,7 @@ type UserModel struct {
 	UID       primitive.ObjectID `bson:"_id" json:"id,omitempty"`
 	FirstName string             `json:"firstName"`
 	LastName  string             `json:"lastName"`
+	Username  string             `json:"username"`
 	Email     string             `json:"email"`
 	Password  string             `json:"password"`
 	CreatedAt interface{}        `json:"createdAt"`
