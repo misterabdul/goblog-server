@@ -7,6 +7,7 @@ import "fmt"
  * Reference from: https://golangbyexample.com/print-output-text-color-console/
  */
 
+// Get console's color value from given name.
 func getColor(name string) string {
 	switch {
 	case name == "reset":
@@ -29,22 +30,29 @@ func getColor(name string) string {
 	return "\033[37m"
 }
 
+// Print given string to console with given color name.
+//
+// Available color name: white, green, yellow, red, blue, purple, and cyan.
 func ConsolePrintColor(str string, color string) (int, error) {
 	return fmt.Println(getColor(color), str)
 }
 
+// Print given string to console with white color.
 func ConsolePrintWhite(str string) (int, error) {
 	return ConsolePrintColor(str, "white")
 }
 
+// Print given string to console with yellow color.
 func ConsolePrintYellow(str string) (int, error) {
 	return ConsolePrintColor(str, "yellow")
 }
 
+// Print given string to console with green color.
 func ConsolePrintGreen(str string) (int, error) {
 	return ConsolePrintColor(str, "green")
 }
 
+// Print given string to console with red color.
 func ConsolePrintRed(str string) (int, error) {
 	return ConsolePrintColor(str, "red")
 }

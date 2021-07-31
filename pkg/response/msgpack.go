@@ -7,6 +7,7 @@ import (
 	"github.com/vmihailenco/msgpack/v5"
 )
 
+// MsgPack http response for gin.
 func MSGPACK(c *gin.Context, code int, obj interface{}) {
 	msgpackData, err := msgpack.Marshal(obj)
 	if err != nil {
