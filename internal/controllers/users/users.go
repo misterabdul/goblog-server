@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"
 	"github.com/misterabdul/goblog-server/internal/responses"
@@ -26,10 +27,12 @@ func GetPublicUser(c *gin.Context) {
 	var err error
 	userIdQuery := c.Param("user")
 
-	if dbConn, err = repositories.GetDBConnDefault(ctx); err != nil {
+	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+	defer dbConn.Client().Disconnect(ctx)
+
 	if userId, err = primitive.ObjectIDFromHex(userIdQuery); err != nil {
 		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
@@ -51,10 +54,12 @@ func GetPublicUsers(c *gin.Context) {
 	var usersData []*models.UserModel
 	var err error
 
-	if dbConn, err = repositories.GetDBConnDefault(ctx); err != nil {
+	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+	defer dbConn.Client().Disconnect(ctx)
+
 	if usersData, err = repositories.GetUsers(ctx, dbConn, bson.M{}, 10, "createdAt", false); err != nil {
 		responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
 		return

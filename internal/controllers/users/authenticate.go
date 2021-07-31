@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"
 	"github.com/misterabdul/goblog-server/internal/requests"
@@ -29,10 +30,12 @@ func SignIn(c *gin.Context) {
 		responses.Basic(c, http.StatusBadRequest, gin.H{"message": err.Error()})
 	}
 
-	if dbConn, err = repositories.GetDBConnDefault(ctx); err != nil {
+	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 		return
 	}
+	defer dbConn.Client().Disconnect(ctx)
+
 	if user, err = repositories.GetUser(ctx, dbConn, bson.M{"$or": []bson.M{
 		{"username": input.Username},
 		{"email": input.Username}}}); err != nil {
