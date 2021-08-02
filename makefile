@@ -11,5 +11,5 @@ clean:
 server: cmd/goblog-server/main.go
 	$(GO) build -o build/output/$@ $<
 
-migration: cmd/goblog-migration/main.go
+migration: cmd/goblog-utils/main.go
 	$(GO) build -o build/output/$@ $<
