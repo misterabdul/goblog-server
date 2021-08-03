@@ -74,7 +74,7 @@ func UpdateUser(ctx context.Context, dbConn *mongo.Database, user *models.UserMo
 
 	user.UpdatedAt = now
 
-	_, err := getUserCollection(dbConn).UpdateByID(ctx, user.UID, user)
+	_, err := getUserCollection(dbConn).UpdateByID(ctx, user.UID, bson.M{"$set": user})
 
 	return err
 }

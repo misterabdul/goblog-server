@@ -42,8 +42,13 @@ func initRoute(server *gin.Engine) {
 			v1.POST("/post/:post/comment", postController.CreatePublicPostComment)
 
 			v1.POST("/signin", userController.SignIn)
-			v1.POST("/signin/refresh", userController.SignInRefresh)
 			v1.POST("/signup", userController.SignUp)
+
+			refresh := v1.Group("/refresh")
+			refresh.Use(authenticateMiddleware.AuthenticateRefresh())
+			{
+				refresh.POST("/", userController.SignInRefresh)
+			}
 
 			auth := v1.Group("/auth")
 			auth.Use(authenticateMiddleware.Authenticate())

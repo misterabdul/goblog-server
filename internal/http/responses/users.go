@@ -12,10 +12,15 @@ func User(c *gin.Context, user *models.UserModel) {
 		"uid":       user.UID,
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
+		"username":  user.Username,
 		"email":     user.Email,
 	}
 
 	Basic(c, http.StatusOK, gin.H{"data": data})
+}
+
+func Me(c *gin.Context, user *models.UserModel) {
+	User(c, user)
 }
 
 func Users(c *gin.Context, users []*models.UserModel) {
@@ -25,6 +30,7 @@ func Users(c *gin.Context, users []*models.UserModel) {
 			"uid":       user.UID,
 			"firstName": user.FirstName,
 			"lastName":  user.LastName,
+			"username":  user.Username,
 			"email":     user.Email,
 		})
 	}
