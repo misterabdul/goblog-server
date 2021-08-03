@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	authenticationController "github.com/misterabdul/goblog-server/internal/http/controllers/authentications"
 	categoryController "github.com/misterabdul/goblog-server/internal/http/controllers/categories"
 	notificationController "github.com/misterabdul/goblog-server/internal/http/controllers/notifications"
 	postController "github.com/misterabdul/goblog-server/internal/http/controllers/posts"
@@ -44,19 +45,19 @@ func initRoute(server *gin.Engine) {
 			v1.GET("/post/:post/comment/:comment", postController.GetPublicPostComment(maxCtxDuration))
 			v1.POST("/post/:post/comment", postController.CreatePublicPostComment(maxCtxDuration))
 
-			v1.POST("/signin", userController.SignIn(maxCtxDuration))
-			v1.POST("/signup", userController.SignUp(maxCtxDuration))
+			v1.POST("/signin", authenticationController.SignIn(maxCtxDuration))
+			v1.POST("/signup", authenticationController.SignUp(maxCtxDuration))
 
 			refresh := v1.Group("/refresh")
 			refresh.Use(authenticateMiddleware.AuthenticateRefresh())
 			{
-				refresh.POST("/", userController.SignInRefresh(maxCtxDuration))
+				refresh.POST("/", authenticationController.Refresh(maxCtxDuration))
 			}
 
 			auth := v1.Group("/auth")
 			auth.Use(authenticateMiddleware.Authenticate(maxCtxDuration))
 			{
-				auth.POST("/signout", userController.SignOut(maxCtxDuration))
+				auth.POST("/signout", authenticationController.SignOut(maxCtxDuration))
 
 				auth.GET("/me", userController.GetMe(maxCtxDuration))
 				auth.PUT("/me", userController.UpdateMe(maxCtxDuration))
