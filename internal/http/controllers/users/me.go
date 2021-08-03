@@ -17,42 +17,49 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetMe(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func GetMe(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	var (
-		dbConn *mongo.Database
-		user   *models.UserModel
-		err    error
-	)
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
 
-	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
+		var (
+			dbConn *mongo.Database
+			user   *models.UserModel
+			err    error
+		)
+
+		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+		defer dbConn.Client().Disconnect(ctx)
+
+		userUid, err := primitive.ObjectIDFromHex(c.GetString(authenticate.AuthenticatedUserUid))
+		if err != nil {
+			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			return
+		}
+
+		if user, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userUid}); err != nil {
+			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			return
+		}
+
+		responses.Me(c, user)
 	}
-	defer dbConn.Client().Disconnect(ctx)
-
-	userUid, err := primitive.ObjectIDFromHex(c.GetString(authenticate.AuthenticatedUserUid))
-	if err != nil {
-		responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
-		return
-	}
-
-	if user, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userUid}); err != nil {
-		responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
-		return
-	}
-
-	responses.Me(c, user)
 }
 
-func UpdateMe(c *gin.Context) {
+func UpdateMe(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func UpdateMePassword(c *gin.Context) {
+func UpdateMePassword(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }

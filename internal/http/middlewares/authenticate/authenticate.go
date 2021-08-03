@@ -27,9 +27,10 @@ const (
 )
 
 // Check the authentication status of given user.
-func Authenticate() gin.HandlerFunc {
+func Authenticate(maxCtxDuration time.Duration) gin.HandlerFunc {
+
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		auth := c.GetHeader("Authorization")
@@ -69,6 +70,7 @@ func Authenticate() gin.HandlerFunc {
 }
 
 func AuthenticateRefresh() gin.HandlerFunc {
+
 	return func(c *gin.Context) {
 		refreshToken, err := c.Cookie("refreshToken")
 		if err != nil {

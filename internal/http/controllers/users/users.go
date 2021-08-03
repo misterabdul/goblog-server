@@ -17,53 +17,59 @@ import (
 )
 
 // Get single user record publicly
-func GetPublicUser(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func GetPublicUser(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	var dbConn *mongo.Database
-	var userData *models.UserModel
-	var userId primitive.ObjectID
-	var err error
-	userIdQuery := c.Param("user")
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
 
-	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
+		var dbConn *mongo.Database
+		var userData *models.UserModel
+		var userId primitive.ObjectID
+		var err error
+		userIdQuery := c.Param("user")
+
+		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+		defer dbConn.Client().Disconnect(ctx)
+
+		if userId, err = primitive.ObjectIDFromHex(userIdQuery); err != nil {
+			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+		if userData, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
+			responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
+			return
+		}
+
+		responses.User(c, userData)
 	}
-	defer dbConn.Client().Disconnect(ctx)
-
-	if userId, err = primitive.ObjectIDFromHex(userIdQuery); err != nil {
-		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
-	}
-	if userData, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
-		responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
-		return
-	}
-
-	responses.User(c, userData)
 }
 
 // Get multiple user records publicly
-func GetPublicUsers(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+func GetPublicUsers(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	var dbConn *mongo.Database
-	var usersData []*models.UserModel
-	var err error
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
 
-	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-		responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
-		return
+		var dbConn *mongo.Database
+		var usersData []*models.UserModel
+		var err error
+
+		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			return
+		}
+		defer dbConn.Client().Disconnect(ctx)
+
+		if usersData, err = repositories.GetUsers(ctx, dbConn, bson.M{}, 10, "createdAt", false); err != nil {
+			responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
+			return
+		}
+
+		responses.Users(c, usersData)
 	}
-	defer dbConn.Client().Disconnect(ctx)
-
-	if usersData, err = repositories.GetUsers(ctx, dbConn, bson.M{}, 10, "createdAt", false); err != nil {
-		responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
-		return
-	}
-
-	responses.Users(c, usersData)
 }

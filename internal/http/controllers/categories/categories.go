@@ -2,21 +2,28 @@ package categories
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetPublicCategory(c *gin.Context) {
+func GetPublicCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func GetPublicCategorySlug(c *gin.Context) {
+func GetPublicCategorySlug(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func GetPublicCategories(c *gin.Context) {
+func GetPublicCategories(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }

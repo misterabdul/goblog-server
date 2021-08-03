@@ -2,36 +2,50 @@ package categories
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetCategories(c *gin.Context) {
+func GetCategories(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func GetCategory(c *gin.Context) {
+func GetCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func CreateCategory(c *gin.Context) {
+func CreateCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func UpdateCategory(c *gin.Context) {
+func UpdateCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func TrashCategory(c *gin.Context) {
+func TrashCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func DeleteCategory(c *gin.Context) {
+func DeleteCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }

@@ -2,66 +2,91 @@ package posts
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetMyPost(c *gin.Context) {
+func GetMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func GetMyPosts(c *gin.Context) {
+func GetMyPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func CreatePost(c *gin.Context) {
+func CreatePost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func PublishMyPost(c *gin.Context) {
+func PublishMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func DepublishMyPost(c *gin.Context) {
+func DepublishMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func UpdateMyPost(c *gin.Context) {
+func UpdateMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func TrashMyPost(c *gin.Context) {
+func TrashMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func DeleteMyPost(c *gin.Context) {
+func DeleteMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func GetMyPostComment(c *gin.Context) {
+func GetMyPostComment(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func GetMyPostComments(c *gin.Context) {
+func GetMyPostComments(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func TrashMyPostComment(c *gin.Context) {
+func TrashMyPostComment(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func DeleteMyPostComment(c *gin.Context) {
+func DeleteMyPostComment(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }

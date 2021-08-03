@@ -2,21 +2,28 @@ package posts
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetPublicPost(c *gin.Context) {
+func GetPublicPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func GetPublicPostSlug(c *gin.Context) {
+func GetPublicPostSlug(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
 
-func GetPublicPosts(c *gin.Context) {
+func GetPublicPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 
-	c.JSON(http.StatusNotImplemented, gin.H{})
+	return func(c *gin.Context) {
+		c.JSON(http.StatusNotImplemented, gin.H{})
+	}
 }
