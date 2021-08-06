@@ -3,13 +3,12 @@ package requests
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/misterabdul/goblog-server/internal/models"
+	"github.com/misterabdul/goblog-server/internal/http/forms"
 )
 
-func GetSignInModel(c *gin.Context) (*models.SignInModel, error) {
-	var signIn models.SignInModel
-	if err := c.ShouldBind(&signIn); err != nil {
-		return nil, err
-	}
-	return &signIn, nil
+func GetSignInForm(c *gin.Context) (*forms.SignInForm, error) {
+	var signIn forms.SignInForm
+	err := shouldBind(c, &signIn)
+
+	return &signIn, err
 }

@@ -69,30 +69,6 @@ func Authenticate(maxCtxDuration time.Duration) gin.HandlerFunc {
 	}
 }
 
-func AuthenticateRefresh() gin.HandlerFunc {
-
-	return func(c *gin.Context) {
-		refreshToken, err := c.Cookie("refreshToken")
-		if err != nil {
-			responses.Unauthenticated(c)
-			c.Abort()
-			return
-		}
-
-		claims, err := jwt.CheckRefreshToken(refreshToken)
-		if err != nil {
-			responses.Unauthenticated(c)
-			c.Abort()
-			return
-		}
-
-		c.Set(RefreshUserUid, claims.Payload.UserUID)
-		c.Set(RefreshTokenUid, claims.TokenUID)
-
-		c.Next()
-	}
-}
-
 func checkForRevokedToken(ctx context.Context, dbConn *mongo.Database, userUid string, tokenUid string) (bool, error) {
 	pUserUid, err := primitive.ObjectIDFromHex(userUid)
 	if err != nil {

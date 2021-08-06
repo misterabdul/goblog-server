@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database"
+	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -25,13 +26,13 @@ func SignIn(maxCtxDuration time.Duration) gin.HandlerFunc {
 		defer cancel()
 
 		var (
-			input  *models.SignInModel
+			input  *forms.SignInForm
 			dbConn *mongo.Database
 			user   *models.UserModel
 			err    error
 		)
 
-		if input, err = requests.GetSignInModel(c); err != nil {
+		if input, err = requests.GetSignInForm(c); err != nil {
 			responses.Basic(c, http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}

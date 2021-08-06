@@ -17,11 +17,6 @@ type UserModel struct {
 	DeletedAt           interface{}        `json:"deletedAt"`
 }
 
-type SignInModel struct {
-	Username string `form:"username" json:"username" xml:"username" binding:"required"`
-	Password string `form:"password" json:"password" xml:"password" binding:"required"`
-}
-
 type IssuedToken struct {
 	TokenUID  string             `json:"tokenUid"`
 	Client    string             `json:"client"`

@@ -8,6 +8,7 @@ import (
 
 	authenticationController "github.com/misterabdul/goblog-server/internal/http/controllers/authentications"
 	categoryController "github.com/misterabdul/goblog-server/internal/http/controllers/categories"
+	meController "github.com/misterabdul/goblog-server/internal/http/controllers/me"
 	notificationController "github.com/misterabdul/goblog-server/internal/http/controllers/notifications"
 	postController "github.com/misterabdul/goblog-server/internal/http/controllers/posts"
 	userController "github.com/misterabdul/goblog-server/internal/http/controllers/users"
@@ -59,11 +60,16 @@ func initRoute(server *gin.Engine) {
 			{
 				auth.POST("/signout", authenticationController.SignOut(maxCtxDuration))
 
-				auth.GET("/me", userController.GetMe(maxCtxDuration))
-				auth.PUT("/me", userController.UpdateMe(maxCtxDuration))
-				auth.PATCH("/me", userController.UpdateMe(maxCtxDuration))
-				auth.PUT("/me/password", userController.UpdateMePassword(maxCtxDuration))
-				auth.PATCH("/me/password", userController.UpdateMePassword(maxCtxDuration))
+				auth.GET("/me", meController.GetMe(maxCtxDuration))
+
+				me := auth.Group("/me")
+				me.Use(authenticateMiddleware.VerifyPassword(maxCtxDuration))
+				{
+					me.PUT("/", meController.UpdateMe(maxCtxDuration))
+					me.PATCH("/", meController.UpdateMe(maxCtxDuration))
+					me.PUT("/password", meController.UpdateMePassword(maxCtxDuration))
+					me.PATCH("/password", meController.UpdateMePassword(maxCtxDuration))
+				}
 
 				auth.GET("/notifications", notificationController.GetNotifications(maxCtxDuration))
 				auth.GET("/notification/:notification", notificationController.GetNotification(maxCtxDuration))
