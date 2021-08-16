@@ -64,14 +64,36 @@ func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) error {
 		return err
 	}
 
-	now := time.Now()
+	now := primitive.NewDateTimeFromTime(time.Now())
 	superAdmin := models.UserModel{
 		FirstName: "Super Admin",
 		Email:     "superadmin@example.com",
 		Username:  "superadmin",
 		Password:  password,
-		CreatedAt: primitive.NewDateTimeFromTime(now),
-		UpdatedAt: primitive.NewDateTimeFromTime(now),
+		Roles: []models.UserRoles{
+			{
+				Level: 0,
+				Name:  "SuperAdmin",
+				Since: now,
+			},
+			{
+				Level: 1,
+				Name:  "Admin",
+				Since: now,
+			},
+			{
+				Level: 2,
+				Name:  "Editor",
+				Since: now,
+			},
+			{
+				Level: 3,
+				Name:  "Writer",
+				Since: now,
+			},
+		},
+		CreatedAt: now,
+		UpdatedAt: now,
 	}
 
 	return repositories.CreateUser(ctx, dbConn, &superAdmin)

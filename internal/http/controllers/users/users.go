@@ -44,7 +44,7 @@ func GetPublicUser(maxCtxDuration time.Duration) gin.HandlerFunc {
 			return
 		}
 
-		responses.User(c, userData)
+		responses.PublicUser(c, userData)
 	}
 }
 
@@ -70,6 +70,6 @@ func GetPublicUsers(maxCtxDuration time.Duration) gin.HandlerFunc {
 			return
 		}
 
-		responses.Users(c, usersData)
+		responses.PublicUsers(c, usersData)
 	}
 }

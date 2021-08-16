@@ -18,5 +18,5 @@ func Migrate(ctx context.Context) {
 	if err := database.Migrate(ctx, dbConn); err != nil {
 		log.Fatal(err)
 	}
-	utils.ConsolePrintGreen("All migrations completed.")
+	utils.ConsolePrintlnGreen("All migrations completed.")
 }

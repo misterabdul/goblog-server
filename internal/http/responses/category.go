@@ -1,0 +1,58 @@
+package responses
+
+import (
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/misterabdul/goblog-server/internal/models"
+)
+
+func PublicCategory(c *gin.Context, category *models.CategoryModel) {
+	data := extractPublicCategoryData(category)
+
+	Basic(c, http.StatusOK, data)
+}
+
+func AuthorizedCategory(c *gin.Context, category *models.CategoryModel) {
+	data := extractAuthorizedCategoryData(category)
+
+	Basic(c, http.StatusOK, data)
+}
+
+func PublicCategories(c *gin.Context, categories []*models.CategoryModel) {
+	var data []gin.H
+	for _, category := range categories {
+		data = append(data, extractPublicCategoryData(category))
+	}
+
+	Basic(c, http.StatusOK, gin.H{"data": data})
+}
+
+func AuthorizedCategories(c *gin.Context, categories []*models.CategoryModel) {
+	var data []gin.H
+	for _, category := range categories {
+		data = append(data, extractAuthorizedCategoryData(category))
+	}
+
+	Basic(c, http.StatusOK, gin.H{"data": data})
+}
+
+func extractPublicCategoryData(category *models.CategoryModel) gin.H {
+	return gin.H{
+		"uid":  category.UID,
+		"slug": category.Slug,
+		"name": category.Name,
+	}
+}
+
+func extractAuthorizedCategoryData(category *models.CategoryModel) gin.H {
+	return gin.H{
+		"uid":       category.UID,
+		"slug":      category.Slug,
+		"name":      category.Name,
+		"createdAt": category.CreatedAt,
+		"updatedAt": category.UpdatedAt,
+		"deletedAt": category.DeletedAt,
+	}
+}

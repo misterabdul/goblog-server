@@ -9,6 +9,7 @@ type UserModel struct {
 	Username            string             `json:"username"`
 	Email               string             `json:"email"`
 	Password            string             `json:"password"`
+	Roles               []UserRoles        `json:"roles"`
 	IssuedRefreshTokens []IssuedToken      `json:"issuedRefreshTokens"`
 	IssuedAccessTokens  []IssuedToken      `json:"issuedAccessTokens"`
 	RevokedAccessTokens []RevokedToken     `json:"revokedAccessTokens"`
@@ -22,6 +23,17 @@ type UserCommonModel struct {
 	LastName  string `json:"lastName"`
 	Username  string `json:"username"`
 	Email     string `json:"email"`
+}
+
+// 0 => SuperAdmin
+//
+// 1 => Admin
+//
+// 2 => Editor
+type UserRoles struct {
+	Level int                `json:"level"`
+	Name  string             `json:"name"`
+	Since primitive.DateTime `json:"since"`
 }
 
 type IssuedToken struct {

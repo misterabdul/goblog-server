@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 
@@ -17,17 +19,25 @@ func main() {
 	}
 
 	if len(args) < 1 {
-		utils.ConsolePrintWhite("No command specified")
+		utils.ConsolePrintlnWhite("No command specified")
 		return
 	}
 
 	godotenv.Load()
-
 	ctx := context.TODO()
+	reader := bufio.NewReader(os.Stdin)
 
 	switch {
 	default:
-		utils.ConsolePrintWhite("Unknown command : " + args)
+		utils.ConsolePrintlnWhite("Unknown command : " + args)
+	case args == "migration:fresh":
+		utils.ConsolePrintlnYellow("Warning: this will create a new fresh database")
+		utils.ConsolePrintWhite("Are you sure to execute migrate:fresh [yes/no]: ")
+		if input, err := reader.ReadString('\n'); err == nil {
+			if strings.ToLower(string(input)) == "yes\n" {
+				migration.Fresh(ctx)
+			}
+		}
 	case args == "migration:migrate":
 		migration.Migrate(ctx)
 	case args == "migration:rollback":

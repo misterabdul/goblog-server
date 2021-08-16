@@ -8,15 +8,18 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/utils"
 )
 
-func Rollback(ctx context.Context) {
+func Fresh(ctx context.Context) {
 	dbConn, err := database.GetDBConnDefault(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer dbConn.Client().Disconnect(ctx)
 
-	if err := database.Rollback(ctx, dbConn); err != nil {
+	utils.ConsolePrintlnYellow("Dropping database: " + dbConn.Name())
+	if err := dbConn.Drop(ctx); err != nil {
 		log.Fatal(err)
 	}
-	utils.ConsolePrintlnGreen("Rollback migration completed.")
+	utils.ConsolePrintlnWhite("Dropped database : " + dbConn.Name())
+
+	Migrate(ctx)
 }

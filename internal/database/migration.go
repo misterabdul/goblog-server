@@ -56,14 +56,14 @@ func Migrate(ctx context.Context, dbConn *mongo.Database) error {
 
 	for _, migration := range getMigrations() {
 		if !alreadyMigrated(migration, migrationsData) {
-			utils.ConsolePrintYellow("Migrating: " + migration.Name())
+			utils.ConsolePrintlnYellow("Migrating: " + migration.Name())
 			if err := noteMigration(ctx, dbConn, batch, migration); err != nil {
 				return err
 			}
 			if err := migration.Up(ctx, dbConn); err != nil {
 				return err
 			}
-			utils.ConsolePrintWhite("Migrated : " + migration.Name())
+			utils.ConsolePrintlnWhite("Migrated : " + migration.Name())
 		}
 	}
 
@@ -79,14 +79,14 @@ func Rollback(ctx context.Context, dbConn *mongo.Database) error {
 
 	for _, migration := range getMigrations() {
 		if data, isIn := isInBatch(latestBatch, migration, migrationsData); isIn {
-			utils.ConsolePrintYellow("Removing: " + migration.Name())
+			utils.ConsolePrintlnYellow("Removing: " + migration.Name())
 			if err := migration.Down(ctx, dbConn); err != nil {
 				return err
 			}
 			if err := deleteMigrationNote(ctx, dbConn, data); err != nil {
 				return err
 			}
-			utils.ConsolePrintWhite("Removed : " + migration.Name())
+			utils.ConsolePrintlnWhite("Removed : " + migration.Name())
 		}
 	}
 

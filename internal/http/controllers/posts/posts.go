@@ -29,18 +29,18 @@ func GetPublicPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 			postId   primitive.ObjectID
 			err      error
 		)
-		postIdQuery := c.Param("post")
 
+		postIdQuery := c.Param("post")
+		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found"})
+			return
+		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found"})
-			return
-		}
 		if postData, err = repositories.GetPost(ctx, dbConn, bson.M{"$and": []interface{}{
 			bson.M{"deletedAt": bson.M{"$exists": false}},
 			bson.M{"publishedAt": bson.M{"$exists": true}},

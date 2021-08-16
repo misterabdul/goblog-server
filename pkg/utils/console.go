@@ -34,6 +34,13 @@ func getColor(name string) string {
 //
 // Available color name: white, green, yellow, red, blue, purple, and cyan.
 func ConsolePrintColor(str string, color string) (int, error) {
+	return fmt.Print(getColor(color), str)
+}
+
+// Println given string to console with given color name.
+//
+// Available color name: white, green, yellow, red, blue, purple, and cyan.
+func ConsolePrintlnColor(str string, color string) (int, error) {
 	return fmt.Println(getColor(color), str)
 }
 
@@ -42,9 +49,19 @@ func ConsolePrintWhite(str string) (int, error) {
 	return ConsolePrintColor(str, "white")
 }
 
+// Println given string to console with white color.
+func ConsolePrintlnWhite(str string) (int, error) {
+	return ConsolePrintlnColor(str, "white")
+}
+
 // Print given string to console with yellow color.
 func ConsolePrintYellow(str string) (int, error) {
 	return ConsolePrintColor(str, "yellow")
+}
+
+// Println given string to console with yellow color.
+func ConsolePrintlnYellow(str string) (int, error) {
+	return ConsolePrintlnColor(str, "yellow")
 }
 
 // Print given string to console with green color.
@@ -52,7 +69,17 @@ func ConsolePrintGreen(str string) (int, error) {
 	return ConsolePrintColor(str, "green")
 }
 
+// Println given string to console with green color.
+func ConsolePrintlnGreen(str string) (int, error) {
+	return ConsolePrintlnColor(str, "green")
+}
+
 // Print given string to console with red color.
 func ConsolePrintRed(str string) (int, error) {
 	return ConsolePrintColor(str, "red")
+}
+
+// Println given string to console with red color.
+func ConsolePrintlnRed(str string) (int, error) {
+	return ConsolePrintlnColor(str, "red")
 }
