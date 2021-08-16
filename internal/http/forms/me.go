@@ -1,13 +1,32 @@
 package forms
 
+import "github.com/misterabdul/goblog-server/internal/models"
+
 type UpdateMeForm struct {
-	FirstName string `form:"firstname" json:"firstname" xml:"firstname"`
-	LastName  string `form:"lastname" json:"lastname" xml:"lastname"`
-	Username  string `form:"username" json:"username" xml:"username"`
-	Email     string `form:"email" json:"email" xml:"email" binding:"email"`
+	FirstName string `json:"firstname"`
+	LastName  string `json:"lastname"`
+	Username  string `json:"username"`
+	Email     string `json:"email" binding:"email"`
 }
 
 type UpdateMePasswordForm struct {
-	NewPassword        string `form:"newpassword" json:"newpassword" xml:"newpassword" bind:"required"`
-	NewPasswordConfirm string `form:"newpasswordconfirm" json:"newpasswordconfirm" xml:"newpasswordconfirm" bind:"required"`
+	NewPassword        string `json:"newpassword" bind:"required"`
+	NewPasswordConfirm string `json:"newpasswordconfirm" bind:"required"`
+}
+
+func UpdateMeUserModel(form *UpdateMeForm, me *models.UserModel) *models.UserModel {
+	if len(form.FirstName) > 0 {
+		me.FirstName = form.FirstName
+	}
+	if len(form.LastName) > 0 {
+		me.LastName = form.LastName
+	}
+	if len(form.Username) > 0 {
+		me.Username = form.Username
+	}
+	if len(form.Email) > 0 {
+		me.Email = form.Email
+	}
+
+	return me
 }

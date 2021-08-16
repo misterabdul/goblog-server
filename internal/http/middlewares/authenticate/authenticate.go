@@ -13,14 +13,15 @@ import (
 
 	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
-	"github.com/misterabdul/goblog-server/internal/pkg/jwt"
+	"github.com/misterabdul/goblog-server/internal/models"
+	internalJwt "github.com/misterabdul/goblog-server/internal/pkg/jwt"
 	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
 const (
-	AuthenticatedUserUid        = "AUTH_USER_UID"
-	AuthenticatedTokenUid       = "AUTH_TOKEN_UID"
-	AuthenticatedTokenExpiredAt = "AUTH_TOKEN_EXPIRED_AT"
+	AuthenticatedClaims = "AUTH_CLAIMS"
+	AuthenticatedUser   = "AUTH_USER"
 
 	RefreshUserUid  = "REFRESH_USER_UID"
 	RefreshTokenUid = "REFRESH_TOKEN_UID"
@@ -33,58 +34,54 @@ func Authenticate(maxCtxDuration time.Duration) gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
-		auth := c.GetHeader("Authorization")
-		if !strings.Contains(auth, "Bearer ") {
+		var (
+			dbConn *mongo.Database
+			me     *models.UserModel
+			claims jwt.Claims
+			userId primitive.ObjectID
+			auth   string
+			err    error
+		)
+
+		if auth = c.GetHeader("Authorization"); !strings.Contains(auth, "Bearer ") {
 			responses.Unauthenticated(c)
 			c.Abort()
 			return
 		}
 		auth = strings.ReplaceAll(auth, "Bearer ", "")
 
-		claims, err := jwt.CheckAccessToken(auth)
-		if err != nil {
+		if claims, err = internalJwt.CheckAccessToken(auth); err != nil {
 			responses.Unauthenticated(c)
 			c.Abort()
 			return
 		}
-
-		var dbConn *mongo.Database
+		if userId, err = primitive.ObjectIDFromHex(claims.Payload.UserUID); err != nil {
+			responses.Unauthenticated(c)
+			c.Abort()
+			return
+		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 			c.Abort()
 			return
 		}
+		defer dbConn.Client().Disconnect(ctx)
 
-		if isInvoked, err := checkForRevokedToken(ctx, dbConn, claims.Payload.UserUID, claims.TokenUID); isInvoked || err != nil {
+		if me, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
 			responses.Unauthenticated(c)
 			c.Abort()
 			return
 		}
-
-		c.Set(AuthenticatedUserUid, claims.Payload.UserUID)
-		c.Set(AuthenticatedTokenUid, claims.TokenUID)
-		c.Set(AuthenticatedTokenExpiredAt, claims.ExpiredAt)
+		for _, revokedToken := range me.RevokedAccessTokens {
+			if revokedToken.TokenUID == claims.TokenUID {
+				responses.Unauthenticated(c)
+				c.Abort()
+				return
+			}
+		}
+		c.Set(AuthenticatedClaims, claims)
+		c.Set(AuthenticatedUser, *me)
 
 		c.Next()
 	}
-}
-
-func checkForRevokedToken(ctx context.Context, dbConn *mongo.Database, userUid string, tokenUid string) (bool, error) {
-	pUserUid, err := primitive.ObjectIDFromHex(userUid)
-	if err != nil {
-		return false, err
-	}
-
-	user, err := repositories.GetUser(ctx, dbConn, bson.M{"_id": pUserUid})
-	if err != nil {
-		return false, err
-	}
-
-	for _, revokedToken := range user.RevokedAccessTokens {
-		if revokedToken.TokenUID == tokenUid {
-			return true, nil
-		}
-	}
-
-	return false, nil
 }

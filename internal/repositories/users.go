@@ -51,6 +51,7 @@ func GetUsers(ctx context.Context, dbConn *mongo.Database, filter interface{}, s
 func CreateUser(ctx context.Context, dbConn *mongo.Database, user *models.UserModel) error {
 	now := primitive.NewDateTimeFromTime(time.Now())
 
+	user.UID = primitive.NewObjectID()
 	user.CreatedAt = now
 	user.UpdatedAt = now
 	user.DeletedAt = nil
@@ -63,7 +64,9 @@ func CreateUser(ctx context.Context, dbConn *mongo.Database, user *models.UserMo
 	if !ok {
 		return errors.New("unable to assert inserted uid")
 	}
-	user.UID = insertedID
+	if user.UID != insertedID {
+		return errors.New("inserted uid is not same with database")
+	}
 
 	return nil
 }

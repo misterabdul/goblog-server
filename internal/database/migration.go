@@ -39,6 +39,8 @@ type migrationModel struct {
 func getMigrations() []MigrationInterface {
 	return []MigrationInterface{
 		new(migrations.CreateUsersCollection),
+		new(migrations.CreatePostsCollection),
+		new(migrations.CreateCommentsCollection),
 	}
 }
 

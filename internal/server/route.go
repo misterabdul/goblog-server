@@ -81,6 +81,7 @@ func initRoute(server *gin.Engine) {
 				auth.PUT("/post/:post", postController.UpdateMyPost(maxCtxDuration))
 				auth.PATCH("/post/:post", postController.UpdateMyPost(maxCtxDuration))
 				auth.DELETE("/post/:post", postController.TrashMyPost(maxCtxDuration))
+				auth.PUT("/post/:post/detrash", postController.DetrashMyPost(maxCtxDuration))
 				auth.DELETE("/post/:post/permanent", postController.DeleteMyPost(maxCtxDuration))
 				auth.PUT("/post/:post/publish", postController.PublishMyPost(maxCtxDuration))
 				auth.PATCH("/post/:post/publish", postController.PublishMyPost(maxCtxDuration))

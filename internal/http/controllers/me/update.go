@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database"
@@ -26,48 +24,26 @@ func UpdateMe(maxCtxDuration time.Duration) gin.HandlerFunc {
 		defer cancel()
 
 		var (
-			input  *forms.UpdateMeForm
 			dbConn *mongo.Database
-			user   *models.UserModel
+			me     *models.UserModel
+			form   *forms.UpdateMeForm
 			err    error
 		)
 
-		input, _ = requests.GetUpdateMeForm(c)
-
+		if form, err = requests.GetUpdateMeForm(c); err != nil {
+			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+		}
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			return
+		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
-		userUid, err := primitive.ObjectIDFromHex(c.GetString(authenticate.AuthenticatedUserUid))
-		if err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
-			return
-		}
-
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userUid}); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
-			return
-		}
-
-		if input.FirstName != "" {
-			user.FirstName = input.FirstName
-		}
-
-		if input.LastName != "" {
-			user.LastName = input.LastName
-		}
-
-		if input.Username != "" {
-			user.Username = input.Username
-		}
-
-		if input.Email != "" {
-			user.Email = input.Email
-		}
-
-		if err := repositories.UpdateUser(ctx, dbConn, user); err != nil {
+		if err := repositories.UpdateUser(ctx, dbConn, forms.UpdateMeUserModel(form, me)); err != nil {
 			responses.Basic(c, http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}

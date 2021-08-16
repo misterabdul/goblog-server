@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database"
@@ -27,53 +25,41 @@ func UpdateMePassword(maxCtxDuration time.Duration) gin.HandlerFunc {
 		defer cancel()
 
 		var (
-			input       *forms.UpdateMePasswordForm
 			dbConn      *mongo.Database
-			user        *models.UserModel
+			me          *models.UserModel
+			form        *forms.UpdateMePasswordForm
 			newPassword string
 			err         error
 		)
 
-		if input, err = requests.GetUpdateMePasswordForm(c); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": err.Error()})
+		if form, err = requests.GetUpdateMePasswordForm(c); err != nil {
+			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
 			return
 		}
-
-		if input.NewPassword != input.NewPasswordConfirm {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "new password confirmation not match"})
+		if form.NewPassword != form.NewPasswordConfirm {
+			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": "new password confirmation not match"})
 			return
 		}
-
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			return
+		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
-		userUid, err := primitive.ObjectIDFromHex(c.GetString(authenticate.AuthenticatedUserUid))
-		if err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
-			return
-		}
-
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userUid}); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
-			return
-		}
-
-		if hash.Check(newPassword, user.Password) {
+		if hash.Check(newPassword, me.Password) {
 			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": "your password is same as old one"})
 		}
-
-		if newPassword, err = hash.Make(input.NewPassword); err != nil {
+		if newPassword, err = hash.Make(form.NewPassword); err != nil {
 			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
-
-		user.Password = newPassword
-
-		if err := repositories.UpdateUser(ctx, dbConn, user); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": err.Error()})
+		me.Password = newPassword
+		if err := repositories.UpdateUser(ctx, dbConn, me); err != nil {
+			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
 

@@ -14,6 +14,10 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
+const (
+	usersCollectionName = "users"
+)
+
 // Create the users collection.
 // Insert super admin record data.
 type CreateUsersCollection struct {
@@ -24,7 +28,7 @@ func (m *CreateUsersCollection) Name() string {
 }
 
 func (m *CreateUsersCollection) Up(ctx context.Context, dbConn *mongo.Database) error {
-	if err := dbConn.CreateCollection(ctx, "users"); err != nil {
+	if err := dbConn.CreateCollection(ctx, usersCollectionName); err != nil {
 		return err
 	}
 
@@ -43,7 +47,7 @@ func (m *CreateUsersCollection) Up(ctx context.Context, dbConn *mongo.Database) 
 		},
 	}
 
-	_, err := dbConn.Collection("users").Indexes().CreateMany(ctx, indexes)
+	_, err := dbConn.Collection(usersCollectionName).Indexes().CreateMany(ctx, indexes)
 
 	insertSuperAdmin(ctx, dbConn)
 
@@ -51,7 +55,7 @@ func (m *CreateUsersCollection) Up(ctx context.Context, dbConn *mongo.Database) 
 }
 
 func (m *CreateUsersCollection) Down(ctx context.Context, dbConn *mongo.Database) error {
-	return dbConn.Collection("users").Drop(ctx)
+	return dbConn.Collection(usersCollectionName).Drop(ctx)
 }
 
 func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) error {
@@ -62,7 +66,6 @@ func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) error {
 
 	now := time.Now()
 	superAdmin := models.UserModel{
-		UID:       primitive.NewObjectID(),
 		FirstName: "Super Admin",
 		Email:     "superadmin@example.com",
 		Username:  "superadmin",

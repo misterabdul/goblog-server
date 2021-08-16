@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -15,6 +14,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
 func SignOut(maxCtxDuration time.Duration) gin.HandlerFunc {
@@ -25,44 +25,38 @@ func SignOut(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 		var (
 			dbConn *mongo.Database
-			user   *models.UserModel
+			me     *models.UserModel
+			claims *jwt.Claims
 			err    error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			return
+		}
+		if claims, err = authenticate.GetAuthenticatedClaim(c); err != nil {
+			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "token claims not found"})
+			return
+		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
-		userUid, err := primitive.ObjectIDFromHex(c.GetString(authenticate.AuthenticatedUserUid))
-		if err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
-			return
-		}
-
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userUid}); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
-			return
-		}
-
-		tokenUid := c.GetString(authenticate.AuthenticatedTokenUid)
 		newIssuedAccessTokens := []models.IssuedToken{}
-		for _, issuedAccessToken := range user.IssuedAccessTokens {
-			if issuedAccessToken.TokenUID != tokenUid {
+		for _, issuedAccessToken := range me.IssuedAccessTokens {
+			if issuedAccessToken.TokenUID != claims.TokenUID {
 				newIssuedAccessTokens = append(newIssuedAccessTokens, issuedAccessToken)
 			}
 		}
-		user.IssuedAccessTokens = newIssuedAccessTokens
-
-		tokenExpiredAt := c.GetTime(authenticate.AuthenticatedTokenExpiredAt)
-		user.RevokedAccessTokens = append(user.RevokedAccessTokens, models.RevokedToken{
-			TokenUID: tokenUid,
-			Until:    primitive.NewDateTimeFromTime(tokenExpiredAt),
+		me.IssuedAccessTokens = newIssuedAccessTokens
+		me.RevokedAccessTokens = append(me.RevokedAccessTokens, models.RevokedToken{
+			TokenUID: claims.TokenUID,
+			Until:    primitive.NewDateTimeFromTime(claims.ExpiredAt),
 		})
-
-		if err := repositories.UpdateUser(ctx, dbConn, user); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+		if err := repositories.UpdateUser(ctx, dbConn, me); err != nil {
+			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
 			return
 		}
 

@@ -17,6 +17,13 @@ type UserModel struct {
 	DeletedAt           interface{}        `json:"deletedAt"`
 }
 
+type UserCommonModel struct {
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Username  string `json:"username"`
+	Email     string `json:"email"`
+}
+
 type IssuedToken struct {
 	TokenUID  string             `json:"tokenUid"`
 	Client    string             `json:"client"`
@@ -27,4 +34,13 @@ type IssuedToken struct {
 type RevokedToken struct {
 	TokenUID string             `json:"tokenUid"`
 	Until    primitive.DateTime `json:"until"`
+}
+
+func CreateUserCommonModel(user UserModel) UserCommonModel {
+	return UserCommonModel{
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+		Email:     user.Email,
+	}
 }
