@@ -36,26 +36,25 @@ func GetMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
 		postIdQuery := c.Param("post")
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+			responses.IncorrectPostId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if postData, err = repositories.GetPost(ctx, dbConn, bson.M{"$and": []interface{}{
-			bson.M{"deletedAt": bson.M{"$exists": false}},
 			bson.M{"author.username": me.Username},
 			bson.M{"_id": postId},
 		}}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found"})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -78,14 +77,14 @@ func GetMyPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
 		if trashParam := c.DefaultQuery("trash", "false"); trashParam == "true" {
 			trashQuery = bson.M{"$ne": primitive.Null{}}
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -98,7 +97,7 @@ func GetMyPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 			helpers.GetShowQuery(c),
 			helpers.GetOrderQuery(c),
 			helpers.GetAscQuery(c)); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -121,15 +120,15 @@ func CreatePost(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
 		if form, err = requests.GetCreatePostForm(c); err != nil {
-			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+			responses.FormIncorrect(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -138,10 +137,10 @@ func CreatePost(maxCtxDuration time.Duration) gin.HandlerFunc {
 		if err = repositories.CreatePost(ctx, dbConn, post); err != nil {
 			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
-				responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": writeErr.WriteErrors.Error()})
+				responses.FormIncorrect(c, err)
 				return
 			}
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
@@ -162,40 +161,40 @@ func PublishMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 			postId primitive.ObjectID
 			err    error
 		)
-		postIdQuery := c.Param("post")
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
+		postIdQuery := c.Param("post")
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+			responses.IncorrectPostId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": postId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found for id: " + postIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if post.Author.Username != me.Username {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "unauthorized action"})
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if post.PublishedAt != nil {
-			responses.Basic(c, http.StatusNoContent, nil)
+			responses.NoContent(c)
 			return
 		}
 		if err = repositories.PublishPost(ctx, dbConn, post); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 
@@ -212,40 +211,40 @@ func DepublishMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 			postId primitive.ObjectID
 			err    error
 		)
-		postIdQuery := c.Param("post")
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
+		postIdQuery := c.Param("post")
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+			responses.IncorrectPostId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": postId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found for id: " + postIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if post.Author.Username != me.Username {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "unauthorized action"})
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if post.PublishedAt == nil {
-			responses.Basic(c, http.StatusNoContent, nil)
+			responses.NoContent(c)
 			return
 		}
 		if err = repositories.DepublishPost(ctx, dbConn, post); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 
@@ -265,38 +264,43 @@ func UpdateMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
 		postIdQuery := c.Param("post")
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+			responses.IncorrectPostId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": postId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found for id: " + postIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if post.Author.Username != me.Username {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "unauthorized action"})
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if form, err = requests.GetUpdatePostForm(c); err != nil {
-			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+			responses.FormIncorrect(c, err)
 			return
 		}
 		if err = repositories.UpdatePost(ctx, dbConn, forms.UpdatePostModel(form, post)); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			var writeErr mongo.WriteException
+			if errors.As(err, &writeErr) {
+				responses.FormIncorrect(c, err)
+				return
+			}
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 
@@ -313,40 +317,40 @@ func TrashMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 			postId primitive.ObjectID
 			err    error
 		)
-		postIdQuery := c.Param("post")
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
+		postIdQuery := c.Param("post")
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+			responses.IncorrectPostId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": postId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found for id: " + postIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if post.Author.Username != me.Username {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "unauthorized action"})
+			responses.UnauthorizedAction(c, errors.New("your are not the author of the post"))
 			return
 		}
 		if post.DeletedAt != nil {
-			responses.Basic(c, http.StatusNoContent, nil)
+			responses.NoContent(c)
 			return
 		}
 		if err = repositories.TrashPost(ctx, dbConn, post); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 
@@ -363,40 +367,40 @@ func DetrashMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 			postId primitive.ObjectID
 			err    error
 		)
-		postIdQuery := c.Param("post")
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
+		postIdQuery := c.Param("post")
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+			responses.IncorrectPostId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": postId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found for id: " + postIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if post.Author.Username != me.Username {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "unauthorized action"})
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if post.DeletedAt == nil {
-			responses.Basic(c, http.StatusNoContent, nil)
+			responses.NoContent(c)
 			return
 		}
 		if err = repositories.DetrashPost(ctx, dbConn, post); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 
@@ -413,36 +417,36 @@ func DeleteMyPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 			postId primitive.ObjectID
 			err    error
 		)
-		postIdQuery := c.Param("post")
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
+		postIdQuery := c.Param("post")
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+			responses.IncorrectPostId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": postId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found for id: " + postIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if post.Author.Username != me.Username {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "unauthorized action"})
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if err = repositories.DeletePost(ctx, dbConn, post); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 

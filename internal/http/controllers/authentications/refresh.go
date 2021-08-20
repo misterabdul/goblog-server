@@ -2,7 +2,7 @@ package authentications
 
 import (
 	"context"
-	"net/http"
+	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,25 +32,23 @@ func Refresh(maxCtxDuration time.Duration) gin.HandlerFunc {
 			refreshFlag bool
 			err         error
 		)
+
 		userUid_s := c.GetString(authenticate.RefreshUserUid)
 		tokenUid := c.GetString(authenticate.RefreshTokenUid)
-
+		if userUid, err = primitive.ObjectIDFromHex(userUid_s); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
-		if userUid, err = primitive.ObjectIDFromHex(userUid_s); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
-			return
-		}
-
 		if user, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userUid}); err != nil {
-			responses.Unauthenticated(c)
+			responses.Unauthenticated(c, err)
 			return
 		}
-
 		newIssuedRefreshTokens := []models.IssuedToken{}
 		for _, refreshToken := range user.IssuedRefreshTokens {
 			if hash.Check(tokenUid, refreshToken.TokenUID) {
@@ -61,22 +59,21 @@ func Refresh(maxCtxDuration time.Duration) gin.HandlerFunc {
 		}
 		user.IssuedAccessTokens = newIssuedRefreshTokens
 		if !refreshFlag {
-			responses.Unauthenticated(c)
+			responses.Unauthenticated(c, errors.New("refresh token not found"))
 			return
 		}
-
 		accessTokenClaims, accessToken, err := internalJwt.IssueAccessToken(user)
 		if err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err})
+			responses.InternalServerError(c, err)
 			return
 		}
 		refreshTokenClaims, refreshToken, err := internalJwt.IssueRefreshToken(user)
 		if err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err})
+			responses.InternalServerError(c, err)
 			return
 		}
 		if err := saveToken(ctx, dbConn, user, accessTokenClaims, refreshTokenClaims); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 

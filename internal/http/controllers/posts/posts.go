@@ -2,7 +2,6 @@ package posts
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,11 +31,11 @@ func GetPublicPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 		postIdQuery := c.Param("post")
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found"})
+			responses.NotFound(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -46,7 +45,7 @@ func GetPublicPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 			bson.M{"publishedAt": bson.M{"$exists": true}},
 			bson.M{"_id": postId},
 		}}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found"})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -68,7 +67,7 @@ func GetPublicPostSlug(maxCtxDuration time.Duration) gin.HandlerFunc {
 		postSlugQuery := c.Param("post")
 
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -78,7 +77,7 @@ func GetPublicPostSlug(maxCtxDuration time.Duration) gin.HandlerFunc {
 			bson.M{"publishedAt": bson.M{"$exists": true}},
 			bson.M{"slug": postSlugQuery},
 		}}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found"})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -97,7 +96,7 @@ func GetPublicPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 		var err error
 
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -110,7 +109,7 @@ func GetPublicPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 			helpers.GetShowQuery(c),
 			helpers.GetOrderQuery(c),
 			helpers.GetAscQuery(c)); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
+			responses.NotFound(c, err)
 			return
 		}
 

@@ -2,7 +2,6 @@ package users
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -30,17 +29,17 @@ func GetPublicUser(maxCtxDuration time.Duration) gin.HandlerFunc {
 		userIdQuery := c.Param("user")
 
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if userId, err = primitive.ObjectIDFromHex(userIdQuery); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.NotFound(c, err)
 			return
 		}
 		if userData, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -60,13 +59,13 @@ func GetPublicUsers(maxCtxDuration time.Duration) gin.HandlerFunc {
 		var err error
 
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if usersData, err = repositories.GetUsers(ctx, dbConn, bson.M{}, 10, "createdAt", false); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
+			responses.NotFound(c, err)
 			return
 		}
 

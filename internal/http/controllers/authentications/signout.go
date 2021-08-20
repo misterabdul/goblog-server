@@ -2,7 +2,6 @@ package authentications
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -31,15 +30,15 @@ func SignOut(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
 		if claims, err = authenticate.GetAuthenticatedClaim(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "token claims not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -56,10 +55,10 @@ func SignOut(maxCtxDuration time.Duration) gin.HandlerFunc {
 			Until:    primitive.NewDateTimeFromTime(claims.ExpiredAt),
 		})
 		if err := repositories.UpdateUser(ctx, dbConn, me); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }

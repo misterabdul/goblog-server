@@ -9,8 +9,12 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-func Unauthenticated(c *gin.Context) {
+func Unauthenticated(c *gin.Context, err error) {
 	Basic(c, http.StatusUnauthorized, gin.H{"message": "Unauthenticated."})
+}
+
+func WrongSignIn(c *gin.Context, err error) {
+	Basic(c, http.StatusUnauthorized, gin.H{"message": "Wrong username or password."})
 }
 
 func SignedIn(c *gin.Context, accessToken string, accessTokenClaims *jwt.Claims, refreshToken string, refreshTokenClaims *jwt.Claims) {

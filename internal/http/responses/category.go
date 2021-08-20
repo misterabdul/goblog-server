@@ -38,6 +38,10 @@ func AuthorizedCategories(c *gin.Context, categories []*models.CategoryModel) {
 	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
+func IncorrectCategoryId(c *gin.Context, err error) {
+	Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+}
+
 func extractPublicCategoryData(category *models.CategoryModel) gin.H {
 	return gin.H{
 		"uid":  category.UID,

@@ -2,7 +2,7 @@ package authentications
 
 import (
 	"context"
-	"net/http"
+	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -33,39 +33,39 @@ func SignIn(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if input, err = requests.GetSignInForm(c); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": err.Error()})
+			responses.FormIncorrect(c, err)
 			return
 		}
-
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{"$or": []bson.M{
-			{"username": input.Username},
-			{"email": input.Username}}}); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "Wrong username or password."})
+		if user, err = repositories.GetUser(ctx, dbConn,
+			bson.M{"$or": []bson.M{
+				{"username": input.Username},
+				{"email": input.Username},
+			}}); err != nil {
+			responses.WrongSignIn(c, err)
 			return
 		}
 		if !hash.Check(input.Password, user.Password) {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "Wrong username or password."})
+			responses.WrongSignIn(c, errors.New("incorrect password"))
 			return
 		}
-
 		accessTokenClaims, accessToken, err := internalJwt.IssueAccessToken(user)
 		if err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err})
+			responses.InternalServerError(c, err)
 			return
 		}
 		refreshTokenClaims, refreshToken, err := internalJwt.IssueRefreshToken(user)
 		if err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err})
+			responses.InternalServerError(c, err)
 			return
 		}
 		if err := saveToken(ctx, dbConn, user, accessTokenClaims, refreshTokenClaims); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 

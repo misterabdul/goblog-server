@@ -2,7 +2,6 @@ package categories
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -32,11 +31,11 @@ func GetPublicCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 		categoryIdQuery := c.Param("category")
 
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "category not found"})
+			responses.NotFound(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -45,7 +44,7 @@ func GetPublicCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 			bson.M{"deletedAt": bson.M{"$exists": false}},
 			bson.M{"_id": categoryId},
 		}}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "category not found"})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -64,19 +63,19 @@ func GetPublicCategorySlug(maxCtxDuration time.Duration) gin.HandlerFunc {
 			categoryData *models.CategoryModel
 			err          error
 		)
-		categorySlugQuery := c.Param("category")
 
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
+		categorySlugQuery := c.Param("category")
 		if categoryData, err = repositories.GetCategory(ctx, dbConn, bson.M{"$and": []interface{}{
 			bson.M{"deletedAt": bson.M{"$exists": false}},
 			bson.M{"slug": categorySlugQuery},
 		}}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "category not found"})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -97,7 +96,7 @@ func GetPublicCategories(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -109,7 +108,7 @@ func GetPublicCategories(maxCtxDuration time.Duration) gin.HandlerFunc {
 			helpers.GetShowQuery(c),
 			helpers.GetOrderQuery(c),
 			helpers.GetAscQuery(c)); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
+			responses.NotFound(c, err)
 			return
 		}
 

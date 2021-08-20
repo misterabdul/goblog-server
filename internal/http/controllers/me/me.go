@@ -2,7 +2,6 @@ package me
 
 import (
 	"context"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -24,7 +23,7 @@ func GetMe(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
 

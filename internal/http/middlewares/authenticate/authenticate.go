@@ -2,6 +2,7 @@ package authenticate
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -44,19 +45,19 @@ func Authenticate(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if auth = c.GetHeader("Authorization"); !strings.Contains(auth, "Bearer ") {
-			responses.Unauthenticated(c)
+			responses.Unauthenticated(c, errors.New("no bearer type authorization header found"))
 			c.Abort()
 			return
 		}
 		auth = strings.ReplaceAll(auth, "Bearer ", "")
 
 		if claims, err = internalJwt.CheckAccessToken(auth); err != nil {
-			responses.Unauthenticated(c)
+			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
 		}
 		if userId, err = primitive.ObjectIDFromHex(claims.Payload.UserUID); err != nil {
-			responses.Unauthenticated(c)
+			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
 		}
@@ -68,13 +69,13 @@ func Authenticate(maxCtxDuration time.Duration) gin.HandlerFunc {
 		defer dbConn.Client().Disconnect(ctx)
 
 		if me, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
-			responses.Unauthenticated(c)
+			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
 		}
 		for _, revokedToken := range me.RevokedAccessTokens {
 			if revokedToken.TokenUID == claims.TokenUID {
-				responses.Unauthenticated(c)
+				responses.Unauthenticated(c, errors.New("token already revoked"))
 				c.Abort()
 				return
 			}

@@ -3,7 +3,6 @@ package categories
 import (
 	"context"
 	"errors"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -35,11 +34,11 @@ func GetCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 		categoryIdQuery := c.Param("category")
 
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "category not found"})
+			responses.NotFound(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -47,7 +46,7 @@ func GetCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 		if categoryData, err = repositories.GetCategory(ctx, dbConn, bson.M{"$and": []interface{}{
 			bson.M{"_id": categoryId},
 		}}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "category not found"})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -72,7 +71,7 @@ func GetCategories(maxCtxDuration time.Duration) gin.HandlerFunc {
 			trashQuery = bson.M{"$ne": primitive.Null{}}
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -84,7 +83,7 @@ func GetCategories(maxCtxDuration time.Duration) gin.HandlerFunc {
 			helpers.GetShowQuery(c),
 			helpers.GetOrderQuery(c),
 			helpers.GetAscQuery(c)); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": err.Error()})
+			responses.NotFound(c, err)
 			return
 		}
 
@@ -106,11 +105,11 @@ func CreateCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if form, err = requests.GetCreateCategoryForm(c); err != nil {
-			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+			responses.FormIncorrect(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -119,10 +118,10 @@ func CreateCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 		if err = repositories.CreateCategory(ctx, dbConn, category); err != nil {
 			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
-				responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": writeErr.WriteErrors.Error()})
+				responses.FormIncorrect(c, writeErr.WriteErrors)
 				return
 			}
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
@@ -146,11 +145,15 @@ func UpdateCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 		categoryIdQuery := c.Param("category")
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent category id format"})
+			responses.IncorrectCategoryId(c, err)
+			return
+		}
+		if form, err = requests.GetUpdateCategoryForm(c); err != nil {
+			responses.FormIncorrect(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
@@ -159,24 +162,20 @@ func UpdateCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 			bson.M{"deletedat": primitive.Null{}},
 			bson.M{"_id": categoryId},
 		}}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "category not found for id: " + categoryIdQuery})
-			return
-		}
-		if form, err = requests.GetUpdateCategoryForm(c); err != nil {
-			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+			responses.NotFound(c, err)
 			return
 		}
 		if err = repositories.UpdateCategory(ctx, dbConn, forms.UpdateCategoryModel(form, category)); err != nil {
 			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
-				responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": writeErr.WriteErrors.Error()})
+				responses.FormIncorrect(c, writeErr.WriteErrors)
 				return
 			}
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 
@@ -195,29 +194,29 @@ func TrashCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 		categoryIdQuery := c.Param("category")
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent category id format"})
+			responses.IncorrectCategoryId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{"_id": categoryId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "categeory not found for id: " + categoryIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if category.DeletedAt != nil {
-			responses.Basic(c, http.StatusNoContent, nil)
+			responses.NoContent(c)
 			return
 		}
 		if err = repositories.TrashCategory(ctx, dbConn, category); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 
@@ -236,29 +235,29 @@ func DetrashCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 		categoryIdQuery := c.Param("category")
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent category id format"})
+			responses.IncorrectCategoryId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{"_id": categoryId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "categeory not found for id: " + categoryIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if category.DeletedAt == nil {
-			responses.Basic(c, http.StatusNoContent, nil)
+			responses.NoContent(c)
 			return
 		}
 		if err = repositories.DetrashCategory(ctx, dbConn, category); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
 
@@ -277,24 +276,24 @@ func DeleteCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 		categoryIdQuery := c.Param("category")
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent category id format"})
+			responses.IncorrectCategoryId(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{"_id": categoryId}); err != nil {
-			responses.Basic(c, http.StatusNotFound, gin.H{"message": "post not found for id: " + categoryIdQuery})
+			responses.NotFound(c, err)
 			return
 		}
 		if err = repositories.DeleteCategory(ctx, dbConn, category); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }

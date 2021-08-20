@@ -4,22 +4,27 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/misterabdul/goblog-server/internal/http/responses"
-	"github.com/misterabdul/goblog-server/internal/pkg/jwt"
+	internalJwt "github.com/misterabdul/goblog-server/internal/pkg/jwt"
+	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
 func AuthenticateRefresh() gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		refreshToken, err := c.Cookie("refreshToken")
-		if err != nil {
-			responses.Unauthenticated(c)
+		var (
+			refreshToken string
+			claims       jwt.Claims
+			err          error
+		)
+
+		if refreshToken, err = c.Cookie("refreshToken"); err != nil {
+			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
 		}
 
-		claims, err := jwt.CheckRefreshToken(refreshToken)
-		if err != nil {
-			responses.Unauthenticated(c)
+		if claims, err = internalJwt.CheckRefreshToken(refreshToken); err != nil {
+			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
 		}

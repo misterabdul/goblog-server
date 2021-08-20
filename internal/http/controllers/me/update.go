@@ -2,7 +2,7 @@ package me
 
 import (
 	"context"
-	"net/http"
+	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -31,23 +31,28 @@ func UpdateMe(maxCtxDuration time.Duration) gin.HandlerFunc {
 		)
 
 		if form, err = requests.GetUpdateMeForm(c); err != nil {
-			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+			responses.FormIncorrect(c, err)
 		}
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Basic(c, http.StatusUnauthorized, gin.H{"message": "user not found"})
+			responses.Unauthenticated(c, err)
 			return
 		}
 		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+			responses.InternalServerError(c, err)
 			return
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
 		if err := repositories.UpdateUser(ctx, dbConn, forms.UpdateMeUserModel(form, me)); err != nil {
-			responses.Basic(c, http.StatusBadRequest, gin.H{"message": err.Error()})
+			var writeErr mongo.WriteException
+			if errors.As(err, &writeErr) {
+				responses.FormIncorrect(c, err)
+				return
+			}
+			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.Basic(c, http.StatusNoContent, nil)
+		responses.NoContent(c)
 	}
 }
