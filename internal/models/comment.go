@@ -4,19 +4,20 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 
 type CommentModel struct {
 	UID       primitive.ObjectID  `bson:"_id" json:"id,omitempty"`
-	Slug      string              `json:"slug"`
-	Content   string              `json:"content"`
+	PostUid   primitive.ObjectID  `json:"postUid"`
+	PostSlug  string              `json:"postSlug"`
 	Email     string              `json:"email"`
 	Name      string              `json:"name"`
+	Content   string              `json:"content"`
+	Replies   []CommentReplyModel `json:"replies"`
 	CreatedAt interface{}         `json:"createdAt"`
 	DeletedAt interface{}         `json:"deletedAt"`
-	Replies   []CommentReplyModel `json:"replies"`
 }
 
 type CommentReplyModel struct {
-	Content   string      `json:"content"`
 	Email     string      `json:"email"`
 	Name      string      `json:"name"`
+	Content   string      `json:"content"`
 	CreatedAt interface{} `json:"createdAt"`
 	DeletedAt interface{} `json:"deletedAt"`
 }

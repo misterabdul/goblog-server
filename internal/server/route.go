@@ -35,16 +35,14 @@ func initRoute(server *gin.Engine) {
 
 			v1.GET("/categories", categoryController.GetPublicCategories(maxCtxDuration))
 			v1.GET("/category/:category", categoryController.GetPublicCategory(maxCtxDuration))
-			v1.GET("/category/slug/:category", categoryController.GetPublicCategorySlug(maxCtxDuration))
 			v1.GET("/category/:category/posts", categoryController.GetPublicCategoryPosts(maxCtxDuration))
 			v1.GET("/category/:category/post/:post", categoryController.GetPublicCategoryPost(maxCtxDuration))
 
 			v1.GET("/posts", postController.GetPublicPosts(maxCtxDuration))
 			v1.GET("/post/:post", postController.GetPublicPost(maxCtxDuration))
-			v1.GET("/post/slug/:post", postController.GetPublicPostSlug(maxCtxDuration))
 			v1.GET("/post/:post/comments", postController.GetPublicPostComments(maxCtxDuration))
-			v1.GET("/post/:post/comment/:comment", postController.GetPublicPostComment(maxCtxDuration))
-			v1.POST("/post/:post/comment", postController.CreatePublicPostComment(maxCtxDuration))
+			v1.GET("/comment/:comment", postController.GetPublicPostComment(maxCtxDuration))
+			v1.POST("/comment", postController.CreatePublicPostComment(maxCtxDuration))
 
 			v1.POST("/signin", authenticationController.SignIn(maxCtxDuration))
 			v1.POST("/signup", authenticationController.SignUp(maxCtxDuration))
@@ -91,9 +89,11 @@ func initRoute(server *gin.Engine) {
 					writer.PUT("/post/:post/depublish", postController.DepublishMyPost(maxCtxDuration))
 					writer.PATCH("/post/:post/depublish", postController.DepublishMyPost(maxCtxDuration))
 					writer.GET("/post/:post/comments", postController.GetMyPostComments(maxCtxDuration))
-					writer.GET("/post/:post/comment/:comment", postController.GetMyPostComment(maxCtxDuration))
-					writer.DELETE("/post/:post/comment/:comment", postController.TrashMyPostComment(maxCtxDuration))
-					writer.DELETE("/post/:post/comment/:comment/permanent", postController.DeleteMyPostComment(maxCtxDuration))
+					writer.GET("/comment/:comment", postController.GetMyPostComment(maxCtxDuration))
+					writer.DELETE("/comment/:comment", postController.TrashMyPostComment(maxCtxDuration))
+					writer.PUT("/comment/:comment/detrash", postController.DetrashMyPostComment(maxCtxDuration))
+					writer.PATCH("/comment/:comment/detrash", postController.DetrashMyPostComment(maxCtxDuration))
+					writer.DELETE("/comment/:comment/permanent", postController.DeleteMyPostComment(maxCtxDuration))
 				}
 
 				editor := auth.Group("/editor")
@@ -115,9 +115,11 @@ func initRoute(server *gin.Engine) {
 					editor.DELETE("/post/:post", postController.TrashPost(maxCtxDuration))
 					editor.DELETE("/post/:post/permanent", postController.DeletePost(maxCtxDuration))
 					editor.GET("/post/:post/comments", postController.GetPostComments(maxCtxDuration))
-					editor.GET("/post/:post/comment/:comment", postController.GetPostComment(maxCtxDuration))
-					editor.DELETE("/post/:post/comment/:comment", postController.TrashPostComment(maxCtxDuration))
-					editor.DELETE("/post/:post/comment/:comment/permanent", postController.DeletePostComment(maxCtxDuration))
+					editor.GET("/comment/:comment", postController.GetPostComment(maxCtxDuration))
+					editor.DELETE("/comment/:comment", postController.TrashPostComment(maxCtxDuration))
+					editor.PUT("/comment/:comment/detrash", postController.DetrashPostComment(maxCtxDuration))
+					editor.PATCH("/comment/:comment/detrash", postController.DetrashPostComment(maxCtxDuration))
+					editor.DELETE("/comment/:comment/permanent", postController.DeletePostComment(maxCtxDuration))
 				}
 
 				admin := auth.Group("/admin")

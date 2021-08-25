@@ -3,7 +3,6 @@ package posts
 import (
 	"context"
 	"errors"
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -27,10 +26,10 @@ func GetPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 		defer cancel()
 
 		var (
-			dbConn   *mongo.Database
-			postData *models.PostModel
-			postId   primitive.ObjectID
-			err      error
+			dbConn *mongo.Database
+			post   *models.PostModel
+			postId primitive.ObjectID
+			err    error
 		)
 
 		postIdQuery := c.Param("post")
@@ -44,7 +43,7 @@ func GetPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
-		if postData, err = repositories.GetPost(ctx, dbConn, bson.M{"$and": []interface{}{
+		if post, err = repositories.GetPost(ctx, dbConn, bson.M{"$and": []interface{}{
 			bson.M{"deletedat": primitive.Null{}},
 			bson.M{"_id": postId},
 		}}); err != nil {
@@ -52,7 +51,7 @@ func GetPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 			return
 		}
 
-		responses.AuthorizedPost(c, postData)
+		responses.AuthorizedPost(c, post)
 	}
 }
 
@@ -64,7 +63,7 @@ func GetPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 		var (
 			dbConn     *mongo.Database
-			postsData  []*models.PostModel
+			posts      []*models.PostModel
 			trashQuery interface{} = primitive.Null{}
 			err        error
 		)
@@ -78,7 +77,7 @@ func GetPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 		}
 		defer dbConn.Client().Disconnect(ctx)
 
-		if postsData, err = repositories.GetPosts(ctx, dbConn,
+		if posts, err = repositories.GetPosts(ctx, dbConn,
 			bson.M{"$and": []interface{}{
 				bson.M{"deletedat": trashQuery},
 			}},
@@ -89,7 +88,7 @@ func GetPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 			return
 		}
 
-		responses.AuthorizedPosts(c, postsData)
+		responses.AuthorizedPosts(c, posts)
 	}
 }
 
@@ -344,27 +343,221 @@ func DeletePost(maxCtxDuration time.Duration) gin.HandlerFunc {
 func GetPostComment(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{})
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
+
+		var (
+			dbConn    *mongo.Database
+			comment   *models.CommentModel
+			commentId primitive.ObjectID
+			err       error
+		)
+
+		commentIdQuery := c.Param("comment")
+		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
+			responses.IncorrectCommentId(c, err)
+			return
+		}
+		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		defer dbConn.Client().Disconnect(ctx)
+
+		if comment, err = repositories.GetComment(ctx, dbConn,
+			bson.M{"$and": []interface{}{
+				bson.M{"_id": commentId},
+			}}); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+
+		responses.AuthorizedComment(c, comment)
 	}
 }
 
 func GetPostComments(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{})
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
+
+		var (
+			dbConn     *mongo.Database
+			post       *models.PostModel
+			comments   []*models.CommentModel
+			postId     primitive.ObjectID
+			trashQuery interface{} = primitive.Null{}
+			err        error
+		)
+
+		postIdQuery := c.Param("post")
+		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+			responses.IncorrectPostId(c, err)
+			return
+		}
+		if trashParam := c.DefaultQuery("trash", "false"); trashParam == "true" {
+			trashQuery = bson.M{"$ne": primitive.Null{}}
+		}
+		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		defer dbConn.Client().Disconnect(ctx)
+
+		if post, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": postId}); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+		if comments, err = repositories.GetComments(ctx, dbConn,
+			bson.M{"$and": []interface{}{
+				bson.M{"deletedat": trashQuery},
+				bson.M{"_id": post.UID},
+			}},
+			helpers.GetShowQuery(c),
+			helpers.GetOrderQuery(c),
+			helpers.GetAscQuery(c)); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+
+		responses.AuthorizedComments(c, comments)
 	}
 }
 
 func TrashPostComment(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{})
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
+
+		var (
+			dbConn    *mongo.Database
+			comment   *models.CommentModel
+			commentId primitive.ObjectID
+			err       error
+		)
+
+		commentIdQuery := c.Param("comment")
+		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
+			responses.IncorrectCommentId(c, err)
+			return
+		}
+		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		defer dbConn.Client().Disconnect(ctx)
+
+		if comment, err = repositories.GetComment(ctx, dbConn,
+			bson.M{"$and": []interface{}{
+				bson.M{"_id": commentId},
+			}}); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+		if _, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": comment.PostUid}); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+		if comment.DeletedAt != nil {
+			responses.NoContent(c)
+			return
+		}
+		if err = repositories.TrashComment(ctx, dbConn, comment); err != nil {
+			responses.InternalServerError(c, err)
+		}
+
+		responses.NoContent(c)
+	}
+}
+
+func DetrashPostComment(maxCtxDuration time.Duration) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
+
+		var (
+			dbConn    *mongo.Database
+			comment   *models.CommentModel
+			commentId primitive.ObjectID
+			err       error
+		)
+
+		commentIdQuery := c.Param("comment")
+		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
+			responses.IncorrectCommentId(c, err)
+			return
+		}
+		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		defer dbConn.Client().Disconnect(ctx)
+
+		if comment, err = repositories.GetComment(ctx, dbConn,
+			bson.M{"$and": []interface{}{
+				bson.M{"_id": commentId},
+			}}); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+		if _, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": comment.PostUid}); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+		if comment.DeletedAt == nil {
+			responses.NoContent(c)
+			return
+		}
+		if err = repositories.DetrashComment(ctx, dbConn, comment); err != nil {
+			responses.InternalServerError(c, err)
+		}
+
+		responses.NoContent(c)
 	}
 }
 
 func DeletePostComment(maxCtxDuration time.Duration) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{})
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
+
+		var (
+			dbConn    *mongo.Database
+			comment   *models.CommentModel
+			commentId primitive.ObjectID
+			err       error
+		)
+
+		commentIdQuery := c.Param("comment")
+		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
+			responses.IncorrectCommentId(c, err)
+			return
+		}
+		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		defer dbConn.Client().Disconnect(ctx)
+
+		if comment, err = repositories.GetComment(ctx, dbConn,
+			bson.M{"$and": []interface{}{
+				bson.M{"_id": commentId},
+			}}); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+		if _, err = repositories.GetPost(ctx, dbConn, bson.M{"_id": comment.PostUid}); err != nil {
+			responses.NotFound(c, err)
+			return
+		}
+		if err = repositories.DeleteComment(ctx, dbConn, comment); err != nil {
+			responses.InternalServerError(c, err)
+		}
+
+		responses.NoContent(c)
 	}
 }

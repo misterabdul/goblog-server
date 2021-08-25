@@ -57,6 +57,6 @@ func extractAuthorizedCategoryData(category *models.CategoryModel) gin.H {
 		"name":      category.Name,
 		"createdAt": category.CreatedAt,
 		"updatedAt": category.UpdatedAt,
-		"deletedAt": category.DeletedAt,
+		"deletedat": category.DeletedAt,
 	}
 }

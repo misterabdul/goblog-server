@@ -45,6 +45,14 @@ func (m *CreateUsersCollection) Up(ctx context.Context, dbConn *mongo.Database) 
 			Keys:    bson.D{{Key: "createdAt", Value: -1}},
 			Options: nil,
 		},
+		{
+			Keys:    bson.D{{Key: "updatedAt", Value: -1}},
+			Options: nil,
+		},
+		{
+			Keys:    bson.D{{Key: "deletedAt", Value: -1}},
+			Options: nil,
+		},
 	}
 
 	_, err := dbConn.Collection(usersCollectionName).Indexes().CreateMany(ctx, indexes)

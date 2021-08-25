@@ -75,6 +75,6 @@ func extractAuthorizedPostData(post *models.PostModel) gin.H {
 		"publishedAt": post.PublishedAt,
 		"createdAt":   post.CreatedAt,
 		"updatedAt":   post.UpdatedAt,
-		"deletedAt":   post.DeletedAt,
+		"deletedat":   post.DeletedAt,
 	}
 }

@@ -5,7 +5,6 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
@@ -27,8 +26,12 @@ func (m *CreateCommentsCollection) Up(ctx context.Context, dbConn *mongo.Databas
 
 	indexes := []mongo.IndexModel{
 		{
-			Keys:    bson.D{{Key: "slug", Value: 1}},
-			Options: options.Index().SetUnique(true),
+			Keys:    bson.D{{Key: "postUid", Value: 1}},
+			Options: nil,
+		},
+		{
+			Keys:    bson.D{{Key: "postSlug", Value: 1}},
+			Options: nil,
 		},
 		{
 			Keys:    bson.D{{Key: "email", Value: 1}},
@@ -36,10 +39,6 @@ func (m *CreateCommentsCollection) Up(ctx context.Context, dbConn *mongo.Databas
 		},
 		{
 			Keys:    bson.D{{Key: "name", Value: 1}},
-			Options: nil,
-		},
-		{
-			Keys:    bson.D{{Key: "createdAt", Value: 1}},
 			Options: nil,
 		},
 		{
@@ -52,6 +51,18 @@ func (m *CreateCommentsCollection) Up(ctx context.Context, dbConn *mongo.Databas
 		},
 		{
 			Keys:    bson.D{{Key: "replies.createdAt", Value: 1}},
+			Options: nil,
+		},
+		{
+			Keys:    bson.D{{Key: "replies.deletedAt", Value: 1}},
+			Options: nil,
+		},
+		{
+			Keys:    bson.D{{Key: "createdAt", Value: 1}},
+			Options: nil,
+		},
+		{
+			Keys:    bson.D{{Key: "deletedAt", Value: 1}},
 			Options: nil,
 		},
 	}
