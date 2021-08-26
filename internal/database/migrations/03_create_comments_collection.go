@@ -69,8 +69,6 @@ func (m *CreateCommentsCollection) Up(ctx context.Context, dbConn *mongo.Databas
 
 	_, err := dbConn.Collection(commentsCollectionName).Indexes().CreateMany(ctx, indexes)
 
-	insertSuperAdmin(ctx, dbConn)
-
 	return err
 }
 

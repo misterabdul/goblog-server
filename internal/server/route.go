@@ -36,7 +36,6 @@ func initRoute(server *gin.Engine) {
 			v1.GET("/categories", categoryController.GetPublicCategories(maxCtxDuration))
 			v1.GET("/category/:category", categoryController.GetPublicCategory(maxCtxDuration))
 			v1.GET("/category/:category/posts", categoryController.GetPublicCategoryPosts(maxCtxDuration))
-			v1.GET("/category/:category/post/:post", categoryController.GetPublicCategoryPost(maxCtxDuration))
 
 			v1.GET("/posts", postController.GetPublicPosts(maxCtxDuration))
 			v1.GET("/post/:post", postController.GetPublicPost(maxCtxDuration))

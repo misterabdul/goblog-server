@@ -46,7 +46,6 @@ func extractPublicCommentData(comment *models.CommentModel) gin.H {
 	return gin.H{
 		"uid":       comment.UID,
 		"postUid":   comment.PostUid,
-		"postSlug":  comment.PostSlug,
 		"email":     comment.Email,
 		"name":      comment.Name,
 		"content":   comment.Content,
@@ -74,7 +73,6 @@ func extractAuthorizedCommentData(comment *models.CommentModel) gin.H {
 	return gin.H{
 		"uid":       comment.UID,
 		"postUid":   comment.PostUid,
-		"postSlug":  comment.PostSlug,
 		"email":     comment.Email,
 		"name":      comment.Name,
 		"content":   comment.Content,

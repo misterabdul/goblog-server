@@ -9,11 +9,10 @@ import (
 )
 
 type CreateCommentForm struct {
-	PostUid  string `json:"postUid" binding:"required,printascii,max=24"`
-	PostSlug string `json:"postSlug" binding:"required,printascii,max=100"`
-	Email    string `json:"email" binding:"required,email"`
-	Name     string `json:"name" binding:"required,printascii,max=50"`
-	Content  string `json:"content" bindinng:"required,printascii,max=255"`
+	PostUid string `json:"postUid" binding:"required,printascii,max=24"`
+	Email   string `json:"email" binding:"required,email"`
+	Name    string `json:"name" binding:"required,printascii,max=50"`
+	Content string `json:"content" bindinng:"required,printascii,max=255"`
 }
 
 type ReplyCommmentForm struct {
@@ -37,7 +36,6 @@ func CreateCommentModel(form *CreateCommentForm) (*models.CommentModel, error) {
 	return &models.CommentModel{
 		UID:       primitive.NewObjectID(),
 		PostUid:   postUid,
-		PostSlug:  form.PostSlug,
 		Email:     form.Email,
 		Name:      form.Name,
 		Content:   form.Content,

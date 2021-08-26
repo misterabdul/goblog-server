@@ -42,7 +42,7 @@ func GetPublicPost(maxCtxDuration time.Duration) gin.HandlerFunc {
 		if post, err = repositories.GetPost(ctx, dbConn,
 			bson.M{"$and": []interface{}{
 				bson.M{"deletedat": primitive.Null{}},
-				bson.M{"publishedat": bson.M{"$exists": true}},
+				bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				bson.M{"$or": []interface{}{
 					bson.M{"_id": postId},
 					bson.M{"slug": postQuery},
@@ -77,7 +77,7 @@ func GetPublicPosts(maxCtxDuration time.Duration) gin.HandlerFunc {
 		if posts, err = repositories.GetPosts(ctx, dbConn,
 			bson.M{"$and": []interface{}{
 				bson.M{"deletedat": primitive.Null{}},
-				bson.M{"publishedat": bson.M{"$exists": true}},
+				bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
 			}},
 			helpers.GetShowQuery(c),
 			helpers.GetOrderQuery(c),

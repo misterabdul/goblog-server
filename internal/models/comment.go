@@ -5,7 +5,6 @@ import "go.mongodb.org/mongo-driver/bson/primitive"
 type CommentModel struct {
 	UID       primitive.ObjectID  `bson:"_id" json:"id,omitempty"`
 	PostUid   primitive.ObjectID  `json:"postUid"`
-	PostSlug  string              `json:"postSlug"`
 	Email     string              `json:"email"`
 	Name      string              `json:"name"`
 	Content   string              `json:"content"`
