@@ -47,7 +47,7 @@ func MyPosts(c *gin.Context, posts []*models.PostModel) {
 }
 
 func IncorrectPostId(c *gin.Context, err error) {
-	Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+	Basic(c, http.StatusBadRequest, gin.H{"message": "incorrect post id format"})
 }
 
 func extractPublicPostData(post *models.PostModel) gin.H {

@@ -70,8 +70,11 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 				}
 
 				auth.GET("/notifications", notificationController.GetNotifications(maxCtxDuration, dbConn))
+				auth.GET("/notifications/listen", notificationController.ServeListenedNotifications(maxCtxDuration, dbConn))
 				auth.GET("/notification/:notification", notificationController.GetNotification(maxCtxDuration, dbConn))
-				auth.PUT("/notification/:notification/read", notificationController.ReadNotification(maxCtxDuration, dbConn))
+				auth.PUT("/notification/:notification", notificationController.ReadNotification(maxCtxDuration, dbConn))
+				auth.PATCH("/notification/:notification", notificationController.ReadNotification(maxCtxDuration, dbConn))
+				auth.DELETE("/notification/:notification", notificationController.DeleteNotification(maxCtxDuration, dbConn))
 
 				writer := auth.Group("/writer")
 				writer.Use(authorizeMiddleware.Authorize(maxCtxDuration, dbConn, "Writer"))
