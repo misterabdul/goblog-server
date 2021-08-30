@@ -5,13 +5,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func GetMe(maxCtxDuration time.Duration) gin.HandlerFunc {
+func GetMe(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		_, cancel := context.WithTimeout(context.Background(), maxCtxDuration)

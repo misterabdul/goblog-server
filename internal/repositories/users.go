@@ -21,6 +21,9 @@ func getUserCollection(dbConn *mongo.Database) *mongo.Collection {
 func GetUser(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.UserModel, error) {
 	var user models.UserModel
 	if err := getUserCollection(dbConn).FindOne(ctx, filter).Decode(&user); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
 		return nil, err
 	}
 

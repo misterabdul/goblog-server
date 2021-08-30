@@ -20,6 +20,9 @@ func getPostCollection(dbConn *mongo.Database) *mongo.Collection {
 func GetPost(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.PostModel, error) {
 	var post models.PostModel
 	if err := getPostCollection(dbConn).FindOne(ctx, filter).Decode(&post); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
 		return nil, err
 	}
 

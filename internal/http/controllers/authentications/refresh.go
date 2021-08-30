@@ -10,7 +10,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -19,14 +18,13 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
-func Refresh(maxCtxDuration time.Duration) gin.HandlerFunc {
+func Refresh(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			dbConn      *mongo.Database
 			userUid     primitive.ObjectID
 			user        *models.UserModel
 			refreshFlag bool
@@ -39,13 +37,11 @@ func Refresh(maxCtxDuration time.Duration) gin.HandlerFunc {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+		if user, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userUid}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		defer dbConn.Client().Disconnect(ctx)
-
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userUid}); err != nil {
+		if user == nil {
 			responses.Unauthenticated(c, err)
 			return
 		}

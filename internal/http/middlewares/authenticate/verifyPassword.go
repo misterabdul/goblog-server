@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
@@ -14,7 +15,7 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
-func VerifyPassword(maxCtxDuration time.Duration) gin.HandlerFunc {
+func VerifyPassword(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		_, cancel := context.WithTimeout(context.Background(), maxCtxDuration)

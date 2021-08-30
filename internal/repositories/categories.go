@@ -20,6 +20,9 @@ func getCategoryCollection(dbConn *mongo.Database) *mongo.Collection {
 func GetCategory(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.CategoryModel, error) {
 	var category models.CategoryModel
 	if err := getCategoryCollection(dbConn).FindOne(ctx, filter).Decode(&category); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
 		return nil, err
 	}
 

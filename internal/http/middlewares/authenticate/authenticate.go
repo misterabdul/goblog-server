@@ -3,7 +3,6 @@ package authenticate
 import (
 	"context"
 	"errors"
-	"net/http"
 	"strings"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	internalJwt "github.com/misterabdul/goblog-server/internal/pkg/jwt"
@@ -29,14 +27,13 @@ const (
 )
 
 // Check the authentication status of given user.
-func Authenticate(maxCtxDuration time.Duration) gin.HandlerFunc {
+func Authenticate(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			dbConn *mongo.Database
 			me     *models.UserModel
 			claims jwt.Claims
 			userId primitive.ObjectID
@@ -50,7 +47,6 @@ func Authenticate(maxCtxDuration time.Duration) gin.HandlerFunc {
 			return
 		}
 		auth = strings.ReplaceAll(auth, "Bearer ", "")
-
 		if claims, err = internalJwt.CheckAccessToken(auth); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
@@ -61,13 +57,6 @@ func Authenticate(maxCtxDuration time.Duration) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
-			c.Abort()
-			return
-		}
-		defer dbConn.Client().Disconnect(ctx)
-
 		if me, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()

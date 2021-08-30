@@ -8,7 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -16,17 +15,17 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-func SignOut(maxCtxDuration time.Duration) gin.HandlerFunc {
+func SignOut(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			dbConn *mongo.Database
-			me     *models.UserModel
-			claims *jwt.Claims
-			err    error
+			me                    *models.UserModel
+			claims                *jwt.Claims
+			newIssuedAccessTokens = []models.IssuedToken{}
+			err                   error
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
@@ -37,13 +36,6 @@ func SignOut(maxCtxDuration time.Duration) gin.HandlerFunc {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.InternalServerError(c, err)
-			return
-		}
-		defer dbConn.Client().Disconnect(ctx)
-
-		newIssuedAccessTokens := []models.IssuedToken{}
 		for _, issuedAccessToken := range me.IssuedAccessTokens {
 			if issuedAccessToken.TokenUID != claims.TokenUID {
 				newIssuedAccessTokens = append(newIssuedAccessTokens, issuedAccessToken)
@@ -54,7 +46,7 @@ func SignOut(maxCtxDuration time.Duration) gin.HandlerFunc {
 			TokenUID: claims.TokenUID,
 			Until:    primitive.NewDateTimeFromTime(claims.ExpiredAt),
 		})
-		if err := repositories.UpdateUser(ctx, dbConn, me); err != nil {
+		if err = repositories.UpdateUser(ctx, dbConn, me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

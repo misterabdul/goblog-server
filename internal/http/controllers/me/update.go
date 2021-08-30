@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
@@ -17,17 +16,16 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func UpdateMe(maxCtxDuration time.Duration) gin.HandlerFunc {
+func UpdateMe(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			dbConn *mongo.Database
-			me     *models.UserModel
-			form   *forms.UpdateMeForm
-			err    error
+			me   *models.UserModel
+			form *forms.UpdateMeForm
+			err  error
 		)
 
 		if form, err = requests.GetUpdateMeForm(c); err != nil {
@@ -37,13 +35,7 @@ func UpdateMe(maxCtxDuration time.Duration) gin.HandlerFunc {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.InternalServerError(c, err)
-			return
-		}
-		defer dbConn.Client().Disconnect(ctx)
-
-		if err := repositories.UpdateUser(ctx, dbConn, forms.UpdateMeUserModel(form, me)); err != nil {
+		if err = repositories.UpdateUser(ctx, dbConn, forms.UpdateMeUserModel(form, me)); err != nil {
 			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, err)

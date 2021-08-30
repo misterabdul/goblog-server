@@ -1,24 +1,38 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/server"
+	internalDatabase "github.com/misterabdul/goblog-server/internal/database"
+	internalServer "github.com/misterabdul/goblog-server/internal/server"
 )
 
 // Run the main server.
 func main() {
-	err := godotenv.Load(".env")
-	if err != nil {
+	var (
+		ctx    = context.TODO()
+		dbConn *mongo.Database
+		server *gin.Engine
+		err    error
+	)
+
+	if err = godotenv.Load(".env"); err != nil {
 		log.Println("Error loading .env file")
 	}
-
-	server := server.GetServer()
-	server.Run(getAddress())
+	if dbConn, err = internalDatabase.GetDBConnDefault(ctx); err != nil {
+		log.Fatal(err)
+	}
+	server = internalServer.GetServer(dbConn)
+	if err = server.Run(getAddress()); err != nil {
+		log.Panic(err)
+	}
 }
 
 func getAddress() string {

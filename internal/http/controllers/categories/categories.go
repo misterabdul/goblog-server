@@ -2,6 +2,7 @@ package categories
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -9,79 +10,70 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/http/controllers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetPublicCategory(maxCtxDuration time.Duration) gin.HandlerFunc {
+func GetPublicCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			dbConn       *mongo.Database
-			categoryData *models.CategoryModel
-			categoryId   primitive.ObjectID
-			err          error
+			category      *models.CategoryModel
+			categoryId    primitive.ObjectID
+			categoryQuery = c.Param("category")
+			err           error
 		)
 
-		categoryQuery := c.Param("category")
 		if categoryId, err = primitive.ObjectIDFromHex(categoryQuery); err != nil {
 			categoryId = primitive.ObjectID{}
 		}
-		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
+		if category, err = repositories.GetCategory(ctx, dbConn,
+			bson.M{"$and": []bson.M{
+				{"deletedat": primitive.Null{}},
+				{"$or": []bson.M{
+					{"_id": categoryId},
+					{"slug": categoryQuery},
+				}},
+			}}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		defer dbConn.Client().Disconnect(ctx)
-
-		if categoryData, err = repositories.GetCategory(ctx, dbConn,
-			bson.M{"$and": []interface{}{
-				bson.M{"deletedat": primitive.Null{}},
-				bson.M{"$or": []interface{}{
-					bson.M{"_id": categoryId},
-					bson.M{"slug": categoryQuery},
-				}},
-			}}); err != nil {
-			responses.NotFound(c, err)
-			return
+		if category == nil {
+			responses.NotFound(c, errors.New("category not found"))
 		}
 
-		responses.PublicCategory(c, categoryData)
+		responses.PublicCategory(c, category)
 	}
 }
 
-func GetPublicCategories(maxCtxDuration time.Duration) gin.HandlerFunc {
+func GetPublicCategories(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			dbConn     *mongo.Database
 			categories []*models.CategoryModel
 			err        error
 		)
 
-		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.InternalServerError(c, err)
-			return
-		}
-		defer dbConn.Client().Disconnect(ctx)
-
 		if categories, err = repositories.GetCategories(ctx, dbConn,
-			bson.M{"$and": []interface{}{
-				bson.M{"deletedat": primitive.Null{}},
+			bson.M{"$and": []bson.M{
+				{"deletedat": primitive.Null{}},
 			}},
 			helpers.GetShowQuery(c),
 			helpers.GetOrderQuery(c),
 			helpers.GetAscQuery(c)); err != nil {
-			responses.NotFound(c, err)
+			responses.InternalServerError(c, err)
 			return
+		}
+		if len(categories) == 0 {
+			responses.NoContent(c)
 		}
 
 		responses.PublicCategories(c, categories)

@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
@@ -18,14 +17,13 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
-func UpdateMePassword(maxCtxDuration time.Duration) gin.HandlerFunc {
+func UpdateMePassword(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			dbConn      *mongo.Database
 			me          *models.UserModel
 			form        *forms.UpdateMePasswordForm
 			newPassword string
@@ -44,12 +42,6 @@ func UpdateMePassword(maxCtxDuration time.Duration) gin.HandlerFunc {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
-			responses.InternalServerError(c, err)
-			return
-		}
-		defer dbConn.Client().Disconnect(ctx)
-
 		if hash.Check(newPassword, me.Password) {
 			responses.FormIncorrect(c, errors.New("your password is same as old one"))
 			return
@@ -59,7 +51,7 @@ func UpdateMePassword(maxCtxDuration time.Duration) gin.HandlerFunc {
 			return
 		}
 		me.Password = newPassword
-		if err := repositories.UpdateUser(ctx, dbConn, me); err != nil {
+		if err = repositories.UpdateUser(ctx, dbConn, me); err != nil {
 			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, writeErr.WriteErrors)

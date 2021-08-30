@@ -20,6 +20,9 @@ func getCommentCollection(dbConn *mongo.Database) *mongo.Collection {
 func GetComment(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.CommentModel, error) {
 	var comment models.CommentModel
 	if err := getCommentCollection(dbConn).FindOne(ctx, filter).Decode(&comment); err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
 		return nil, err
 	}
 

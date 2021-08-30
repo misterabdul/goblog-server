@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type serverRelatedEnv struct {
@@ -11,7 +12,7 @@ type serverRelatedEnv struct {
 }
 
 // Get the server engine.
-func GetServer() *gin.Engine {
+func GetServer(dbConn *mongo.Database) *gin.Engine {
 	var (
 		ginEngine *gin.Engine
 	)
@@ -32,7 +33,7 @@ func GetServer() *gin.Engine {
 		ginEngine = gin.Default()
 	}
 
-	initRoute(ginEngine)
+	initRoute(ginEngine, dbConn)
 
 	return ginEngine
 }
