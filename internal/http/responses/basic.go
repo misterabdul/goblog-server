@@ -19,6 +19,7 @@ func Basic(c *gin.Context, code int, obj interface{}) {
 		return
 	case acceptHeader == "application/msgpack":
 		response.MSGPACK(c, code, obj)
+		return
 	}
 	c.Data(http.StatusNotFound, "*/*", nil)
 }
