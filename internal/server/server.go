@@ -3,6 +3,8 @@ package server
 import (
 	"os"
 
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -31,8 +33,10 @@ func GetServer(dbConn *mongo.Database) *gin.Engine {
 	case 2:
 		gin.SetMode(gin.DebugMode)
 		ginEngine = gin.Default()
+		ginEngine.Use(cors.Default())
 	}
 
+	ginEngine.Use(gzip.Gzip(gzip.DefaultCompression))
 	initRoute(ginEngine, dbConn)
 
 	return ginEngine
