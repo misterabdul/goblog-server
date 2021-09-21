@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/misterabdul/goblog-server/cmd/goblog-utils/migration"
+	"github.com/misterabdul/goblog-server/cmd/goblog-utils/post"
 	"github.com/misterabdul/goblog-server/pkg/utils"
 )
 
@@ -27,20 +28,38 @@ func main() {
 	ctx := context.TODO()
 	reader := bufio.NewReader(os.Stdin)
 
-	switch {
-	default:
-		utils.ConsolePrintlnWhite("Unknown command : " + args)
-	case args == "migration:fresh":
-		utils.ConsolePrintlnYellow("Warning: this will create a new fresh database")
-		utils.ConsolePrintWhite("Are you sure to execute migrate:fresh [yes/no]: ")
-		if input, err := reader.ReadString('\n'); err == nil {
-			if strings.ToLower(string(input)) == "yes\n" {
-				migration.Fresh(ctx)
-			}
+	availableCommands := getAvailableCommands()
+	if commands, ok := availableCommands[args]; ok {
+		commands(ctx, reader)
+	} else {
+		utils.ConsolePrintlnWhite("Unknown command: " + args)
+		utils.ConsolePrintlnWhite("Available commands")
+		for key := range availableCommands {
+			utils.ConsolePrintlnWhite("  " + key)
 		}
-	case args == "migration:migrate":
-		migration.Migrate(ctx)
-	case args == "migration:rollback":
-		migration.Rollback(ctx)
+	}
+
+}
+
+func getAvailableCommands() map[string]func(context.Context, *bufio.Reader) {
+	return map[string]func(context.Context, *bufio.Reader){
+		"migrations:fresh": func(ctx context.Context, reader *bufio.Reader) {
+			utils.ConsolePrintlnYellow("Warning: this will create a new fresh database")
+			utils.ConsolePrintWhite("Are you sure to execute migrate:fresh (y/N): ")
+			if input, err := reader.ReadString('\n'); err == nil {
+				if strings.ToLower(string(input)) == "y\n" {
+					migration.Fresh(ctx)
+				}
+			}
+		},
+		"migrations:migrate": func(ctx context.Context, reader *bufio.Reader) {
+			migration.Migrate(ctx)
+		},
+		"migrations:rollback": func(ctx context.Context, reader *bufio.Reader) {
+			migration.Rollback(ctx)
+		},
+		"post:generate": func(ctx context.Context, reader *bufio.Reader) {
+			post.Generate(ctx)
+		},
 	}
 }
