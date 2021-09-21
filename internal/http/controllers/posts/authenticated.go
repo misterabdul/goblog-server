@@ -28,6 +28,7 @@ func GetMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handler
 		var (
 			me          *models.UserModel
 			post        *models.PostModel
+			postContent *models.PostContentModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
@@ -41,7 +42,7 @@ func GetMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handler
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
+		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"_id": postId},
 			}}); err != nil {
@@ -56,7 +57,7 @@ func GetMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handler
 			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 		}
 
-		responses.MyPost(c, post)
+		responses.MyPost(c, post, postContent)
 	}
 }
 
@@ -106,10 +107,11 @@ func CreatePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 		defer cancel()
 
 		var (
-			me   *models.UserModel
-			post *models.PostModel
-			form *forms.CreatePostForm
-			err  error
+			me          *models.UserModel
+			post        *models.PostModel
+			postContent *models.PostContentModel
+			form        *forms.CreatePostForm
+			err         error
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
@@ -120,8 +122,8 @@ func CreatePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 			responses.FormIncorrect(c, err)
 			return
 		}
-		post = forms.CreatePostModel(form, me)
-		if err = repositories.CreatePost(ctx, dbConn, post); err != nil {
+		post, postContent = forms.CreatePostModel(form, me)
+		if err = repositories.CreatePost(ctx, dbConn, post, postContent); err != nil {
 			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, err)
@@ -131,7 +133,7 @@ func CreatePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 			return
 		}
 
-		responses.MyPost(c, post)
+		responses.MyPost(c, post, postContent)
 	}
 }
 
@@ -246,6 +248,7 @@ func UpdateMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 		var (
 			me          *models.UserModel
 			post        *models.PostModel
+			postContent *models.PostContentModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			form        *forms.UpdatePostForm
@@ -260,7 +263,7 @@ func UpdateMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
+		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": postId},
@@ -280,7 +283,8 @@ func UpdateMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = repositories.UpdatePost(ctx, dbConn, forms.UpdatePostModel(form, post)); err != nil {
+		post, postContent = forms.UpdatePostModel(form, post, postContent)
+		if err = repositories.UpdatePost(ctx, dbConn, post, postContent); err != nil {
 			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, err)
@@ -397,6 +401,7 @@ func DeleteMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 		var (
 			me          *models.UserModel
 			post        *models.PostModel
+			postContent *models.PostContentModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
@@ -410,7 +415,7 @@ func DeleteMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
+		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": postId},
@@ -426,7 +431,7 @@ func DeleteMyPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
-		if err = repositories.DeletePost(ctx, dbConn, post); err != nil {
+		if err = repositories.DeletePost(ctx, dbConn, post, postContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -23,16 +23,17 @@ func GetPublicPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 		defer cancel()
 
 		var (
-			post      *models.PostModel
-			postId    primitive.ObjectID
-			postQuery = c.Param("post")
-			err       error
+			post        *models.PostModel
+			postContent *models.PostContentModel
+			postId      primitive.ObjectID
+			postQuery   = c.Param("post")
+			err         error
 		)
 
 		if postId, err = primitive.ObjectIDFromHex(postQuery); err != nil {
 			postId = primitive.ObjectID{}
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
+		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
@@ -49,7 +50,7 @@ func GetPublicPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 			return
 		}
 
-		responses.PublicPost(c, post)
+		responses.PublicPost(c, post, postContent)
 	}
 }
 

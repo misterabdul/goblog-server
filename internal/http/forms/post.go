@@ -8,21 +8,25 @@ import (
 )
 
 type CreatePostForm struct {
-	Slug       string         `json:"slug" binding:"required"`
-	Title      string         `json:"title" binding:"required"`
-	Categories []postCategory `json:"categories" binding:"required"`
-	Tags       []string       `json:"tags"`
-	Content    string         `json:"content" binding:"required"`
-	PublishNow bool           `json:"publishNow"`
+	Slug               string         `json:"slug" binding:"required"`
+	Title              string         `json:"title" binding:"required"`
+	Description        string         `json:"description"`
+	FeaturingImagePath string         `json:"featuringImagePath"`
+	Categories         []postCategory `json:"categories" binding:"required"`
+	Tags               []string       `json:"tags"`
+	Content            string         `json:"content" binding:"required"`
+	PublishNow         bool           `json:"publishNow"`
 }
 
 type UpdatePostForm struct {
-	Slug       string         `json:"slug"`
-	Title      string         `json:"title"`
-	Categories []postCategory `json:"categories"`
-	Tags       []string       `json:"tags"`
-	Content    string         `json:"content"`
-	PublishNow bool           `json:"publishNow"`
+	Slug               string         `json:"slug"`
+	Title              string         `json:"title"`
+	Description        string         `json:"description"`
+	FeaturingImagePath string         `json:"featuringImagePath"`
+	Categories         []postCategory `json:"categories"`
+	Tags               []string       `json:"tags"`
+	Content            string         `json:"content"`
+	PublishNow         bool           `json:"publishNow"`
 }
 
 type postCategory struct {
@@ -30,8 +34,14 @@ type postCategory struct {
 	Slug string `json:"slug"`
 }
 
-func CreatePostModel(form *CreatePostForm, author *models.UserModel) *models.PostModel {
-	var categories []models.CategoryCommonModel
+func CreatePostModel(form *CreatePostForm, author *models.UserModel) (*models.PostModel, *models.PostContentModel) {
+	var (
+		categories  []models.CategoryCommonModel
+		now                     = primitive.NewDateTimeFromTime(time.Now())
+		postId                  = primitive.NewObjectID()
+		publishedAt interface{} = nil
+	)
+
 	for _, formCategory := range form.Categories {
 		category := models.CategoryCommonModel{
 			Name: formCategory.Name,
@@ -39,30 +49,34 @@ func CreatePostModel(form *CreatePostForm, author *models.UserModel) *models.Pos
 		}
 		categories = append(categories, category)
 	}
-
-	now := primitive.NewDateTimeFromTime(time.Now())
-	var publishedAt interface{} = nil
 	if form.PublishNow {
 		publishedAt = now
 	}
 
 	return &models.PostModel{
-		UID:         primitive.NewObjectID(),
-		Slug:        form.Slug,
-		Title:       form.Title,
-		Categories:  categories,
-		Tags:        form.Tags,
-		Content:     form.Content,
-		Author:      models.CreateUserCommonModel(*author),
-		PublishedAt: publishedAt,
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		DeletedAt:   nil,
-	}
+			UID:                postId,
+			Slug:               form.Slug,
+			Title:              form.Title,
+			Description:        form.Description,
+			FeaturingImagePath: form.FeaturingImagePath,
+			Categories:         categories,
+			Tags:               form.Tags,
+			Author:             models.CreateUserCommonModel(*author),
+			PublishedAt:        publishedAt,
+			CreatedAt:          now,
+			UpdatedAt:          now,
+			DeletedAt:          nil,
+		}, &models.PostContentModel{
+			UID:     postId,
+			Content: form.Content,
+		}
 }
 
-func UpdatePostModel(form *UpdatePostForm, post *models.PostModel) *models.PostModel {
-	now := primitive.NewDateTimeFromTime(time.Now())
+func UpdatePostModel(form *UpdatePostForm, post *models.PostModel, postContent *models.PostContentModel) (*models.PostModel, *models.PostContentModel) {
+	var (
+		categories []models.CategoryCommonModel
+		now        = primitive.NewDateTimeFromTime(time.Now())
+	)
 
 	if len(form.Slug) > 0 {
 		post.Slug = form.Slug
@@ -70,8 +84,13 @@ func UpdatePostModel(form *UpdatePostForm, post *models.PostModel) *models.PostM
 	if len(form.Title) > 0 {
 		post.Title = form.Title
 	}
+	if len(form.Description) > 0 {
+		post.Description = form.Description
+	}
+	if len(form.FeaturingImagePath) > 0 {
+		post.FeaturingImagePath = form.FeaturingImagePath
+	}
 	if len(form.Categories) > 0 {
-		var categories []models.CategoryCommonModel
 		for _, formCategory := range form.Categories {
 			category := models.CategoryCommonModel{
 				Name: formCategory.Name,
@@ -85,12 +104,12 @@ func UpdatePostModel(form *UpdatePostForm, post *models.PostModel) *models.PostM
 		post.Tags = form.Tags
 	}
 	if len(form.Content) > 0 {
-		post.Content = form.Content
+		postContent.Content = form.Content
 	}
 	if form.PublishNow {
 		post.PublishedAt = now
 	}
 	post.UpdatedAt = now
 
-	return post
+	return post, postContent
 }

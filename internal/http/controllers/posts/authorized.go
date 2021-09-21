@@ -26,6 +26,7 @@ func GetPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFu
 
 		var (
 			post        *models.PostModel
+			postContent *models.PostContentModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
@@ -35,7 +36,7 @@ func GetPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFu
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
+		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": postId},
@@ -48,7 +49,7 @@ func GetPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFu
 			return
 		}
 
-		responses.AuthorizedPost(c, post)
+		responses.AuthorizedPost(c, post, postContent)
 	}
 }
 
@@ -178,6 +179,7 @@ func UpdatePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 
 		var (
 			post        *models.PostModel
+			postContent *models.PostContentModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			form        *forms.UpdatePostForm
@@ -188,7 +190,7 @@ func UpdatePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
+		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": postId},
@@ -204,7 +206,8 @@ func UpdatePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if err = repositories.UpdatePost(ctx, dbConn, forms.UpdatePostModel(form, post)); err != nil {
+		post, postContent = forms.UpdatePostModel(form, post, postContent)
+		if err = repositories.UpdatePost(ctx, dbConn, post, postContent); err != nil {
 			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, err)
@@ -306,6 +309,7 @@ func DeletePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 
 		var (
 			post        *models.PostModel
+			postContent *models.PostContentModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
@@ -315,7 +319,7 @@ func DeletePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
+		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": postId},
@@ -327,7 +331,7 @@ func DeletePost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if err = repositories.DeletePost(ctx, dbConn, post); err != nil {
+		if err = repositories.DeletePost(ctx, dbConn, post, postContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
