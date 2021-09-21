@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/models"
 )
@@ -21,13 +22,13 @@ func getPostContentCollection(dbConn *mongo.Database) *mongo.Collection {
 }
 
 // Get single post
-func GetPost(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.PostModel, error) {
+func GetPost(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOneOptions) (*models.PostModel, error) {
 	var (
 		post models.PostModel
 		err  error
 	)
 
-	if err = getPostCollection(dbConn).FindOne(ctx, filter).Decode(&post); err != nil {
+	if err = getPostCollection(dbConn).FindOne(ctx, filter, opts...).Decode(&post); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -60,20 +61,25 @@ func GetPostWithContent(ctx context.Context, dbConn *mongo.Database, filter inte
 }
 
 // Get multiple posts
-func GetPosts(ctx context.Context, dbConn *mongo.Database, filter interface{}, show int, order string, asc bool) ([]*models.PostModel, error) {
-	cursor, err := getPostCollection(dbConn).Find(ctx, filter)
-	if err != nil {
+func GetPosts(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOptions) ([]*models.PostModel, error) {
+	var (
+		posts  []*models.PostModel
+		post   *models.PostModel
+		cursor *mongo.Cursor
+		err    error
+	)
+
+	if cursor, err = getPostCollection(dbConn).Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	var posts []*models.PostModel
 	for cursor.Next(ctx) {
-		var post models.PostModel
-		if err := cursor.Decode(&post); err != nil {
+		post = &models.PostModel{}
+		if err = cursor.Decode(post); err != nil {
 			return nil, err
 		}
-		posts = append(posts, &post)
+		posts = append(posts, post)
 	}
 
 	return posts, nil

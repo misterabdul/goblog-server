@@ -12,6 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/misterabdul/goblog-server/internal/http/controllers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -69,10 +70,7 @@ func checkNotifications(dbConn *mongo.Database, me *models.UserModel, messageCha
 			bson.M{"$and": []bson.M{
 				{"owner.username": me.Username},
 				{"createdat": bson.M{"$gt": primitive.NewDateTimeFromTime(latestCheck)}},
-			}},
-			25,
-			"createdAt",
-			false); err != nil {
+			}}, helpers.CreateFindOptions(25, 1, "createdat", false)); err != nil {
 			continue
 		}
 		messageBuff = fmt.Sprintf("There is %d new notification(s)", len(notifications))

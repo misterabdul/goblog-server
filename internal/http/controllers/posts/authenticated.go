@@ -85,10 +85,7 @@ func GetMyPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handle
 			bson.M{"$and": []bson.M{
 				{"deletedat": trashQuery},
 				{"author.username": me.Username},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptionsPost(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -543,10 +540,7 @@ func GetMyPostComments(maxCtxDuration time.Duration, dbConn *mongo.Database) gin
 			bson.M{"$and": []bson.M{
 				{"deletedat": trashQuery},
 				{"postuid": post.UID},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

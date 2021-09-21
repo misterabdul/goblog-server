@@ -71,10 +71,7 @@ func GetPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerF
 		if posts, err = repositories.GetPosts(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": trashQuery},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptionsPost(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -424,10 +421,7 @@ func GetPostComments(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.H
 			bson.M{"$and": []bson.M{
 				{"deletedat": trashQuery},
 				{"_id": post.UID},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/models"
 )
@@ -17,9 +18,9 @@ func getCategoryCollection(dbConn *mongo.Database) *mongo.Collection {
 }
 
 // Get single category
-func GetCategory(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.CategoryModel, error) {
+func GetCategory(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOneOptions) (*models.CategoryModel, error) {
 	var category models.CategoryModel
-	if err := getCategoryCollection(dbConn).FindOne(ctx, filter).Decode(&category); err != nil {
+	if err := getCategoryCollection(dbConn).FindOne(ctx, filter, opts...).Decode(&category); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -30,24 +31,25 @@ func GetCategory(ctx context.Context, dbConn *mongo.Database, filter interface{}
 }
 
 // Get multiple categories
-func GetCategories(ctx context.Context, dbConn *mongo.Database, filter interface{}, show int, order string, asc bool) ([]*models.CategoryModel, error) {
+func GetCategories(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOptions) ([]*models.CategoryModel, error) {
 	var (
 		categories []*models.CategoryModel
-		category   models.CategoryModel
+		category   *models.CategoryModel
 		cursor     *mongo.Cursor
 		err        error
 	)
 
-	if cursor, err = getCategoryCollection(dbConn).Find(ctx, filter); err != nil {
+	if cursor, err = getCategoryCollection(dbConn).Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
 	for cursor.Next(ctx) {
-		if err := cursor.Decode(&category); err != nil {
+		category = &models.CategoryModel{}
+		if err := cursor.Decode(category); err != nil {
 			return nil, err
 		}
-		categories = append(categories, &category)
+		categories = append(categories, category)
 	}
 
 	return categories, nil

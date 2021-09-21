@@ -69,10 +69,7 @@ func GetCategories(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 		if categories, err = repositories.GetCategories(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": trashQuery},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

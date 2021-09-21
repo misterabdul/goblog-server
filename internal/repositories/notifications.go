@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/models"
 )
@@ -17,9 +18,9 @@ func getNotificationCollection(dbConn *mongo.Database) *mongo.Collection {
 }
 
 // Get single notification
-func GetNotification(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.NotificationModel, error) {
+func GetNotification(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOneOptions) (*models.NotificationModel, error) {
 	var notification models.NotificationModel
-	if err := getNotificationCollection(dbConn).FindOne(ctx, filter).Decode(&notification); err != nil {
+	if err := getNotificationCollection(dbConn).FindOne(ctx, filter, opts...).Decode(&notification); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -30,20 +31,25 @@ func GetNotification(ctx context.Context, dbConn *mongo.Database, filter interfa
 }
 
 // Get multiple notifications
-func GetNotifications(ctx context.Context, dbConn *mongo.Database, filter interface{}, show int, order string, asc bool) ([]*models.NotificationModel, error) {
-	cursor, err := getNotificationCollection(dbConn).Find(ctx, filter)
-	if err != nil {
+func GetNotifications(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOptions) ([]*models.NotificationModel, error) {
+	var (
+		notifications []*models.NotificationModel
+		notification  *models.NotificationModel
+		cursor        *mongo.Cursor
+		err           error
+	)
+
+	if cursor, err = getNotificationCollection(dbConn).Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	var notifications []*models.NotificationModel
 	for cursor.Next(ctx) {
-		var notification models.NotificationModel
-		if err := cursor.Decode(&notification); err != nil {
+		notification = &models.NotificationModel{}
+		if err = cursor.Decode(notification); err != nil {
 			return nil, err
 		}
-		notifications = append(notifications, &notification)
+		notifications = append(notifications, notification)
 	}
 
 	return notifications, nil

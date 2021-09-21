@@ -68,10 +68,7 @@ func GetPublicUsers(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 		if users, err = repositories.GetUsers(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

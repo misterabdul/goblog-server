@@ -69,10 +69,7 @@ func GetPublicPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 			bson.M{"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptionsPost(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

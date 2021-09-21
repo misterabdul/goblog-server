@@ -105,10 +105,7 @@ func GetPublicPostComments(maxCtxDuration time.Duration, dbConn *mongo.Database)
 					{"postslug": postQuery},
 					{"postuid": postId},
 				}},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -75,10 +75,7 @@ func GetNotifications(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.
 		if notifications, err = repositories.GetNotifications(ctx, dbConn,
 			bson.M{"$and": []bson.M{
 				{"owner.username": me.Username},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

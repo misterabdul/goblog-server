@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/models"
 )
@@ -18,9 +19,9 @@ func getUserCollection(dbConn *mongo.Database) *mongo.Collection {
 }
 
 // Get single user
-func GetUser(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.UserModel, error) {
+func GetUser(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOneOptions) (*models.UserModel, error) {
 	var user models.UserModel
-	if err := getUserCollection(dbConn).FindOne(ctx, filter).Decode(&user); err != nil {
+	if err := getUserCollection(dbConn).FindOne(ctx, filter, opts...).Decode(&user); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -31,20 +32,25 @@ func GetUser(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*
 }
 
 // Get multiple users
-func GetUsers(ctx context.Context, dbConn *mongo.Database, filter interface{}, show int, order string, asc bool) ([]*models.UserModel, error) {
-	cursor, err := getUserCollection(dbConn).Find(ctx, filter)
-	if err != nil {
+func GetUsers(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOptions) ([]*models.UserModel, error) {
+	var (
+		users  []*models.UserModel
+		user   *models.UserModel
+		cursor *mongo.Cursor
+		err    error
+	)
+
+	if cursor, err = getUserCollection(dbConn).Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	var users []*models.UserModel
 	for cursor.Next(ctx) {
-		var user models.UserModel
-		if err := cursor.Decode(&user); err != nil {
+		user = &models.UserModel{}
+		if err = cursor.Decode(user); err != nil {
 			return nil, err
 		}
-		users = append(users, &user)
+		users = append(users, user)
 	}
 
 	return users, nil

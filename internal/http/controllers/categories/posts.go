@@ -39,10 +39,7 @@ func GetPublicCategoryPosts(maxCtxDuration time.Duration, dbConn *mongo.Database
 					{"_id": categoryId},
 					{"slug": categoryQuery},
 				}},
-			}},
-			helpers.GetShowQuery(c),
-			helpers.GetOrderQuery(c),
-			helpers.GetAscQuery(c)); err != nil {
+			}}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

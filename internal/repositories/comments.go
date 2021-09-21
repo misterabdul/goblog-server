@@ -8,6 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/models"
 )
@@ -17,9 +18,9 @@ func getCommentCollection(dbConn *mongo.Database) *mongo.Collection {
 }
 
 // Get single comment
-func GetComment(ctx context.Context, dbConn *mongo.Database, filter interface{}) (*models.CommentModel, error) {
+func GetComment(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOneOptions) (*models.CommentModel, error) {
 	var comment models.CommentModel
-	if err := getCommentCollection(dbConn).FindOne(ctx, filter).Decode(&comment); err != nil {
+	if err := getCommentCollection(dbConn).FindOne(ctx, filter, opts...).Decode(&comment); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -30,20 +31,25 @@ func GetComment(ctx context.Context, dbConn *mongo.Database, filter interface{})
 }
 
 // Get multiple comments
-func GetComments(ctx context.Context, dbConn *mongo.Database, filter interface{}, show int, order string, asc bool) ([]*models.CommentModel, error) {
-	cursor, err := getCommentCollection(dbConn).Find(ctx, filter)
-	if err != nil {
+func GetComments(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOptions) ([]*models.CommentModel, error) {
+	var (
+		comments []*models.CommentModel
+		comment  *models.CommentModel
+		cursor   *mongo.Cursor
+		err      error
+	)
+
+	if cursor, err = getCommentCollection(dbConn).Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
 
-	var comments []*models.CommentModel
 	for cursor.Next(ctx) {
-		var comment models.CommentModel
-		if err := cursor.Decode(&comment); err != nil {
+		comment = &models.CommentModel{}
+		if err = cursor.Decode(comment); err != nil {
 			return nil, err
 		}
-		comments = append(comments, &comment)
+		comments = append(comments, comment)
 	}
 
 	return comments, nil
