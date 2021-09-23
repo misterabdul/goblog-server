@@ -36,7 +36,7 @@ func Generate(ctx context.Context) {
 			UID:                postId,
 			Slug:               fmt.Sprintf("lorem-ipsum-%d", i),
 			Title:              fmt.Sprintf("Lorem Ipsum %d", i),
-			Description:        "Lorem ipsum dolor sit amet",
+			Description:        lipsumParagraph(),
 			FeaturingImagePath: "./statics/images/image-example.jpg",
 			Categories:         []models.CategoryCommonModel{},
 			Tags:               []string{"lorem", "ipsum", "dolor", "sit", "amet"},
@@ -59,6 +59,10 @@ func Generate(ctx context.Context) {
 		}
 	}
 	utils.ConsolePrintlnGreen("Generated 100 dummy posts.")
+}
+
+func lipsumParagraph() string {
+	return "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ipsum libero, laoreet at sem vel, ornare dapibus enim. Curabitur vestibulum eros ac nisi lobortis, at sollicitudin velit congue. In scelerisque feugiat nisi, ut blandit nisi tempus non. Vivamus lacinia nisi sit amet aliquam fermentum. Aliquam feugiat dui sed dolor accumsan, vel ultrices velit vehicula. Mauris elit sapien, interdum in ante ac, iaculis placerat orci. Nulla facilisi. Praesent ac auctor arcu. Mauris aliquet ultricies enim, viverra aliquet neque lobortis ullamcorper. Sed volutpat facilisis lacus nec porttitor. Duis feugiat nibh euismod, tincidunt mauris et, laoreet dolor. Praesent eu dolor et nisl finibus venenatis. Aenean metus eros, malesuada nec diam sit amet, tincidunt facilisis justo."
 }
 
 func lipsumMarkdown() string {
@@ -174,15 +178,15 @@ _Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec consequat dictum
 # Code Block
 
 ---
-` +
-		"```c" + `
+
+` + "```c" + `
   #include <stdio.h>
 
   int main(int argc, char** argv) {
     printf("Hello world\n");
     return 0;
-  }` +
-		"```" + `
+  }
+` + "```" + `
 
 # Image
 
