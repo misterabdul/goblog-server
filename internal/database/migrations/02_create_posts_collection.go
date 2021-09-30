@@ -27,6 +27,16 @@ func (m *CreatePostsCollection) Up(ctx context.Context, dbConn *mongo.Database) 
 
 	indexes := []mongo.IndexModel{
 		{
+			Keys: bson.D{
+				{Key: "title", Value: "text"},
+				{Key: "categories.name", Value: "text"},
+				{Key: "tags", Value: "text"},
+				{Key: "author.firstname", Value: "text"},
+				{Key: "author.lastname", Value: "text"},
+			},
+			Options: nil,
+		},
+		{
 			Keys:    bson.D{{Key: "slug", Value: 1}},
 			Options: options.Index().SetUnique(true),
 		},

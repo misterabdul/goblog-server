@@ -39,6 +39,7 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 			v1.GET("/category/:category/posts", categoryController.GetPublicCategoryPosts(maxCtxDuration, dbConn))
 
 			v1.GET("/posts", postController.GetPublicPosts(maxCtxDuration, dbConn))
+			v1.GET("/post/search", postController.SearchPublicPosts(maxCtxDuration, dbConn))
 			v1.GET("/post/:post", postController.GetPublicPost(maxCtxDuration, dbConn))
 			v1.GET("/post/:post/comments", postController.GetPublicPostComments(maxCtxDuration, dbConn))
 			v1.GET("/comment/:comment", postController.GetPublicPostComment(maxCtxDuration, dbConn))

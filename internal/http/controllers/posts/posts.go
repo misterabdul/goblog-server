@@ -81,3 +81,37 @@ func GetPublicPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 		responses.PublicPosts(c, posts)
 	}
 }
+
+func SearchPublicPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
+
+		var (
+			searchQuery = c.Query("q")
+			posts       []*models.PostModel
+			err         error
+		)
+
+		if posts, err = repositories.GetPosts(ctx, dbConn,
+			bson.M{
+				"$text": bson.M{
+					"$search": searchQuery,
+				},
+				"$and": []bson.M{
+					{"deletedat": primitive.Null{}},
+					{"publishedat": bson.M{"$ne": primitive.Null{}}},
+				},
+			}, helpers.GetFindOptionsPost(c)); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		if len(posts) == 0 {
+			responses.NoContent(c)
+			return
+		}
+
+		responses.PublicPosts(c, posts)
+	}
+}
