@@ -33,6 +33,13 @@ func (c Claims) Valid() error {
 	return nil
 }
 
+func (c Claims) ExpireDurationsInSeconds() int {
+	now := time.Now()
+	diff := c.ExpiredAt.Sub(now)
+
+	return int(diff.Seconds())
+}
+
 func Issue(payload Payload, duration time.Duration, secret string) (tokenID string, token string, err error) {
 	tokenID = primitive.NewObjectID().Hex()
 	claims := Claims{

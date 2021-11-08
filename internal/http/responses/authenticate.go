@@ -33,16 +33,16 @@ func SignedIn(c *gin.Context, accessToken string, accessTokenClaims *jwt.Claims,
 	}
 
 	c.SetCookie(
-		"refreshToken",
+		"refresh-token",
 		refreshToken,
-		refreshTokenClaims.ExpiredAt.Minute(),
-		"/api/v1/refresh",
+		refreshTokenClaims.ExpireDurationsInSeconds(),
+		"",
 		domain,
 		secured,
 		true,
 	)
 
-	c.JSON(http.StatusOK, gin.H{
+	Basic(c, http.StatusOK, gin.H{
 		"tokenType":   "Bearer",
 		"accessToken": accessToken,
 	})
