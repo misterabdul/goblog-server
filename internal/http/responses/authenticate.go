@@ -9,6 +9,10 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
+const (
+	RefreshTokenCookieName = "refresh-token"
+)
+
 func Unauthenticated(c *gin.Context, err error) {
 	Basic(c, http.StatusUnauthorized, gin.H{"message": "Unauthenticated."})
 }
@@ -33,10 +37,10 @@ func SignedIn(c *gin.Context, accessToken string, accessTokenClaims *jwt.Claims,
 	}
 
 	c.SetCookie(
-		"refresh-token",
+		RefreshTokenCookieName,
 		refreshToken,
 		refreshTokenClaims.ExpireDurationsInSeconds(),
-		"",
+		"/api/v1/refresh",
 		domain,
 		secured,
 		true,

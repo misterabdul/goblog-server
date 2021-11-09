@@ -17,7 +17,7 @@ func AuthenticateRefresh() gin.HandlerFunc {
 			err          error
 		)
 
-		if refreshToken, err = c.Cookie("refreshToken"); err != nil {
+		if refreshToken, err = c.Cookie(responses.RefreshTokenCookieName); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
