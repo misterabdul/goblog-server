@@ -2,79 +2,120 @@ package jwt
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-type Payload struct {
-	UserUID  string `json:"userUid"`
-	Username string `json:"username"`
+type CustomClaims struct {
+	KeyID     string `json:"kid,omitempty"`
+	Id        string `json:"jti,omitempty"`
+	Type      string `json:"typ,omitempty"`
+	Subject   string `json:"sub,omitempty"`
+	Audience  string `json:"aud,omitempty"`
+	Issuer    string `json:"iss,omitempty"`
+	IssuedAt  int64  `json:"iat,omitempty"`
+	NotBefore int64  `json:"nbf,omitempty"`
+	ExpiresAt int64  `json:"exp,omitempty"`
 }
 
-type Claims struct {
-	Payload
-	TokenUID  string    `json:"tokenUid"`
-	IssuedAt  time.Time `json:"issuedAt"`
-	ExpiredAt time.Time `json:"expiredAt"`
-}
+func (c CustomClaims) Valid() error {
+	vErr := new(jwt.ValidationError)
+	now := jwt.TimeFunc().Unix()
 
-func (c Claims) Valid() error {
-	now := time.Now()
-
-	if !c.IssuedAt.Before(now) {
-		return errors.New("token is invalid")
+	if c.ExpiresAt <= now {
+		delta := time.Unix(now, 0).Sub(time.Unix(c.ExpiresAt, 0))
+		vErr.Inner = fmt.Errorf("token is expired by %v", delta)
+		vErr.Errors |= jwt.ValidationErrorExpired
 	}
-	if !c.ExpiredAt.After(now) {
-		return errors.New("token is invalid")
+	if c.IssuedAt > now {
+		vErr.Inner = fmt.Errorf("token used before issued")
+		vErr.Errors |= jwt.ValidationErrorIssuedAt
+	}
+	if c.NotBefore > now {
+		vErr.Inner = fmt.Errorf("token is not valid yet")
+		vErr.Errors |= jwt.ValidationErrorNotValidYet
 	}
 
-	return nil
+	if vErr.Errors == 0 {
+		return nil
+	}
+
+	return vErr
 }
 
-func (c Claims) ExpireDurationsInSeconds() int {
-	now := time.Now()
-	diff := c.ExpiredAt.Sub(now)
-
+func (c CustomClaims) GetExpiresAtSeconds() int {
+	expiresAtTime := time.Unix(c.ExpiresAt, 0)
+	diff := time.Until(expiresAtTime)
 	return int(diff.Seconds())
 }
 
-func Issue(payload Payload, duration time.Duration, secret string) (tokenID string, token string, err error) {
-	tokenID = primitive.NewObjectID().Hex()
-	claims := Claims{
-		payload,
-		tokenID,
-		time.Now(),
-		time.Now().Add(duration),
+func Issue(
+	claimType string,
+	subject string,
+	duration time.Duration,
+	secret string) (
+	claims *CustomClaims,
+	tokenString string,
+	err error) {
+	now := time.Now()
+	tokenID := primitive.NewObjectID().Hex()
+	claims = &CustomClaims{
+		Id:        tokenID,
+		Type:      claimType,
+		Subject:   subject,
+		Audience:  "goblog-client",
+		Issuer:    "goblog-server",
+		IssuedAt:  now.Unix(),
+		NotBefore: now.Unix(),
+		ExpiresAt: now.Add(duration).Unix(),
 	}
-	return IssueClaims(claims, secret)
+
+	if tokenString, err = IssueClaims(claims, secret); err != nil {
+		return nil, "", err
+	}
+
+	return claims, tokenString, nil
 }
 
-func IssueClaims(claims Claims, secret string) (tokenID string, token string, err error) {
-	jwtClaim := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
-	token, err = jwtClaim.SignedString([]byte(secret))
+func IssueClaims(
+	claims *CustomClaims,
+	secret string) (
+	tokenString string,
+	err error) {
+	jwtClaim := jwt.NewWithClaims(jwt.SigningMethodHS512, *claims)
+	tokenString, err = jwtClaim.SignedString([]byte(secret))
 
-	return tokenID, token, err
+	return tokenString, err
 }
 
-func Check(tokenString string, secret string) (claims Claims, err error) {
-	claims = Claims{}
-	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(secret), nil
-	})
-	if err != nil {
-		return Claims{}, err
+func Check(
+	tokenString string,
+	secret string) (
+	claims *CustomClaims,
+	err error) {
+	var (
+		token     *jwt.Token
+		rawClaims = CustomClaims{}
+		ok        bool
+	)
+
+	if token, err = jwt.ParseWithClaims(
+		tokenString,
+		&rawClaims,
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(secret), nil
+		}); err != nil {
+		return nil, err
+	}
+	if claims, ok = token.Claims.(*CustomClaims); !ok {
+		return nil, errors.New("couldn't parse claims")
+	}
+	if err = claims.Valid(); err != nil {
+		return nil, err
 	}
 
-	_claims, ok := token.Claims.(*Claims)
-	if !ok {
-		return Claims{}, errors.New("couldn't parse claims")
-	}
-
-	if err := _claims.Valid(); err != nil {
-		return Claims{}, err
-	}
-
-	return *_claims, nil
+	return claims, nil
 }

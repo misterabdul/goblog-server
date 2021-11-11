@@ -41,6 +41,9 @@ func getMigrations() []MigrationInterface {
 		new(migrations.CreateUsersCollection),
 		new(migrations.CreatePostsCollection),
 		new(migrations.CreateCommentsCollection),
+		new(migrations.CreateCategoryCollection),
+		new(migrations.CreateNotificationCollection),
+		new(migrations.CreateRevokedTokenCollection),
 	}
 }
 

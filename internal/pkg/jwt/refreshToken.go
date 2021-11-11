@@ -7,59 +7,62 @@ import (
 	"time"
 
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/pkg/crypto"
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-func IssueRefreshToken(user *models.UserModel) (*jwt.Claims, string, error) {
-	secret, ok := os.LookupEnv("AUTH_SECRET")
-	if !ok {
+const (
+	refreshTokenTypeName = "refresh-token"
+)
+
+func IssueRefreshToken(
+	user *models.UserModel) (
+	claims *jwt.CustomClaims,
+	tokenString string,
+	err error) {
+	var (
+		secret     string
+		duration_s string
+		duration   int
+		ok         bool
+	)
+
+	if secret, ok = os.LookupEnv("AUTH_SECRET"); !ok {
 		return nil, "", errors.New("unable to get authentication secret data")
 	}
-
-	duration_s, ok := os.LookupEnv("AUTH_REFRESH_DURATION")
-	if !ok {
+	if duration_s, ok = os.LookupEnv("AUTH_REFRESH_DURATION"); !ok {
 		duration_s = "14"
 	}
-
-	duration, err := strconv.Atoi(duration_s)
-	if err != nil {
+	if duration, err = strconv.Atoi(duration_s); err != nil {
 		duration = 14
 	}
-
-	payload := jwt.Payload{
-		UserUID:  user.UID.Hex(),
-		Username: user.Username,
-	}
-
-	tokenID, err := crypto.GenerateRandomString(64)
-	if err != nil {
+	if claims, tokenString, err = jwt.Issue(
+		refreshTokenTypeName,
+		user.UID.Hex(),
+		time.Duration(duration)*24*time.Hour,
+		secret); err != nil {
 		return nil, "", err
 	}
 
-	claims := jwt.Claims{
-		Payload:   payload,
-		TokenUID:  tokenID,
-		IssuedAt:  time.Now(),
-		ExpiredAt: time.Now().Add(time.Duration(duration) * (24 * time.Hour)),
-	}
-	var token string
-
-	if _, token, err = jwt.IssueClaims(claims, secret); err != nil {
-		return nil, "", err
-	}
-
-	return &claims, token, nil
+	return claims, tokenString, nil
 }
 
-func CheckRefreshToken(token string) (claims jwt.Claims, err error) {
-	secret, ok := os.LookupEnv("AUTH_SECRET")
-	if !ok {
-		return jwt.Claims{}, errors.New("unable to get authentication secret data")
-	}
+func CheckRefreshToken(
+	token string) (
+	claims *jwt.CustomClaims,
+	err error) {
+	var (
+		secret string
+		ok     bool
+	)
 
+	if secret, ok = os.LookupEnv("AUTH_SECRET"); !ok {
+		return nil, errors.New("unable to get authentication secret data")
+	}
 	if claims, err = jwt.Check(token, secret); err != nil {
-		return jwt.Claims{}, err
+		return nil, err
+	}
+	if claims.Type != refreshTokenTypeName {
+		return nil, errors.New("invalid token type")
 	}
 
 	return claims, nil

@@ -5,13 +5,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
@@ -22,31 +20,20 @@ func SignOut(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFu
 		defer cancel()
 
 		var (
-			me                    *models.UserModel
-			claims                *jwt.Claims
-			newIssuedAccessTokens = []models.IssuedToken{}
-			err                   error
+			me            *models.UserModel
+			refreshClaims *jwt.CustomClaims
+			err           error
 		)
 
-		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+		if me, err = authenticate.GetRefreshedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if claims, err = authenticate.GetAuthenticatedClaim(c); err != nil {
+		if refreshClaims, err = authenticate.GetRefreshClaims(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		for _, issuedAccessToken := range me.IssuedAccessTokens {
-			if issuedAccessToken.TokenUID != claims.TokenUID {
-				newIssuedAccessTokens = append(newIssuedAccessTokens, issuedAccessToken)
-			}
-		}
-		me.IssuedAccessTokens = newIssuedAccessTokens
-		me.RevokedAccessTokens = append(me.RevokedAccessTokens, models.RevokedToken{
-			TokenUID: claims.TokenUID,
-			Until:    primitive.NewDateTimeFromTime(claims.ExpiredAt),
-		})
-		if err = repositories.UpdateUser(ctx, dbConn, me); err != nil {
+		if err = noteRevokeToken(ctx, dbConn, refreshClaims, me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

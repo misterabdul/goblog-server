@@ -26,13 +26,13 @@ func SignIn(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFun
 		defer cancel()
 
 		var (
-			input              *forms.SignInForm
-			user               *models.UserModel
-			accessTokenClaims  *jwt.Claims
-			refreshTokenClaims *jwt.Claims
-			accessToken        string
-			refreshToken       string
-			err                error
+			input         *forms.SignInForm
+			user          *models.UserModel
+			accessClaims  *jwt.CustomClaims
+			refreshClaims *jwt.CustomClaims
+			accessToken   string
+			refreshToken  string
+			err           error
 		)
 
 		if input, err = requests.GetSignInForm(c); err != nil {
@@ -55,19 +55,20 @@ func SignIn(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFun
 			responses.WrongSignIn(c, errors.New("incorrect password"))
 			return
 		}
-		if accessTokenClaims, accessToken, err = internalJwt.IssueAccessToken(user); err != nil {
+		if accessClaims, accessToken, err = internalJwt.IssueAccessToken(user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		if refreshTokenClaims, refreshToken, err = internalJwt.IssueRefreshToken(user); err != nil {
-			responses.InternalServerError(c, err)
-			return
-		}
-		if err = saveToken(ctx, dbConn, user, accessTokenClaims, refreshTokenClaims); err != nil {
+		if refreshClaims, refreshToken, err = internalJwt.IssueRefreshToken(user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 
-		responses.SignedIn(c, accessToken, accessTokenClaims, refreshToken, refreshTokenClaims)
+		responses.SignedIn(
+			c,
+			accessToken,
+			accessClaims,
+			refreshToken,
+			refreshClaims)
 	}
 }

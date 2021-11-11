@@ -9,34 +9,82 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-func GetAuthenticatedUser(c *gin.Context) (*models.UserModel, error) {
+func GetAuthenticatedUser(
+	c *gin.Context) (
+	user *models.UserModel,
+	err error) {
 	var (
-		user    models.UserModel
+		_user   models.UserModel
 		rawData interface{}
 		ok      bool
 	)
+
 	if rawData, ok = c.Get(AuthenticatedUser); !ok {
 		return nil, errors.New("no gin context data found for: " + AuthenticatedUser)
 	}
-	if user, ok = rawData.(models.UserModel); !ok {
+	if _user, ok = rawData.(models.UserModel); !ok {
 		return nil, errors.New("unable to assert user data")
 	}
 
-	return &user, nil
+	return &_user, nil
 }
 
-func GetAuthenticatedClaim(c *gin.Context) (*jwt.Claims, error) {
+func GetRefreshedUser(
+	c *gin.Context) (
+	user *models.UserModel,
+	err error) {
 	var (
-		claims  jwt.Claims
+		_user   models.UserModel
 		rawData interface{}
 		ok      bool
 	)
+
+	if rawData, ok = c.Get(RefreshUser); !ok {
+		return nil, errors.New("no gin context data found for: " + AuthenticatedUser)
+	}
+	if _user, ok = rawData.(models.UserModel); !ok {
+		return nil, errors.New("unable to assert user data")
+	}
+
+	return &_user, nil
+}
+
+func GetAuthenticatedClaim(
+	c *gin.Context) (
+	claims *jwt.CustomClaims,
+	err error) {
+	var (
+		_claims jwt.CustomClaims
+		rawData interface{}
+		ok      bool
+	)
+
 	if rawData, ok = c.Get(AuthenticatedClaims); !ok {
 		return nil, errors.New("no gin context data found for: " + AuthenticatedClaims)
 	}
-	if claims, ok = rawData.(jwt.Claims); !ok {
+	if _claims, ok = rawData.(jwt.CustomClaims); !ok {
 		return nil, errors.New("unable to assert jwt claims data")
 	}
 
-	return &claims, nil
+	return &_claims, nil
+}
+
+func GetRefreshClaims(
+	c *gin.Context) (
+	claims *jwt.CustomClaims,
+	err error) {
+	var (
+		_claims jwt.CustomClaims
+		rawData interface{}
+		ok      bool
+	)
+
+	if rawData, ok = c.Get(RefreshClaims); !ok {
+		return nil, errors.New("no gin context data found for: " + RefreshClaims)
+	}
+	if _claims, ok = rawData.(jwt.CustomClaims); !ok {
+		return nil, errors.New("unable to assert jwt claims data")
+	}
+
+	return &_claims, nil
 }

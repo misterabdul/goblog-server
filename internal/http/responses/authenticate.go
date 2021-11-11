@@ -13,34 +13,50 @@ const (
 	RefreshTokenCookieName = "refresh-token"
 )
 
-func Unauthenticated(c *gin.Context, err error) {
-	Basic(c, http.StatusUnauthorized, gin.H{"message": "Unauthenticated."})
+func Unauthenticated(
+	c *gin.Context,
+	err error) {
+	Basic(c, http.StatusUnauthorized, gin.H{
+		"message": "Unauthenticated.",
+	})
 }
 
-func WrongSignIn(c *gin.Context, err error) {
-	Basic(c, http.StatusUnauthorized, gin.H{"message": "Wrong username or password."})
+func WrongSignIn(
+	c *gin.Context,
+	err error,
+) {
+	Basic(c, http.StatusUnauthorized, gin.H{
+		"message": "Wrong username or password.",
+	})
 }
 
-func SignedIn(c *gin.Context, accessToken string, accessTokenClaims *jwt.Claims, refreshToken string, refreshTokenClaims *jwt.Claims) {
-	domain, ok := os.LookupEnv("COOKIE_DOMAIN")
-	if !ok {
+func SignedIn(
+	c *gin.Context,
+	accessToken string,
+	accessClaims *jwt.CustomClaims,
+	refreshToken string,
+	refreshClaims *jwt.CustomClaims) {
+	var (
+		domain    string
+		secured_s string
+		secured   = false
+		ok        bool
+	)
+
+	if domain, ok = os.LookupEnv("COOKIE_DOMAIN"); !ok {
 		domain = ".localhost"
 	}
-
-	secured_s, ok := os.LookupEnv("COOKIE_SECURE")
-	if !ok {
+	if secured_s, ok = os.LookupEnv("COOKIE_SECURE"); !ok {
 		secured_s = "false"
 	}
-	secured := false
 	if secured_s == "true" || secured_s == "TRUE" {
 		secured = true
 	}
-
 	c.SetCookie(
 		RefreshTokenCookieName,
 		refreshToken,
-		refreshTokenClaims.ExpireDurationsInSeconds(),
-		"/api/v1/refresh",
+		refreshClaims.GetExpiresAtSeconds(),
+		"/api",
 		domain,
 		secured,
 		true,

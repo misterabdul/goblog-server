@@ -21,9 +21,6 @@ import (
 const (
 	AuthenticatedClaims = "AUTH_CLAIMS"
 	AuthenticatedUser   = "AUTH_USER"
-
-	RefreshUserUid  = "REFRESH_USER_UID"
-	RefreshTokenUid = "REFRESH_TOKEN_UID"
 )
 
 // Check the authentication status of given user.
@@ -34,11 +31,11 @@ func Authenticate(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 		defer cancel()
 
 		var (
-			me     *models.UserModel
-			claims jwt.Claims
-			userId primitive.ObjectID
-			auth   string
-			err    error
+			me           *models.UserModel
+			accessClaims *jwt.CustomClaims
+			userId       primitive.ObjectID
+			auth         string
+			err          error
 		)
 
 		if auth = c.GetHeader("Authorization"); !strings.Contains(auth, "Bearer ") {
@@ -47,12 +44,12 @@ func Authenticate(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 			return
 		}
 		auth = strings.ReplaceAll(auth, "Bearer ", "")
-		if claims, err = internalJwt.CheckAccessToken(auth); err != nil {
+		if accessClaims, err = internalJwt.CheckAccessToken(auth); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
 		}
-		if userId, err = primitive.ObjectIDFromHex(claims.Payload.UserUID); err != nil {
+		if userId, err = primitive.ObjectIDFromHex(accessClaims.Subject); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
@@ -62,14 +59,7 @@ func Authenticate(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 			c.Abort()
 			return
 		}
-		for _, revokedToken := range me.RevokedAccessTokens {
-			if revokedToken.TokenUID == claims.TokenUID {
-				responses.Unauthenticated(c, errors.New("token already revoked"))
-				c.Abort()
-				return
-			}
-		}
-		c.Set(AuthenticatedClaims, claims)
+		c.Set(AuthenticatedClaims, *accessClaims)
 		c.Set(AuthenticatedUser, *me)
 
 		c.Next()
