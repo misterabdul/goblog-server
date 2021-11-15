@@ -9,10 +9,7 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-func GetAuthenticatedUser(
-	c *gin.Context) (
-	user *models.UserModel,
-	err error) {
+func GetAuthenticatedUser(c *gin.Context) (user *models.UserModel, err error) {
 	var (
 		_user   models.UserModel
 		rawData interface{}
@@ -29,10 +26,7 @@ func GetAuthenticatedUser(
 	return &_user, nil
 }
 
-func GetRefreshedUser(
-	c *gin.Context) (
-	user *models.UserModel,
-	err error) {
+func GetRefreshedUser(c *gin.Context) (user *models.UserModel, err error) {
 	var (
 		_user   models.UserModel
 		rawData interface{}
@@ -49,10 +43,7 @@ func GetRefreshedUser(
 	return &_user, nil
 }
 
-func GetAuthenticatedClaim(
-	c *gin.Context) (
-	claims *jwt.CustomClaims,
-	err error) {
+func GetAuthenticatedClaim(c *gin.Context) (claims *jwt.CustomClaims, err error) {
 	var (
 		_claims jwt.CustomClaims
 		rawData interface{}
@@ -69,10 +60,7 @@ func GetAuthenticatedClaim(
 	return &_claims, nil
 }
 
-func GetRefreshClaims(
-	c *gin.Context) (
-	claims *jwt.CustomClaims,
-	err error) {
+func GetRefreshClaims(c *gin.Context) (claims *jwt.CustomClaims, err error) {
 	var (
 		_claims jwt.CustomClaims
 		rawData interface{}

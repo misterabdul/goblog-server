@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -35,15 +34,21 @@ func main() {
 	}
 }
 
-func getAddress() string {
-	host := "localhost"
-	if envHost, ok := os.LookupEnv("APP_HOST"); ok {
+func getAddress() (address string) {
+	var (
+		host    = "localhost"
+		port    = "80"
+		envHost string
+		envPort string
+		ok      bool
+	)
+
+	if envHost, ok = os.LookupEnv("APP_HOST"); ok {
 		host = envHost
 	}
-	port := "80"
-	if envPort, ok := os.LookupEnv("APP_PORT"); ok {
+	if envPort, ok = os.LookupEnv("APP_PORT"); ok {
 		port = envPort
 	}
-	fmt.Println(host + ":" + port)
+
 	return host + ":" + port
 }

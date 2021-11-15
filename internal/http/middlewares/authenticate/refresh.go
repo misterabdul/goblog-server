@@ -21,8 +21,10 @@ const (
 	RefreshUser   = "REFRESH_USER"
 )
 
-func AuthenticateRefresh(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func AuthenticateRefresh(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -66,10 +68,8 @@ func AuthenticateRefresh(maxCtxDuration time.Duration, dbConn *mongo.Database) g
 			c.Abort()
 			return
 		}
-
 		c.Set(RefreshClaims, *refreshClaims)
 		c.Set(RefreshUser, *me)
-
 		c.Next()
 	}
 }
@@ -77,8 +77,8 @@ func AuthenticateRefresh(maxCtxDuration time.Duration, dbConn *mongo.Database) g
 func checkRevokedToken(
 	ctx context.Context,
 	dbConn *mongo.Database,
-	refreshClaims *jwt.CustomClaims) (
-	noted bool, err error) {
+	refreshClaims *jwt.CustomClaims,
+) (noted bool, err error) {
 	var (
 		tokenID          primitive.ObjectID
 		revokedTokenData *models.RevokedTokenModel
@@ -87,9 +87,8 @@ func checkRevokedToken(
 	if tokenID, err = primitive.ObjectIDFromHex(refreshClaims.Id); err != nil {
 		return false, err
 	}
-	if revokedTokenData, err = repositories.GetRevokedToken(ctx, dbConn, bson.M{
-		"_id": tokenID,
-	}); err != nil {
+	if revokedTokenData, err = repositories.GetRevokedToken(
+		ctx, dbConn, bson.M{"_id": tokenID}); err != nil {
 		return false, err
 	}
 	if revokedTokenData != nil {

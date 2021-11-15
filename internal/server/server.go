@@ -14,36 +14,31 @@ type serverRelatedEnv struct {
 }
 
 // Get the server engine.
-func GetServer(dbConn *mongo.Database) *gin.Engine {
-	var (
-		ginEngine *gin.Engine
-	)
-
+func GetServer(dbConn *mongo.Database) (serverInstance *gin.Engine) {
 	serverEnv := getServerRelatedEnv()
 	switch serverEnv.Mode {
 	default:
 		fallthrough
 	case 0:
 		gin.SetMode(gin.ReleaseMode)
-		ginEngine = gin.New()
-		ginEngine.Use(gin.Recovery())
+		serverInstance = gin.New()
+		serverInstance.Use(gin.Recovery())
 	case 1:
 		gin.SetMode(gin.TestMode)
-		ginEngine = gin.New()
+		serverInstance = gin.New()
 	case 2:
 		gin.SetMode(gin.DebugMode)
-		ginEngine = gin.Default()
-		ginEngine.Use(cors.Default())
+		serverInstance = gin.Default()
+		serverInstance.Use(cors.Default())
 	}
+	serverInstance.Use(gzip.Gzip(gzip.DefaultCompression))
+	initRoute(serverInstance, dbConn)
 
-	ginEngine.Use(gzip.Gzip(gzip.DefaultCompression))
-	initRoute(ginEngine, dbConn)
-
-	return ginEngine
+	return serverInstance
 }
 
-func getServerRelatedEnv() *serverRelatedEnv {
-	env := serverRelatedEnv{
+func getServerRelatedEnv() (envs *serverRelatedEnv) {
+	_envs := serverRelatedEnv{
 		Mode: 0,
 	}
 
@@ -52,13 +47,13 @@ func getServerRelatedEnv() *serverRelatedEnv {
 		default:
 			fallthrough
 		case mode == "release":
-			env.Mode = 0
+			_envs.Mode = 0
 		case mode == "test":
-			env.Mode = 1
+			_envs.Mode = 1
 		case mode == "debug":
-			env.Mode = 2
+			_envs.Mode = 2
 		}
 	}
 
-	return &env
+	return &_envs
 }

@@ -17,8 +17,10 @@ import (
 )
 
 // Get single user record publicly
-func GetPublicUser(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicUser(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -33,14 +35,13 @@ func GetPublicUser(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 		if userId, err = primitive.ObjectIDFromHex(userQuery); err != nil {
 			userId = primitive.ObjectID{}
 		}
-		if user, err = repositories.GetUser(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"$or": []bson.M{
 					{"_id": userId},
-					{"username": userQuery},
-				}},
-			}}); err != nil {
+					{"username": userQuery}}}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -54,8 +55,10 @@ func GetPublicUser(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 }
 
 // Get multiple user records publicly
-func GetPublicUsers(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicUsers(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -65,10 +68,10 @@ func GetPublicUsers(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 			err   error
 		)
 
-		if users, err = repositories.GetUsers(ctx, dbConn,
-			bson.M{"$and": []bson.M{
-				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-			}}, helpers.GetFindOptions(c)); err != nil {
+		if users, err = repositories.GetUsers(ctx, dbConn, bson.M{
+			"$and": []bson.M{
+				{"deletedat": bson.M{"$ne": primitive.Null{}}}},
+		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -18,18 +18,20 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetCategory(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			category   *models.CategoryModel
-			categoryId primitive.ObjectID
-			err        error
+			category        *models.CategoryModel
+			categoryId      primitive.ObjectID
+			categoryIdQuery = c.Param("category")
+			err             error
 		)
-		categoryIdQuery := c.Param("category")
 
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
 			responses.NotFound(c, err)
@@ -51,8 +53,10 @@ func GetCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Handl
 	}
 }
 
-func GetCategories(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetCategories(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -82,8 +86,10 @@ func GetCategories(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 	}
 }
 
-func CreateCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func CreateCategory(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -92,6 +98,7 @@ func CreateCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 			category *models.CategoryModel
 			form     *forms.CreateCategoryForm
 			err      error
+			writeErr mongo.WriteException
 		)
 
 		if form, err = requests.GetCreateCategoryForm(c); err != nil {
@@ -100,7 +107,6 @@ func CreateCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 		}
 		category = forms.CreateCategoryModel(form)
 		if err = repositories.CreateCategory(ctx, dbConn, category); err != nil {
-			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, writeErr.WriteErrors)
 				return
@@ -113,8 +119,10 @@ func CreateCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 	}
 }
 
-func UpdateCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func UpdateCategory(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -125,6 +133,7 @@ func UpdateCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 			form            *forms.UpdateCategoryForm
 			categoryIdQuery = c.Param("category")
 			err             error
+			writeErr        mongo.WriteException
 		)
 
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
@@ -147,8 +156,8 @@ func UpdateCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 			responses.NotFound(c, errors.New("category not found"))
 			return
 		}
-		if err = repositories.UpdateCategory(ctx, dbConn, forms.UpdateCategoryModel(form, category)); err != nil {
-			var writeErr mongo.WriteException
+		if err = repositories.UpdateCategory(
+			ctx, dbConn, forms.UpdateCategoryModel(form, category)); err != nil {
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, writeErr.WriteErrors)
 				return
@@ -161,8 +170,10 @@ func UpdateCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 	}
 }
 
-func TrashCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func TrashCategory(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -178,11 +189,10 @@ func TrashCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn,
-			bson.M{"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": categoryId},
-			}}); err != nil {
+		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{"$and": []bson.M{
+			{"deletedat": primitive.Null{}},
+			{"_id": categoryId},
+		}}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -203,8 +213,10 @@ func TrashCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 	}
 }
 
-func DetrashCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func DetrashCategory(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -245,8 +257,10 @@ func DetrashCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.H
 	}
 }
 
-func DeleteCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func DeleteCategory(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -262,11 +276,11 @@ func DeleteCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": categoryId},
-			}}); err != nil {
+				{"_id": categoryId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -6,16 +6,18 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 )
 
-func GetCreateCommentForm(c *gin.Context) (*forms.CreateCommentForm, error) {
-	var createComment forms.CreateCommentForm
-	err := shouldBind(c, &createComment)
+func GetCreateCommentForm(c *gin.Context) (form *forms.CreateCommentForm, err error) {
+	var _form forms.CreateCommentForm
 
-	return &createComment, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }
 
-func GetReplyCommentForm(c *gin.Context) (*forms.ReplyCommmentForm, error) {
-	var replyComment forms.ReplyCommmentForm
-	err := shouldBind(c, &replyComment)
+func GetReplyCommentForm(c *gin.Context) (form *forms.ReplyCommmentForm, err error) {
+	var _form forms.ReplyCommmentForm
 
-	return &replyComment, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }

@@ -24,8 +24,10 @@ const (
 )
 
 // Check the authentication status of given user.
-func Authenticate(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func Authenticate(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -61,7 +63,6 @@ func Authenticate(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Hand
 		}
 		c.Set(AuthenticatedClaims, *accessClaims)
 		c.Set(AuthenticatedUser, *me)
-
 		c.Next()
 	}
 }

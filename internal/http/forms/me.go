@@ -14,7 +14,7 @@ type UpdateMePasswordForm struct {
 	NewPasswordConfirm string `json:"newpasswordconfirm" bind:"required"`
 }
 
-func UpdateMeUserModel(form *UpdateMeForm, me *models.UserModel) *models.UserModel {
+func UpdateMeUserModel(form *UpdateMeForm, me *models.UserModel) (model *models.UserModel) {
 	if len(form.FirstName) > 0 {
 		me.FirstName = form.FirstName
 	}

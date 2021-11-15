@@ -17,8 +17,10 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetNotification(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetNotification(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -39,11 +41,11 @@ func GetNotification(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.H
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = repositories.GetNotification(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if notification, err = repositories.GetNotification(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"owner.username": me.Username},
-				{"_id": notificationId},
-			}}); err != nil {
+				{"_id": notificationId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -56,8 +58,10 @@ func GetNotification(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.H
 	}
 }
 
-func GetNotifications(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetNotifications(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -72,10 +76,10 @@ func GetNotifications(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if notifications, err = repositories.GetNotifications(ctx, dbConn,
-			bson.M{"$and": []bson.M{
-				{"owner.username": me.Username},
-			}}, helpers.GetFindOptions(c)); err != nil {
+		if notifications, err = repositories.GetNotifications(ctx, dbConn, bson.M{
+			"$and": []bson.M{
+				{"owner.username": me.Username}},
+		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -88,8 +92,10 @@ func GetNotifications(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.
 	}
 }
 
-func ReadNotification(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func ReadNotification(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -110,11 +116,11 @@ func ReadNotification(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = repositories.GetNotification(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if notification, err = repositories.GetNotification(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"owner.username": me.Username},
-				{"_id": notificationId},
-			}}); err != nil {
+				{"_id": notificationId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -135,8 +141,10 @@ func ReadNotification(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.
 	}
 }
 
-func DeleteNotification(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func DeleteNotification(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -157,11 +165,11 @@ func DeleteNotification(maxCtxDuration time.Duration, dbConn *mongo.Database) gi
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = repositories.GetNotification(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if notification, err = repositories.GetNotification(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"owner.username": me.Username},
-				{"_id": notificationId},
-			}}); err != nil {
+				{"_id": notificationId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

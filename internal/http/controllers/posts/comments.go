@@ -18,8 +18,10 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetPublicPostComment(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicPostComment(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -36,11 +38,11 @@ func GetPublicPostComment(maxCtxDuration time.Duration, dbConn *mongo.Database) 
 			responses.NotFound(c, err)
 			return
 		}
-		if comment, err = repositories.GetComment(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if comment, err = repositories.GetComment(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
-				{"_id": commentId},
-			}}); err != nil {
+				{"_id": commentId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -48,12 +50,12 @@ func GetPublicPostComment(maxCtxDuration time.Duration, dbConn *mongo.Database) 
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": comment.PostUid},
-			}}); err != nil {
+				{"_id": comment.PostUid}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -65,8 +67,10 @@ func GetPublicPostComment(maxCtxDuration time.Duration, dbConn *mongo.Database) 
 	}
 }
 
-func GetPublicPostComments(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicPostComments(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -82,15 +86,14 @@ func GetPublicPostComments(maxCtxDuration time.Duration, dbConn *mongo.Database)
 		if postId, err = primitive.ObjectIDFromHex(postQuery); err != nil {
 			postId = primitive.ObjectID{}
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
 					{"_id": postId},
-					{"slug": postQuery},
-				}},
-			}}); err != nil {
+					{"slug": postQuery}}}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -98,14 +101,13 @@ func GetPublicPostComments(maxCtxDuration time.Duration, dbConn *mongo.Database)
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if comments, err = repositories.GetComments(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if comments, err = repositories.GetComments(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"$or": []bson.M{
 					{"postslug": postQuery},
-					{"postuid": postId},
-				}},
-			}}, helpers.GetFindOptions(c)); err != nil {
+					{"postuid": postId}}}},
+		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -118,17 +120,20 @@ func GetPublicPostComments(maxCtxDuration time.Duration, dbConn *mongo.Database)
 	}
 }
 
-func CreatePublicPostComment(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func CreatePublicPostComment(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			comment *models.CommentModel
-			post    *models.PostModel
-			form    *forms.CreateCommentForm
-			err     error
+			comment  *models.CommentModel
+			post     *models.PostModel
+			form     *forms.CreateCommentForm
+			err      error
+			writeErr mongo.WriteException
 		)
 
 		if form, err = requests.GetCreateCommentForm(c); err != nil {
@@ -139,12 +144,12 @@ func CreatePublicPostComment(maxCtxDuration time.Duration, dbConn *mongo.Databas
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": comment.PostUid},
-			}}); err != nil {
+				{"_id": comment.PostUid}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -153,7 +158,6 @@ func CreatePublicPostComment(maxCtxDuration time.Duration, dbConn *mongo.Databas
 			return
 		}
 		if err = repositories.CreateComment(ctx, dbConn, comment); err != nil {
-			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, err)
 				return

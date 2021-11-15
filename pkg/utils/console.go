@@ -8,7 +8,7 @@ import "fmt"
  */
 
 // Get console's color value from given name.
-func getColor(name string) string {
+func getColor(name string) (colorString string) {
 	switch {
 	case name == "reset":
 		return "\033[0m"
@@ -33,53 +33,53 @@ func getColor(name string) string {
 // Print given string to console with given color name.
 //
 // Available color name: white, green, yellow, red, blue, purple, and cyan.
-func ConsolePrintColor(str string, color string) (int, error) {
+func ConsolePrintColor(str string, color string) (colorValue int, err error) {
 	return fmt.Print(getColor(color), str)
 }
 
 // Println given string to console with given color name.
 //
 // Available color name: white, green, yellow, red, blue, purple, and cyan.
-func ConsolePrintlnColor(str string, color string) (int, error) {
+func ConsolePrintlnColor(str string, color string) (colorValue int, err error) {
 	return fmt.Println(getColor(color), str)
 }
 
 // Print given string to console with white color.
-func ConsolePrintWhite(str string) (int, error) {
+func ConsolePrintWhite(str string) (colorValue int, err error) {
 	return ConsolePrintColor(str, "white")
 }
 
 // Println given string to console with white color.
-func ConsolePrintlnWhite(str string) (int, error) {
+func ConsolePrintlnWhite(str string) (colorValue int, err error) {
 	return ConsolePrintlnColor(str, "white")
 }
 
 // Print given string to console with yellow color.
-func ConsolePrintYellow(str string) (int, error) {
+func ConsolePrintYellow(str string) (colorValue int, err error) {
 	return ConsolePrintColor(str, "yellow")
 }
 
 // Println given string to console with yellow color.
-func ConsolePrintlnYellow(str string) (int, error) {
+func ConsolePrintlnYellow(str string) (colorValue int, err error) {
 	return ConsolePrintlnColor(str, "yellow")
 }
 
 // Print given string to console with green color.
-func ConsolePrintGreen(str string) (int, error) {
+func ConsolePrintGreen(str string) (colorVallue int, err error) {
 	return ConsolePrintColor(str, "green")
 }
 
 // Println given string to console with green color.
-func ConsolePrintlnGreen(str string) (int, error) {
+func ConsolePrintlnGreen(str string) (colorValue int, err error) {
 	return ConsolePrintlnColor(str, "green")
 }
 
 // Print given string to console with red color.
-func ConsolePrintRed(str string) (int, error) {
+func ConsolePrintRed(str string) (colorValue int, err error) {
 	return ConsolePrintColor(str, "red")
 }
 
 // Println given string to console with red color.
-func ConsolePrintlnRed(str string) (int, error) {
+func ConsolePrintlnRed(str string) (colorValue int, err error) {
 	return ConsolePrintlnColor(str, "red")
 }

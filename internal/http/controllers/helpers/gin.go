@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func GetFindOptions(c *gin.Context) *options.FindOptions {
+func GetFindOptions(c *gin.Context) (option *options.FindOptions) {
 	var (
 		show  = GetShowQuery(c)
 		page  = GetPageQuery(c)
@@ -21,11 +21,10 @@ func GetFindOptions(c *gin.Context) *options.FindOptions {
 	return &options.FindOptions{
 		Limit: show,
 		Skip:  page,
-		Sort:  bson.M{order: asc},
-	}
+		Sort:  bson.M{order: asc}}
 }
 
-func GetFindOptionsPost(c *gin.Context) *options.FindOptions {
+func GetFindOptionsPost(c *gin.Context) (option *options.FindOptions) {
 	var (
 		show  = GetShowQuery(c)
 		page  = GetPageQuery(c)
@@ -38,11 +37,15 @@ func GetFindOptionsPost(c *gin.Context) *options.FindOptions {
 	return &options.FindOptions{
 		Limit: show,
 		Skip:  page,
-		Sort:  bson.M{order: asc},
-	}
+		Sort:  bson.M{order: asc}}
 }
 
-func CreateFindOptions(show int, page int, order string, asc bool) *options.FindOptions {
+func CreateFindOptions(
+	show int,
+	page int,
+	order string,
+	asc bool,
+) (option *options.FindOptions) {
 	var (
 		show_i64 = int64(show)
 		page_i64 = int64((page - 1) * show)
@@ -56,11 +59,10 @@ func CreateFindOptions(show int, page int, order string, asc bool) *options.Find
 	return &options.FindOptions{
 		Limit: &show_i64,
 		Skip:  &page_i64,
-		Sort:  bson.M{order: asc_i},
-	}
+		Sort:  bson.M{order: asc_i}}
 }
 
-func GetShowQuery(c *gin.Context) *int64 {
+func GetShowQuery(c *gin.Context) (show *int64) {
 	var (
 		sQuery string
 		query  int64
@@ -75,7 +77,7 @@ func GetShowQuery(c *gin.Context) *int64 {
 	return &query
 }
 
-func GetPageQuery(c *gin.Context) *int64 {
+func GetPageQuery(c *gin.Context) (page *int64) {
 	var (
 		sQuery string
 		query  int64
@@ -90,15 +92,15 @@ func GetPageQuery(c *gin.Context) *int64 {
 	return &query
 }
 
-func GetOrderQuery(c *gin.Context) string {
+func GetOrderQuery(c *gin.Context) (order string) {
 	return c.DefaultQuery("order", "createdat")
 }
 
-func GetPostOrderQuery(c *gin.Context) string {
+func GetPostOrderQuery(c *gin.Context) (postOrder string) {
 	return c.DefaultQuery("order", "publishedat")
 }
 
-func GetAscQuery(c *gin.Context) int {
+func GetAscQuery(c *gin.Context) (asc int) {
 	var (
 		sQuery string
 		query  bool
@@ -109,9 +111,9 @@ func GetAscQuery(c *gin.Context) int {
 	if query, err = strconv.ParseBool(sQuery); err != nil {
 		query = false
 	}
-
 	if query {
 		return 1
 	}
+
 	return -1
 }

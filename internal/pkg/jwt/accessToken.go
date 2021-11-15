@@ -10,15 +10,13 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-const (
-	accessTokenTypeName = "access-token"
-)
+const accessTokenTypeName = "access-token"
 
-func IssueAccessToken(
-	user *models.UserModel) (
+func IssueAccessToken(user *models.UserModel) (
 	claims *jwt.CustomClaims,
 	tokenString string,
-	err error) {
+	err error,
+) {
 	var (
 		secret     string
 		duration_s string
@@ -46,10 +44,10 @@ func IssueAccessToken(
 	return claims, tokenString, nil
 }
 
-func CheckAccessToken(
-	token string) (
+func CheckAccessToken(token string) (
 	claims *jwt.CustomClaims,
-	err error) {
+	err error,
+) {
 	var (
 		secret string
 		ok     bool

@@ -6,16 +6,18 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 )
 
-func GetCreatePostForm(c *gin.Context) (*forms.CreatePostForm, error) {
-	var createPost forms.CreatePostForm
-	err := shouldBind(c, &createPost)
+func GetCreatePostForm(c *gin.Context) (form *forms.CreatePostForm, err error) {
+	var _form forms.CreatePostForm
 
-	return &createPost, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }
 
-func GetUpdatePostForm(c *gin.Context) (*forms.UpdatePostForm, error) {
-	var updatePost forms.UpdatePostForm
-	err := shouldBind(c, &updatePost)
+func GetUpdatePostForm(c *gin.Context) (form *forms.UpdatePostForm, err error) {
+	var _form forms.UpdatePostForm
 
-	return &updatePost, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }

@@ -13,8 +13,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getRevokedTokenCollection(
-	dbConn *mongo.Database) *mongo.Collection {
+func getRevokedTokenCollection(dbConn *mongo.Database) (tokenCollection *mongo.Collection) {
 	return dbConn.Collection("revokedTokens")
 }
 
@@ -23,15 +22,11 @@ func GetRevokedToken(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	filter interface{},
-	opts ...*options.FindOneOptions) (
-	revokedToken *models.RevokedTokenModel,
-	err error) {
-	var (
-		_revokedToken models.RevokedTokenModel
-	)
+	opts ...*options.FindOneOptions,
+) (revokedToken *models.RevokedTokenModel, err error) {
+	var _revokedToken models.RevokedTokenModel
 
-	if err = getRevokedTokenCollection(dbConn).
-		FindOne(ctx, filter, opts...).
+	if err = getRevokedTokenCollection(dbConn).FindOne(ctx, filter, opts...).
 		Decode(&_revokedToken); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -47,9 +42,8 @@ func GetRevokedTokens(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	filter interface{},
-	opts ...*options.FindOptions) (
-	revokedTokens []*models.RevokedTokenModel,
-	err error) {
+	opts ...*options.FindOptions,
+) (revokedTokens []*models.RevokedTokenModel, err error) {
 	var (
 		revokedToken *models.RevokedTokenModel
 		cursor       *mongo.Cursor
@@ -75,8 +69,8 @@ func GetRevokedTokens(
 func CreateRevokedToken(
 	ctx context.Context,
 	dbConn *mongo.Database,
-	revokedToken *models.RevokedTokenModel) (
-	err error) {
+	revokedToken *models.RevokedTokenModel,
+) (err error) {
 	var (
 		now        = primitive.NewDateTimeFromTime(time.Now())
 		insRes     *mongo.InsertOneResult
@@ -91,8 +85,7 @@ func CreateRevokedToken(
 		InsertOne(ctx, revokedToken); err != nil {
 		return err
 	}
-	if insertedID, ok = insRes.
-		InsertedID.(primitive.ObjectID); !ok {
+	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
 		return errors.New("unable to assert inserted uid")
 	}
 	if revokedToken.UID != insertedID {
@@ -106,11 +99,9 @@ func CreateRevokedToken(
 func UpdateRevokedToken(
 	ctx context.Context,
 	dbConn *mongo.Database,
-	revokedToken *models.RevokedTokenModel) (
-	err error) {
-	var (
-		now = primitive.NewDateTimeFromTime(time.Now())
-	)
+	revokedToken *models.RevokedTokenModel,
+) (err error) {
+	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	revokedToken.UpdatedAt = now
 	_, err = getRevokedTokenCollection(dbConn).
@@ -123,11 +114,9 @@ func UpdateRevokedToken(
 func TrashRevokedToken(
 	ctx context.Context,
 	dbConn *mongo.Database,
-	revokedToken *models.RevokedTokenModel) (
-	err error) {
-	var (
-		now = primitive.NewDateTimeFromTime(time.Now())
-	)
+	revokedToken *models.RevokedTokenModel,
+) (err error) {
+	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	revokedToken.DeletedAt = now
 	_, err = getRevokedTokenCollection(dbConn).
@@ -140,8 +129,8 @@ func TrashRevokedToken(
 func DetrashRevokedToken(
 	ctx context.Context,
 	dbConn *mongo.Database,
-	revokedToken *models.RevokedTokenModel) (
-	err error) {
+	revokedToken *models.RevokedTokenModel,
+) (err error) {
 	revokedToken.DeletedAt = nil
 	_, err = getRevokedTokenCollection(dbConn).
 		UpdateByID(ctx, revokedToken.UID, bson.M{"$set": revokedToken})
@@ -153,8 +142,9 @@ func DetrashRevokedToken(
 func DeleteRevokedToken(
 	ctx context.Context,
 	dbConn *mongo.Database,
-	revokedToken *models.RevokedTokenModel) error {
-	_, err := getRevokedTokenCollection(dbConn).
+	revokedToken *models.RevokedTokenModel,
+) (err error) {
+	_, err = getRevokedTokenCollection(dbConn).
 		DeleteOne(ctx, bson.M{"_id": revokedToken.UID})
 
 	return err

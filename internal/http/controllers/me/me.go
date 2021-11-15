@@ -12,8 +12,10 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func GetMe(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetMe(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		_, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()

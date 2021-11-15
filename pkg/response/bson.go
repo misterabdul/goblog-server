@@ -9,10 +9,14 @@ import (
 
 // BSON http response for gin.
 func BSON(c *gin.Context, code int, obj interface{}) {
-	bsonData, err := bson.Marshal(obj)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-	}
+	var (
+		bsonData []byte
+		err      error
+	)
 
+	if bsonData, err = bson.Marshal(obj); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error()})
+	}
 	c.Data(code, "application/bson", bsonData)
 }

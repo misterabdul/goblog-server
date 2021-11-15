@@ -6,16 +6,18 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 )
 
-func GetUpdateMeForm(c *gin.Context) (*forms.UpdateMeForm, error) {
-	var updateMe forms.UpdateMeForm
-	err := shouldBind(c, &updateMe)
+func GetUpdateMeForm(c *gin.Context) (form *forms.UpdateMeForm, err error) {
+	var _form forms.UpdateMeForm
 
-	return &updateMe, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }
 
-func GetUpdateMePasswordForm(c *gin.Context) (*forms.UpdateMePasswordForm, error) {
-	var updateMePassword forms.UpdateMePasswordForm
-	err := shouldBind(c, &updateMePassword)
+func GetUpdateMePasswordForm(c *gin.Context) (form *forms.UpdateMePasswordForm, err error) {
+	var _form forms.UpdateMePasswordForm
 
-	return &updateMePassword, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }

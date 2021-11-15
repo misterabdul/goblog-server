@@ -10,53 +10,50 @@ import (
 
 func PublicCategory(c *gin.Context, category *models.CategoryModel) {
 	data := extractPublicCategoryData(category)
-
 	Basic(c, http.StatusOK, data)
 }
 
 func AuthorizedCategory(c *gin.Context, category *models.CategoryModel) {
 	data := extractAuthorizedCategoryData(category)
-
 	Basic(c, http.StatusOK, data)
 }
 
 func PublicCategories(c *gin.Context, categories []*models.CategoryModel) {
 	var data []gin.H
+
 	for _, category := range categories {
 		data = append(data, extractPublicCategoryData(category))
 	}
-
 	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
 func AuthorizedCategories(c *gin.Context, categories []*models.CategoryModel) {
 	var data []gin.H
+
 	for _, category := range categories {
 		data = append(data, extractAuthorizedCategoryData(category))
 	}
-
 	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
 func IncorrectCategoryId(c *gin.Context, err error) {
-	Basic(c, http.StatusBadRequest, gin.H{"message": "incorrent post id format"})
+	Basic(c, http.StatusBadRequest, gin.H{
+		"message": "incorrent post id format"})
 }
 
-func extractPublicCategoryData(category *models.CategoryModel) gin.H {
+func extractPublicCategoryData(category *models.CategoryModel) (extracted gin.H) {
 	return gin.H{
 		"uid":  category.UID,
 		"slug": category.Slug,
-		"name": category.Name,
-	}
+		"name": category.Name}
 }
 
-func extractAuthorizedCategoryData(category *models.CategoryModel) gin.H {
+func extractAuthorizedCategoryData(category *models.CategoryModel) (extracted gin.H) {
 	return gin.H{
 		"uid":       category.UID,
 		"slug":      category.Slug,
 		"name":      category.Name,
 		"createdAt": category.CreatedAt,
 		"updatedAt": category.UpdatedAt,
-		"deletedat": category.DeletedAt,
-	}
+		"deletedat": category.DeletedAt}
 }

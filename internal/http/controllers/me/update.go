@@ -16,16 +16,19 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func UpdateMe(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func UpdateMe(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
 
 		var (
-			me   *models.UserModel
-			form *forms.UpdateMeForm
-			err  error
+			me       *models.UserModel
+			form     *forms.UpdateMeForm
+			err      error
+			writeErr mongo.WriteException
 		)
 
 		if form, err = requests.GetUpdateMeForm(c); err != nil {
@@ -35,8 +38,8 @@ func UpdateMe(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerF
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if err = repositories.UpdateUser(ctx, dbConn, forms.UpdateMeUserModel(form, me)); err != nil {
-			var writeErr mongo.WriteException
+		if err = repositories.UpdateUser(ctx, dbConn,
+			forms.UpdateMeUserModel(form, me)); err != nil {
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, err)
 				return

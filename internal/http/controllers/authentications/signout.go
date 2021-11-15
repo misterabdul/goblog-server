@@ -13,8 +13,10 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-func SignOut(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func SignOut(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()

@@ -9,10 +9,14 @@ import (
 
 // MsgPack http response for gin.
 func MSGPACK(c *gin.Context, code int, obj interface{}) {
-	msgpackData, err := msgpack.Marshal(obj)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
-	}
+	var (
+		msgpackData []byte
+		err         error
+	)
 
+	if msgpackData, err = msgpack.Marshal(obj); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": err.Error()})
+	}
 	c.Data(code, "application/msgpack", msgpackData)
 }

@@ -6,16 +6,18 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 )
 
-func GetCreateCategoryForm(c *gin.Context) (*forms.CreateCategoryForm, error) {
-	var createCategory forms.CreateCategoryForm
-	err := shouldBind(c, &createCategory)
+func GetCreateCategoryForm(c *gin.Context) (form *forms.CreateCategoryForm, err error) {
+	var _form forms.CreateCategoryForm
 
-	return &createCategory, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }
 
-func GetUpdateCategoryForm(c *gin.Context) (*forms.UpdateCategoryForm, error) {
-	var updateCategory forms.UpdateCategoryForm
-	err := shouldBind(c, &updateCategory)
+func GetUpdateCategoryForm(c *gin.Context) (form *forms.UpdateCategoryForm, err error) {
+	var _form forms.UpdateCategoryForm
 
-	return &updateCategory, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }

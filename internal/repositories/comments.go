@@ -13,37 +13,45 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getCommentCollection(dbConn *mongo.Database) *mongo.Collection {
+func getCommentCollection(dbConn *mongo.Database) (commentCollection *mongo.Collection) {
 	return dbConn.Collection("comments")
 }
 
 // Get single comment
-func GetComment(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOneOptions) (*models.CommentModel, error) {
-	var comment models.CommentModel
-	if err := getCommentCollection(dbConn).FindOne(ctx, filter, opts...).Decode(&comment); err != nil {
+func GetComment(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.FindOneOptions,
+) (comment *models.CommentModel, err error) {
+	var _comment models.CommentModel
+	if err = getCommentCollection(dbConn).FindOne(ctx, filter, opts...).
+		Decode(&_comment); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return &comment, nil
+	return &_comment, nil
 }
 
 // Get multiple comments
-func GetComments(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOptions) ([]*models.CommentModel, error) {
+func GetComments(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.FindOptions,
+) (comments []*models.CommentModel, err error) {
 	var (
-		comments []*models.CommentModel
-		comment  *models.CommentModel
-		cursor   *mongo.Cursor
-		err      error
+		comment *models.CommentModel
+		cursor  *mongo.Cursor
 	)
 
 	if cursor, err = getCommentCollection(dbConn).Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-
 	for cursor.Next(ctx) {
 		comment = &models.CommentModel{}
 		if err = cursor.Decode(comment); err != nil {
@@ -56,19 +64,25 @@ func GetComments(ctx context.Context, dbConn *mongo.Database, filter interface{}
 }
 
 // Create new comment
-func CreateComment(ctx context.Context, dbConn *mongo.Database, comment *models.CommentModel) error {
-	now := primitive.NewDateTimeFromTime(time.Now())
+func CreateComment(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	comment *models.CommentModel,
+) (err error) {
+	var (
+		now        = primitive.NewDateTimeFromTime(time.Now())
+		insRes     *mongo.InsertOneResult
+		insertedID primitive.ObjectID
+		ok         bool
+	)
 
 	comment.UID = primitive.NewObjectID()
 	comment.CreatedAt = now
 	comment.DeletedAt = nil
-
-	insRes, err := getCommentCollection(dbConn).InsertOne(ctx, comment)
-	if err != nil {
+	if insRes, err = getCommentCollection(dbConn).InsertOne(ctx, comment); err != nil {
 		return err
 	}
-	insertedID, ok := insRes.InsertedID.(primitive.ObjectID)
-	if !ok {
+	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
 		return errors.New("unable to assert inserted uid")
 	}
 	if comment.UID != insertedID {
@@ -79,28 +93,37 @@ func CreateComment(ctx context.Context, dbConn *mongo.Database, comment *models.
 }
 
 // Mark comment trash
-func TrashComment(ctx context.Context, dbConn *mongo.Database, comment *models.CommentModel) error {
+func TrashComment(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	comment *models.CommentModel,
+) (err error) {
 	now := primitive.NewDateTimeFromTime(time.Now())
-
 	comment.DeletedAt = now
-
-	_, err := getCommentCollection(dbConn).UpdateByID(ctx, comment.UID, bson.M{"$set": comment})
+	_, err = getCommentCollection(dbConn).UpdateByID(ctx, comment.UID, bson.M{"$set": comment})
 
 	return err
 }
 
 // Unmark the trash from comment
-func DetrashComment(ctx context.Context, dbConn *mongo.Database, comment *models.CommentModel) error {
+func DetrashComment(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	comment *models.CommentModel,
+) (err error) {
 	comment.DeletedAt = nil
-
-	_, err := getCommentCollection(dbConn).UpdateByID(ctx, comment.UID, bson.M{"$set": comment})
+	_, err = getCommentCollection(dbConn).UpdateByID(ctx, comment.UID, bson.M{"$set": comment})
 
 	return err
 }
 
 // Permanently delete comment
-func DeleteComment(ctx context.Context, dbConn *mongo.Database, comment *models.CommentModel) error {
-	_, err := getCommentCollection(dbConn).DeleteOne(ctx, bson.M{"_id": comment.UID})
+func DeleteComment(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	comment *models.CommentModel,
+) (err error) {
+	_, err = getCommentCollection(dbConn).DeleteOne(ctx, bson.M{"_id": comment.UID})
 
 	return err
 }

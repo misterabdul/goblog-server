@@ -13,37 +13,46 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getNotificationCollection(dbConn *mongo.Database) *mongo.Collection {
+func getNotificationCollection(dbConn *mongo.Database) (notificationCollection *mongo.Collection) {
 	return dbConn.Collection("notifications")
 }
 
 // Get single notification
-func GetNotification(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOneOptions) (*models.NotificationModel, error) {
-	var notification models.NotificationModel
-	if err := getNotificationCollection(dbConn).FindOne(ctx, filter, opts...).Decode(&notification); err != nil {
+func GetNotification(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.FindOneOptions,
+) (notification *models.NotificationModel, err error) {
+	var _notification models.NotificationModel
+
+	if err = getNotificationCollection(dbConn).FindOne(ctx, filter, opts...).
+		Decode(&_notification); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return &notification, nil
+	return &_notification, nil
 }
 
 // Get multiple notifications
-func GetNotifications(ctx context.Context, dbConn *mongo.Database, filter interface{}, opts ...*options.FindOptions) ([]*models.NotificationModel, error) {
+func GetNotifications(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.FindOptions,
+) (notifications []*models.NotificationModel, err error) {
 	var (
-		notifications []*models.NotificationModel
-		notification  *models.NotificationModel
-		cursor        *mongo.Cursor
-		err           error
+		notification *models.NotificationModel
+		cursor       *mongo.Cursor
 	)
 
 	if cursor, err = getNotificationCollection(dbConn).Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
-
 	for cursor.Next(ctx) {
 		notification = &models.NotificationModel{}
 		if err = cursor.Decode(notification); err != nil {
@@ -56,19 +65,25 @@ func GetNotifications(ctx context.Context, dbConn *mongo.Database, filter interf
 }
 
 // Create new notification
-func CreateNotification(ctx context.Context, dbConn *mongo.Database, notification *models.NotificationModel) error {
-	now := primitive.NewDateTimeFromTime(time.Now())
+func CreateNotification(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	notification *models.NotificationModel,
+) (err error) {
+	var (
+		now        = primitive.NewDateTimeFromTime(time.Now())
+		insRes     *mongo.InsertOneResult
+		insertedID primitive.ObjectID
+		ok         bool
+	)
 
 	notification.UID = primitive.NewObjectID()
 	notification.CreatedAt = now
 	notification.DeletedAt = nil
-
-	insRes, err := getNotificationCollection(dbConn).InsertOne(ctx, notification)
-	if err != nil {
+	if insRes, err = getNotificationCollection(dbConn).InsertOne(ctx, notification); err != nil {
 		return err
 	}
-	insertedID, ok := insRes.InsertedID.(primitive.ObjectID)
-	if !ok {
+	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
 		return errors.New("unable to assert inserted uid")
 	}
 	if notification.UID != insertedID {
@@ -79,19 +94,26 @@ func CreateNotification(ctx context.Context, dbConn *mongo.Database, notificatio
 }
 
 // Read notification
-func ReadNotification(ctx context.Context, dbConn *mongo.Database, notification *models.NotificationModel) error {
+func ReadNotification(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	notification *models.NotificationModel,
+) (err error) {
 	now := primitive.NewDateTimeFromTime(time.Now())
-
 	notification.ReadAt = now
-
-	_, err := getNotificationCollection(dbConn).UpdateByID(ctx, notification.UID, bson.M{"$set": notification})
+	_, err = getNotificationCollection(dbConn).
+		UpdateByID(ctx, notification.UID, bson.M{"$set": notification})
 
 	return err
 }
 
 // Permanently delete notification
-func DeleteNotification(ctx context.Context, dbConn *mongo.Database, notification *models.NotificationModel) error {
-	_, err := getNotificationCollection(dbConn).DeleteOne(ctx, bson.M{"_id": notification.UID})
+func DeleteNotification(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	notification *models.NotificationModel,
+) (err error) {
+	_, err = getNotificationCollection(dbConn).DeleteOne(ctx, bson.M{"_id": notification.UID})
 
 	return err
 }

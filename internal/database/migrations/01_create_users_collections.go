@@ -14,92 +14,81 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
-const (
-	usersCollectionName = "users"
-)
+const usersCollectionName = "users"
 
 // Create the users collection.
 // Insert super admin record data.
-type CreateUsersCollection struct {
-}
+type CreateUsersCollection struct{}
 
-func (m *CreateUsersCollection) Name() string {
+func (m *CreateUsersCollection) Name() (collectionName string) {
 	return "01_create_users_collections"
 }
 
-func (m *CreateUsersCollection) Up(ctx context.Context, dbConn *mongo.Database) error {
-	if err := dbConn.CreateCollection(ctx, usersCollectionName); err != nil {
+func (m *CreateUsersCollection) Up(ctx context.Context, dbConn *mongo.Database) (err error) {
+	if err = dbConn.CreateCollection(ctx, usersCollectionName); err != nil {
 		return err
 	}
-
-	indexes := []mongo.IndexModel{
-		{
-			Keys:    bson.D{{Key: "username", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys:    bson.D{{Key: "email", Value: 1}},
-			Options: options.Index().SetUnique(true),
-		},
-		{
-			Keys:    bson.D{{Key: "createdAt", Value: -1}},
-			Options: nil,
-		},
-		{
-			Keys:    bson.D{{Key: "updatedAt", Value: -1}},
-			Options: nil,
-		},
-		{
-			Keys:    bson.D{{Key: "deletedAt", Value: -1}},
-			Options: nil,
-		},
+	indexes := []mongo.IndexModel{{
+		Keys:    bson.D{{Key: "username", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	}, {
+		Keys:    bson.D{{Key: "email", Value: 1}},
+		Options: options.Index().SetUnique(true),
+	}, {
+		Keys:    bson.D{{Key: "createdAt", Value: -1}},
+		Options: nil,
+	}, {
+		Keys:    bson.D{{Key: "updatedAt", Value: -1}},
+		Options: nil,
+	}, {
+		Keys:    bson.D{{Key: "deletedAt", Value: -1}},
+		Options: nil,
+	}}
+	if _, err = dbConn.Collection(usersCollectionName).Indexes().
+		CreateMany(ctx, indexes); err != nil {
+		return err
 	}
-
-	_, err := dbConn.Collection(usersCollectionName).Indexes().CreateMany(ctx, indexes)
-
 	insertSuperAdmin(ctx, dbConn)
 
-	return err
+	return nil
 }
 
-func (m *CreateUsersCollection) Down(ctx context.Context, dbConn *mongo.Database) error {
+func (m *CreateUsersCollection) Down(ctx context.Context, dbConn *mongo.Database) (err error) {
 	return dbConn.Collection(usersCollectionName).Drop(ctx)
 }
 
-func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) error {
-	password, err := hash.Make("password")
-	if err != nil {
+func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) (err error) {
+	var (
+		password   string
+		now        = primitive.NewDateTimeFromTime(time.Now())
+		superAdmin models.UserModel
+	)
+
+	if password, err = hash.Make("password"); err != nil {
 		return err
 	}
-
-	now := primitive.NewDateTimeFromTime(time.Now())
-	superAdmin := models.UserModel{
+	superAdmin = models.UserModel{
 		FirstName: "Super Admin",
 		Email:     "superadmin@example.com",
 		Username:  "superadmin",
 		Password:  password,
-		Roles: []models.UserRoles{
-			{
-				Level: 0,
-				Name:  "SuperAdmin",
-				Since: now,
-			},
-			{
-				Level: 1,
-				Name:  "Admin",
-				Since: now,
-			},
-			{
-				Level: 2,
-				Name:  "Editor",
-				Since: now,
-			},
-			{
-				Level: 3,
-				Name:  "Writer",
-				Since: now,
-			},
-		},
+		Roles: []models.UserRoles{{
+			Level: 0,
+			Name:  "SuperAdmin",
+			Since: now,
+		}, {
+			Level: 1,
+			Name:  "Admin",
+			Since: now,
+		}, {
+			Level: 2,
+			Name:  "Editor",
+			Since: now,
+		}, {
+			Level: 3,
+			Name:  "Writer",
+			Since: now,
+		}},
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

@@ -27,8 +27,7 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 		{
 			v1.GET("/ping", func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{
-					"message": "pong",
-				})
+					"message": "pong"})
 			})
 
 			v1.GET("/users", userController.GetPublicUsers(maxCtxDuration, dbConn))
@@ -48,11 +47,11 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 			v1.POST("/signin", authenticationController.SignIn(maxCtxDuration, dbConn))
 			v1.POST("/signup", authenticationController.SignUp(maxCtxDuration, dbConn))
 
-			refresh := v1.Group("/")
+			refresh := v1.Group("/refresh")
 			refresh.Use(authenticateMiddleware.AuthenticateRefresh(maxCtxDuration, dbConn))
 			{
 				refresh.POST("/signout", authenticationController.SignOut(maxCtxDuration, dbConn))
-				refresh.POST("/refresh", authenticationController.Refresh(maxCtxDuration, dbConn))
+				refresh.POST("/", authenticationController.Refresh(maxCtxDuration, dbConn))
 			}
 
 			auth := v1.Group("/auth")
@@ -151,7 +150,6 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 
 	server.NoRoute(func(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{
-			"message": "not found.",
-		})
+			"message": "not found."})
 	})
 }

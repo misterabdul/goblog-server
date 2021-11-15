@@ -14,8 +14,10 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-func Refresh(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func Refresh(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -42,11 +44,13 @@ func Refresh(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFu
 			responses.InternalServerError(c, err)
 			return
 		}
-		if newAccessClaims, newAccessToken, err = internalJwt.IssueAccessToken(me); err != nil {
+		if newAccessClaims, newAccessToken, err = internalJwt.
+			IssueAccessToken(me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		if newRefreshClaims, newRefreshToken, err = internalJwt.IssueRefreshToken(me); err != nil {
+		if newRefreshClaims, newRefreshToken, err = internalJwt.
+			IssueRefreshToken(me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

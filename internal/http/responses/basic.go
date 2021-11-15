@@ -29,17 +29,21 @@ func NoContent(c *gin.Context) {
 }
 
 func BadRequest(c *gin.Context, msg string, err error) {
-	Basic(c, http.StatusBadRequest, gin.H{"message": msg})
+	Basic(c, http.StatusBadRequest, gin.H{
+		"message": msg})
 }
 
 func NotFound(c *gin.Context, err error) {
-	Basic(c, http.StatusNotFound, gin.H{"message": "not found"})
+	Basic(c, http.StatusNotFound, gin.H{
+		"message": "not found"})
 }
 
 func FormIncorrect(c *gin.Context, err error) {
-	Basic(c, http.StatusUnprocessableEntity, gin.H{"message": err.Error()})
+	Basic(c, http.StatusUnprocessableEntity, gin.H{
+		"message": err.Error()})
 }
 
 func InternalServerError(c *gin.Context, err error) {
-	Basic(c, http.StatusInternalServerError, gin.H{"message": err.Error()})
+	Basic(c, http.StatusInternalServerError, gin.H{
+		"message": err.Error()})
 }

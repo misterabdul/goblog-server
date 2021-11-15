@@ -41,7 +41,10 @@ func main() {
 
 }
 
-func getAvailableCommands() map[string]func(context.Context, *bufio.Reader) {
+func getAvailableCommands() (
+	availableCommands map[string]func(
+		context.Context, *bufio.Reader),
+) {
 	return map[string]func(context.Context, *bufio.Reader){
 		"migrations:fresh": func(ctx context.Context, reader *bufio.Reader) {
 			utils.ConsolePrintlnYellow("Warning: this will create a new fresh database")

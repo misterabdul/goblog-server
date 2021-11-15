@@ -6,9 +6,10 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 )
 
-func GetPasswordConfirmForm(c *gin.Context) (*forms.PasswordConfirmForm, error) {
-	var passwordConfirmForm forms.PasswordConfirmForm
-	err := shouldBind(c, &passwordConfirmForm)
+func GetPasswordConfirmForm(c *gin.Context) (form *forms.PasswordConfirmForm, err error) {
+	var _form forms.PasswordConfirmForm
 
-	return &passwordConfirmForm, err
+	err = shouldBind(c, &_form)
+
+	return &_form, err
 }

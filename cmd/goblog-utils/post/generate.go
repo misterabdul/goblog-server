@@ -29,7 +29,6 @@ func Generate(ctx context.Context) {
 		log.Fatal(err)
 	}
 	defer dbConn.Client().Disconnect(ctx)
-
 	for i := 0; i < 100; i++ {
 		postId = primitive.NewObjectID()
 		post = &models.PostModel{
@@ -43,18 +42,20 @@ func Generate(ctx context.Context) {
 			Author: models.UserCommonModel{
 				FirstName: "Super Admin",
 				Username:  "superadmin",
-				Email:     "superadmin@example.com",
-			},
+				Email:     "superadmin@example.com"},
 			PublishedAt: now,
 			CreatedAt:   now,
 			UpdatedAt:   now,
-			DeletedAt:   nil,
-		}
+			DeletedAt:   nil}
 		postContent = &models.PostContentModel{
 			UID:     postId,
-			Content: lipsumMarkdown(),
-		}
-		if err = repositories.CreatePost(ctx, dbConn, post, postContent); err != nil {
+			Content: lipsumMarkdown()}
+		if err = repositories.CreatePost(
+			ctx,
+			dbConn,
+			post,
+			postContent,
+		); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -62,7 +63,19 @@ func Generate(ctx context.Context) {
 }
 
 func lipsumParagraph() string {
-	return "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Proin ipsum libero, laoreet at sem vel, ornare dapibus enim. Curabitur vestibulum eros ac nisi lobortis, at sollicitudin velit congue. In scelerisque feugiat nisi, ut blandit nisi tempus non. Vivamus lacinia nisi sit amet aliquam fermentum. Aliquam feugiat dui sed dolor accumsan, vel ultrices velit vehicula. Mauris elit sapien, interdum in ante ac, iaculis placerat orci. Nulla facilisi. Praesent ac auctor arcu. Mauris aliquet ultricies enim, viverra aliquet neque lobortis ullamcorper. Sed volutpat facilisis lacus nec porttitor. Duis feugiat nibh euismod, tincidunt mauris et, laoreet dolor. Praesent eu dolor et nisl finibus venenatis. Aenean metus eros, malesuada nec diam sit amet, tincidunt facilisis justo."
+	return "Lorem ipsum dolor sit amet, consectetur adipiscing elit. " +
+		"Proin ipsum libero, laoreet at sem vel, ornare dapibus enim. " +
+		"Curabitur vestibulum eros ac nisi lobortis, at sollicitudin velit congue. " +
+		"In scelerisque feugiat nisi, ut blandit nisi tempus non. " +
+		"Vivamus lacinia nisi sit amet aliquam fermentum. " +
+		"Aliquam feugiat dui sed dolor accumsan, vel ultrices velit vehicula. " +
+		"Mauris elit sapien, interdum in ante ac, iaculis placerat orci. " +
+		"Nulla facilisi. Praesent ac auctor arcu. " +
+		"Mauris aliquet ultricies enim, viverra aliquet neque lobortis ullamcorper. " +
+		"Sed volutpat facilisis lacus nec porttitor. " +
+		"Duis feugiat nibh euismod, tincidunt mauris et, laoreet dolor. " +
+		"Praesent eu dolor et nisl finibus venenatis. " +
+		"Aenean metus eros, malesuada nec diam sit amet, tincidunt facilisis justo."
 }
 
 func lipsumMarkdown() string {

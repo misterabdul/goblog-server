@@ -19,8 +19,10 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-func SignIn(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func SignIn(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -39,11 +41,11 @@ func SignIn(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFun
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if user, err = repositories.GetUser(ctx, dbConn,
-			bson.M{"$or": []bson.M{
+		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+			"$or": []bson.M{
 				{"username": input.Username},
-				{"email": input.Username},
-			}}); err != nil {
+				{"email": input.Username}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

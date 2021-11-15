@@ -22,11 +22,10 @@ type ReplyCommmentForm struct {
 	Content    string `json:"content" binding:"required,printascii,max=255"`
 }
 
-func CreateCommentModel(form *CreateCommentForm) (*models.CommentModel, error) {
+func CreateCommentModel(form *CreateCommentForm) (model *models.CommentModel, err error) {
 	var (
 		postUid primitive.ObjectID
 		now     primitive.DateTime = primitive.NewDateTimeFromTime(time.Now())
-		err     error
 	)
 
 	if postUid, err = primitive.ObjectIDFromHex(form.PostUid); err != nil {
@@ -41,21 +40,21 @@ func CreateCommentModel(form *CreateCommentForm) (*models.CommentModel, error) {
 		Content:   form.Content,
 		Replies:   []models.CommentReplyModel{},
 		CreatedAt: now,
-		DeletedAt: nil,
-	}, nil
+		DeletedAt: nil}, nil
 }
 
-func ReplyCommentModel(form *ReplyCommmentForm, comment *models.CommentModel) *models.CommentModel {
+func ReplyCommentModel(
+	form *ReplyCommmentForm,
+	comment *models.CommentModel,
+) (model *models.CommentModel) {
 	now := primitive.NewDateTimeFromTime(time.Now())
-
 	replies := comment.Replies
 	replies = append(replies, models.CommentReplyModel{
 		Email:     form.Email,
 		Name:      form.Name,
 		Content:   form.Content,
 		CreatedAt: now,
-		DeletedAt: nil,
-	})
+		DeletedAt: nil})
 	comment.Replies = replies
 
 	return comment

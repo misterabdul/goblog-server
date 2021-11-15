@@ -13,21 +13,14 @@ const (
 	RefreshTokenCookieName = "refresh-token"
 )
 
-func Unauthenticated(
-	c *gin.Context,
-	err error) {
+func Unauthenticated(c *gin.Context, err error) {
 	Basic(c, http.StatusUnauthorized, gin.H{
-		"message": "Unauthenticated.",
-	})
+		"message": "Unauthenticated."})
 }
 
-func WrongSignIn(
-	c *gin.Context,
-	err error,
-) {
+func WrongSignIn(c *gin.Context, err error) {
 	Basic(c, http.StatusUnauthorized, gin.H{
-		"message": "Wrong username or password.",
-	})
+		"message": "Wrong username or password."})
 }
 
 func SignedIn(
@@ -35,7 +28,8 @@ func SignedIn(
 	accessToken string,
 	accessClaims *jwt.CustomClaims,
 	refreshToken string,
-	refreshClaims *jwt.CustomClaims) {
+	refreshClaims *jwt.CustomClaims,
+) {
 	var (
 		domain    string
 		secured_s string
@@ -59,11 +53,9 @@ func SignedIn(
 		"/api",
 		domain,
 		secured,
-		true,
-	)
+		true)
 
 	Basic(c, http.StatusOK, gin.H{
 		"tokenType":   "Bearer",
-		"accessToken": accessToken,
-	})
+		"accessToken": accessToken})
 }

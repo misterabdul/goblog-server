@@ -10,15 +10,13 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
-const (
-	refreshTokenTypeName = "refresh-token"
-)
+const refreshTokenTypeName = "refresh-token"
 
-func IssueRefreshToken(
-	user *models.UserModel) (
+func IssueRefreshToken(user *models.UserModel) (
 	claims *jwt.CustomClaims,
 	tokenString string,
-	err error) {
+	err error,
+) {
 	var (
 		secret     string
 		duration_s string
@@ -46,10 +44,7 @@ func IssueRefreshToken(
 	return claims, tokenString, nil
 }
 
-func CheckRefreshToken(
-	token string) (
-	claims *jwt.CustomClaims,
-	err error) {
+func CheckRefreshToken(token string) (claims *jwt.CustomClaims, err error) {
 	var (
 		secret string
 		ok     bool

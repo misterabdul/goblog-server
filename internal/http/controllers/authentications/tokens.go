@@ -16,11 +16,9 @@ func noteRevokeToken(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	refreshClaims *jwt.CustomClaims,
-	user *models.UserModel) (
-	err error) {
-	var (
-		revokeTokenData *models.RevokedTokenModel
-	)
+	user *models.UserModel,
+) (err error) {
+	var revokeTokenData *models.RevokedTokenModel
 
 	if revokeTokenData, err = createRevokeModelFromClaims(refreshClaims); err != nil {
 		return err
@@ -30,10 +28,10 @@ func noteRevokeToken(
 	return repositories.CreateRevokedToken(ctx, dbConn, revokeTokenData)
 }
 
-func createRevokeModelFromClaims(
-	refreshClaims *jwt.CustomClaims) (
+func createRevokeModelFromClaims(refreshClaims *jwt.CustomClaims) (
 	model *models.RevokedTokenModel,
-	err error) {
+	err error,
+) {
 	var (
 		revokeTokenUID primitive.ObjectID
 		expiresAtTime  = time.Unix(refreshClaims.ExpiresAt, 0)

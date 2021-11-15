@@ -8,8 +8,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func SignUp(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func SignUp(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{})
 	}

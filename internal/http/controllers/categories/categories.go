@@ -16,8 +16,10 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetPublicCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicCategory(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -32,14 +34,13 @@ func GetPublicCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin
 		if categoryId, err = primitive.ObjectIDFromHex(categoryQuery); err != nil {
 			categoryId = primitive.ObjectID{}
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"$or": []bson.M{
 					{"_id": categoryId},
-					{"slug": categoryQuery},
-				}},
-			}}); err != nil {
+					{"slug": categoryQuery}}}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -51,8 +52,10 @@ func GetPublicCategory(maxCtxDuration time.Duration, dbConn *mongo.Database) gin
 	}
 }
 
-func GetPublicCategories(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicCategories(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -62,10 +65,10 @@ func GetPublicCategories(maxCtxDuration time.Duration, dbConn *mongo.Database) g
 			err        error
 		)
 
-		if categories, err = repositories.GetCategories(ctx, dbConn,
-			bson.M{"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-			}}, helpers.GetFindOptions(c)); err != nil {
+		if categories, err = repositories.GetCategories(ctx, dbConn, bson.M{
+			"$and": []bson.M{
+				{"deletedat": primitive.Null{}}},
+		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -15,15 +15,17 @@ type UpdateCategoryForm struct {
 	Name string `json:"name"`
 }
 
-func CreateCategoryModel(form *CreateCategoryForm) *models.CategoryModel {
+func CreateCategoryModel(form *CreateCategoryForm) (model *models.CategoryModel) {
 	return &models.CategoryModel{
 		UID:  primitive.NewObjectID(),
 		Slug: form.Slug,
-		Name: form.Name,
-	}
+		Name: form.Name}
 }
 
-func UpdateCategoryModel(form *UpdateCategoryForm, category *models.CategoryModel) *models.CategoryModel {
+func UpdateCategoryModel(
+	form *UpdateCategoryForm,
+	category *models.CategoryModel,
+) (model *models.CategoryModel) {
 	if len(form.Slug) > 0 {
 		category.Slug = form.Slug
 	}

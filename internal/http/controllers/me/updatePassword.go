@@ -17,8 +17,10 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
-func UpdateMePassword(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func UpdateMePassword(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -28,6 +30,7 @@ func UpdateMePassword(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.
 			form        *forms.UpdateMePasswordForm
 			newPassword string
 			err         error
+			writeErr    mongo.WriteException
 		)
 
 		if form, err = requests.GetUpdateMePasswordForm(c); err != nil {
@@ -52,7 +55,6 @@ func UpdateMePassword(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.
 		}
 		me.Password = newPassword
 		if err = repositories.UpdateUser(ctx, dbConn, me); err != nil {
-			var writeErr mongo.WriteException
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, writeErr.WriteErrors)
 				return

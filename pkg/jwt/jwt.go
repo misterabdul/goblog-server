@@ -21,9 +21,11 @@ type CustomClaims struct {
 	ExpiresAt int64  `json:"exp,omitempty"`
 }
 
-func (c CustomClaims) Valid() error {
-	vErr := new(jwt.ValidationError)
-	now := jwt.TimeFunc().Unix()
+func (c CustomClaims) Valid() (err error) {
+	var (
+		vErr = new(jwt.ValidationError)
+		now  = jwt.TimeFunc().Unix()
+	)
 
 	if c.ExpiresAt <= now {
 		delta := time.Unix(now, 0).Sub(time.Unix(c.ExpiresAt, 0))
@@ -38,7 +40,6 @@ func (c CustomClaims) Valid() error {
 		vErr.Inner = fmt.Errorf("token is not valid yet")
 		vErr.Errors |= jwt.ValidationErrorNotValidYet
 	}
-
 	if vErr.Errors == 0 {
 		return nil
 	}
@@ -46,9 +47,10 @@ func (c CustomClaims) Valid() error {
 	return vErr
 }
 
-func (c CustomClaims) GetExpiresAtSeconds() int {
+func (c CustomClaims) GetExpiresAtSeconds() (expiresAtInSeconds int) {
 	expiresAtTime := time.Unix(c.ExpiresAt, 0)
 	diff := time.Until(expiresAtTime)
+
 	return int(diff.Seconds())
 }
 
@@ -56,10 +58,12 @@ func Issue(
 	claimType string,
 	subject string,
 	duration time.Duration,
-	secret string) (
+	secret string,
+) (
 	claims *CustomClaims,
 	tokenString string,
-	err error) {
+	err error,
+) {
 	now := time.Now()
 	tokenID := primitive.NewObjectID().Hex()
 	claims = &CustomClaims{
@@ -70,9 +74,7 @@ func Issue(
 		Issuer:    "goblog-server",
 		IssuedAt:  now.Unix(),
 		NotBefore: now.Unix(),
-		ExpiresAt: now.Add(duration).Unix(),
-	}
-
+		ExpiresAt: now.Add(duration).Unix()}
 	if tokenString, err = IssueClaims(claims, secret); err != nil {
 		return nil, "", err
 	}
@@ -80,22 +82,14 @@ func Issue(
 	return claims, tokenString, nil
 }
 
-func IssueClaims(
-	claims *CustomClaims,
-	secret string) (
-	tokenString string,
-	err error) {
+func IssueClaims(claims *CustomClaims, secret string) (tokenString string, err error) {
 	jwtClaim := jwt.NewWithClaims(jwt.SigningMethodHS512, *claims)
 	tokenString, err = jwtClaim.SignedString([]byte(secret))
 
 	return tokenString, err
 }
 
-func Check(
-	tokenString string,
-	secret string) (
-	claims *CustomClaims,
-	err error) {
+func Check(tokenString string, secret string) (claims *CustomClaims, err error) {
 	var (
 		token     *jwt.Token
 		rawClaims = CustomClaims{}

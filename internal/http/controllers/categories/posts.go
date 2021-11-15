@@ -15,8 +15,10 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetPublicCategoryPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicCategoryPosts(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -31,15 +33,14 @@ func GetPublicCategoryPosts(maxCtxDuration time.Duration, dbConn *mongo.Database
 		if categoryId, err = primitive.ObjectIDFromHex(categoryQuery); err != nil {
 			categoryId = primitive.ObjectID{}
 		}
-		if posts, err = repositories.GetPosts(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
 					{"_id": categoryId},
-					{"slug": categoryQuery},
-				}},
-			}}, helpers.GetFindOptions(c)); err != nil {
+					{"slug": categoryQuery}}}},
+		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

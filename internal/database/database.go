@@ -9,53 +9,75 @@ import (
 )
 
 // Get DB connection instance
-func GetDBConn(ctx context.Context, uri string, dbName string) (*mongo.Database, error) {
-	options := options.Client().ApplyURI(uri)
-	client, err := mongo.Connect(ctx, options)
-	if err != nil {
+func GetDBConn(
+	ctx context.Context,
+	uri string,
+	dbName string,
+) (dbConn *mongo.Database, err error) {
+	var (
+		options    = options.Client().ApplyURI(uri)
+		client     *mongo.Client
+		dbInstance *mongo.Database
+	)
+
+	if client, err = mongo.Connect(ctx, options); err != nil {
 		return nil, err
 	}
-
-	dbInstance := client.Database(dbName)
+	dbInstance = client.Database(dbName)
 
 	return dbInstance, nil
 }
 
 // Get default DB connection instance
-func GetDBConnDefault(ctx context.Context) (*mongo.Database, error) {
+func GetDBConnDefault(ctx context.Context) (dbConn *mongo.Database, err error) {
 	return GetDBConn(ctx, getDbUri(), getDbName())
 }
 
 // Get databse URI
-func getDbUri() string {
-	protocol := "mongodb"
-	if envProtocol, ok := os.LookupEnv("DB_PROTOCOL"); ok {
+func getDbUri() (dbUri string) {
+	var (
+		protocol    = "mongodb"
+		host        = "localhost"
+		port        = "27017"
+		user        = "root"
+		password    = ""
+		envProtocol string
+		envHost     string
+		envPort     string
+		envUser     string
+		envPassword string
+		ok          bool
+	)
+
+	if envProtocol, ok = os.LookupEnv("DB_PROTOCOL"); ok {
 		protocol = envProtocol
 	}
-	host := "localhost"
-	if envHost, ok := os.LookupEnv("DB_HOST"); ok {
+	if envHost, ok = os.LookupEnv("DB_HOST"); ok {
 		host = envHost
 	}
-	port := "27017"
-	if envPort, ok := os.LookupEnv("DB_PORT"); ok {
+	if envPort, ok = os.LookupEnv("DB_PORT"); ok {
 		port = envPort
 	}
-	user := "root"
-	if envUser, ok := os.LookupEnv("DB_USER"); ok {
+	if envUser, ok = os.LookupEnv("DB_USER"); ok {
 		user = envUser
 	}
-	password := ""
-	if envPassword, ok := os.LookupEnv("DB_PASS"); ok {
+	if envPassword, ok = os.LookupEnv("DB_PASS"); ok {
 		password = envPassword
 	}
-	return protocol + "://" + user + ":" + password + "@" + host + ":" + port
+
+	return protocol + "://" +
+		user + ":" +
+		password + "@" +
+		host + ":" +
+		port
 }
 
 // Get database name
-func getDbName() string {
-	dbName := "goblog"
+func getDbName() (dbName string) {
+	dbName = "goblog"
 	if envDbName, ok := os.LookupEnv("DB_NAME"); ok {
 		dbName = envDbName
 	}
+
 	return dbName
 }

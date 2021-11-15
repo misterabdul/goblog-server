@@ -16,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin/binding"
 )
 
-func shouldBind(c *gin.Context, obj interface{}) error {
+func shouldBind(c *gin.Context, obj interface{}) (err error) {
 	contentType := c.ContentType()
 	switch {
 	case contentType == "application/json":

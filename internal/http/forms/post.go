@@ -34,7 +34,10 @@ type postCategory struct {
 	Slug string `json:"slug"`
 }
 
-func CreatePostModel(form *CreatePostForm, author *models.UserModel) (*models.PostModel, *models.PostContentModel) {
+func CreatePostModel(form *CreatePostForm, author *models.UserModel) (
+	post *models.PostModel,
+	content *models.PostContentModel,
+) {
 	var (
 		categories  []models.CategoryCommonModel
 		now                     = primitive.NewDateTimeFromTime(time.Now())
@@ -68,11 +71,17 @@ func CreatePostModel(form *CreatePostForm, author *models.UserModel) (*models.Po
 			DeletedAt:          nil,
 		}, &models.PostContentModel{
 			UID:     postId,
-			Content: form.Content,
-		}
+			Content: form.Content}
 }
 
-func UpdatePostModel(form *UpdatePostForm, post *models.PostModel, postContent *models.PostContentModel) (*models.PostModel, *models.PostContentModel) {
+func UpdatePostModel(
+	form *UpdatePostForm,
+	post *models.PostModel,
+	postContent *models.PostContentModel,
+) (
+	updatedPost *models.PostModel,
+	updatedPostContent *models.PostContentModel,
+) {
 	var (
 		categories []models.CategoryCommonModel
 		now        = primitive.NewDateTimeFromTime(time.Now())
@@ -94,8 +103,7 @@ func UpdatePostModel(form *UpdatePostForm, post *models.PostModel, postContent *
 		for _, formCategory := range form.Categories {
 			category := models.CategoryCommonModel{
 				Name: formCategory.Name,
-				Slug: formCategory.Slug,
-			}
+				Slug: formCategory.Slug}
 			categories = append(categories, category)
 		}
 		post.Categories = categories

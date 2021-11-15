@@ -16,8 +16,10 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetPublicPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicPost(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -33,15 +35,14 @@ func GetPublicPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 		if postId, err = primitive.ObjectIDFromHex(postQuery); err != nil {
 			postId = primitive.ObjectID{}
 		}
-		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
 					{"_id": postId},
-					{"slug": postQuery},
-				}},
-			}}); err != nil {
+					{"slug": postQuery}}}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -54,8 +55,10 @@ func GetPublicPost(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Han
 	}
 }
 
-func GetPublicPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func GetPublicPosts(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -65,11 +68,11 @@ func GetPublicPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 			err   error
 		)
 
-		if posts, err = repositories.GetPosts(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
-				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-			}}, helpers.GetFindOptionsPost(c)); err != nil {
+				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
+		}, helpers.GetFindOptionsPost(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -82,7 +85,10 @@ func GetPublicPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.Ha
 	}
 }
 
-func SearchPublicPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
+func SearchPublicPosts(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
@@ -94,16 +100,13 @@ func SearchPublicPosts(maxCtxDuration time.Duration, dbConn *mongo.Database) gin
 			err         error
 		)
 
-		if posts, err = repositories.GetPosts(ctx, dbConn,
-			bson.M{
-				"$text": bson.M{
-					"$search": searchQuery,
-				},
-				"$and": []bson.M{
-					{"deletedat": primitive.Null{}},
-					{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				},
-			}, helpers.GetFindOptionsPost(c)); err != nil {
+		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
+			"$text": bson.M{
+				"$search": searchQuery},
+			"$and": []bson.M{
+				{"deletedat": primitive.Null{}},
+				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
+		}, helpers.GetFindOptionsPost(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

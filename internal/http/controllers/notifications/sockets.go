@@ -19,8 +19,10 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func ServeListenedNotifications(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func ServeListenedNotifications(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		_, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -55,7 +57,11 @@ func ServeListenedNotifications(maxCtxDuration time.Duration, dbConn *mongo.Data
 	}
 }
 
-func checkNotifications(dbConn *mongo.Database, me *models.UserModel, messageChan *chan string) {
+func checkNotifications(
+	dbConn *mongo.Database,
+	me *models.UserModel,
+	messageChan *chan string,
+) {
 	var (
 		ctx           = context.TODO()
 		notifications []*models.NotificationModel
@@ -66,11 +72,11 @@ func checkNotifications(dbConn *mongo.Database, me *models.UserModel, messageCha
 
 	for {
 		time.Sleep(3 * time.Second)
-		if notifications, err = repositories.GetNotifications(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if notifications, err = repositories.GetNotifications(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"owner.username": me.Username},
-				{"createdat": bson.M{"$gt": primitive.NewDateTimeFromTime(latestCheck)}},
-			}}, helpers.CreateFindOptions(25, 1, "createdat", false)); err != nil {
+				{"createdat": bson.M{"$gt": primitive.NewDateTimeFromTime(latestCheck)}}},
+		}, helpers.CreateFindOptions(25, 1, "createdat", false)); err != nil {
 			continue
 		}
 		messageBuff = fmt.Sprintf("There is %d new notification(s)", len(notifications))

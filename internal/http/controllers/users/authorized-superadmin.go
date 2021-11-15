@@ -8,15 +8,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func AdminizeUser(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func AdminizeUser(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{})
 	}
 }
 
-func DeadminizeUser(maxCtxDuration time.Duration, dbConn *mongo.Database) gin.HandlerFunc {
-
+func DeadminizeUser(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		c.JSON(http.StatusNotImplemented, gin.H{})
 	}

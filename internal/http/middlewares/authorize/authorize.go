@@ -13,8 +13,11 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func Authorize(maxCtxDuration time.Duration, dbConn *mongo.Database, level string) gin.HandlerFunc {
-
+func Authorize(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+	level string,
+) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		_, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
 		defer cancel()
@@ -34,7 +37,6 @@ func Authorize(maxCtxDuration time.Duration, dbConn *mongo.Database, level strin
 			c.Abort()
 			return
 		}
-
 		c.Next()
 	}
 }
