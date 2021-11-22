@@ -40,6 +40,6 @@ func SignOut(
 			return
 		}
 
-		responses.NoContent(c)
+		responses.SigningOut(c)
 	}
 }

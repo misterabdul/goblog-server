@@ -50,7 +50,7 @@ func SignedIn(
 		RefreshTokenCookieName,
 		refreshToken,
 		refreshClaims.GetExpiresAtSeconds(),
-		"/api",
+		"/api/v1/refresh",
 		domain,
 		secured,
 		true)
@@ -58,4 +58,33 @@ func SignedIn(
 	Basic(c, http.StatusOK, gin.H{
 		"tokenType":   "Bearer",
 		"accessToken": accessToken})
+}
+
+func SigningOut(c *gin.Context) {
+	var (
+		domain    string
+		secured_s string
+		secured   = false
+		ok        bool
+	)
+
+	if domain, ok = os.LookupEnv("COOKIE_DOMAIN"); !ok {
+		domain = ".localhost"
+	}
+	if secured_s, ok = os.LookupEnv("COOKIE_SECURE"); !ok {
+		secured_s = "false"
+	}
+	if secured_s == "true" || secured_s == "TRUE" {
+		secured = true
+	}
+	c.SetCookie(
+		RefreshTokenCookieName,
+		"expired",
+		0,
+		"/api/v1/refresh",
+		domain,
+		secured,
+		true)
+
+	NoContent(c)
 }
