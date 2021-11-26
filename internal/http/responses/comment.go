@@ -43,7 +43,7 @@ func IncorrectCommentId(c *gin.Context, err error) {
 
 func extractPublicCommentData(comment *models.CommentModel) (extracted gin.H) {
 	return gin.H{
-		"uid":       comment.UID,
+		"uid":       comment.UID.Hex(),
 		"postUid":   comment.PostUid,
 		"email":     comment.Email,
 		"name":      comment.Name,
@@ -67,7 +67,7 @@ func extractPublicCommentRepliesData(replies []models.CommentReplyModel) (extrac
 
 func extractAuthorizedCommentData(comment *models.CommentModel) (extracted gin.H) {
 	return gin.H{
-		"uid":       comment.UID,
+		"uid":       comment.UID.Hex(),
 		"postUid":   comment.PostUid,
 		"email":     comment.Email,
 		"name":      comment.Name,

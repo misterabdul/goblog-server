@@ -28,7 +28,7 @@ func IncorrectNotificationId(c *gin.Context, err error) {
 
 func extractMyNotificationData(notification *models.NotificationModel) (extracted gin.H) {
 	return gin.H{
-		"uid":       notification.UID,
+		"uid":       notification.UID.Hex(),
 		"title":     notification.Title,
 		"content":   notification.Content,
 		"readAt":    notification.ReadAt,

@@ -67,7 +67,7 @@ func extractPublicPostData(
 ) (extracted gin.H) {
 	if postContent == nil || postContent.UID != post.UID {
 		return gin.H{
-			"uid":                post.UID,
+			"uid":                post.UID.Hex(),
 			"slug":               post.Slug,
 			"title":              post.Title,
 			"featuringImagePath": post.FeaturingImagePath,
@@ -78,7 +78,7 @@ func extractPublicPostData(
 			"publishedAt":        post.PublishedAt}
 	}
 	return gin.H{
-		"uid":                post.UID,
+		"uid":                post.UID.Hex(),
 		"slug":               post.Slug,
 		"title":              post.Title,
 		"featuringImagePath": post.FeaturingImagePath,
@@ -96,7 +96,7 @@ func extractAuthorizedPostData(
 ) (extracted gin.H) {
 	if postContent == nil || postContent.UID != post.UID {
 		return gin.H{
-			"uid":                post.UID,
+			"uid":                post.UID.Hex(),
 			"slug":               post.Slug,
 			"title":              post.Title,
 			"featuringImagePath": post.FeaturingImagePath,
@@ -110,7 +110,7 @@ func extractAuthorizedPostData(
 			"deletedat":          post.DeletedAt}
 	}
 	return gin.H{
-		"uid":                post.UID,
+		"uid":                post.UID.Hex(),
 		"slug":               post.Slug,
 		"title":              post.Title,
 		"featuringImagePath": post.FeaturingImagePath,

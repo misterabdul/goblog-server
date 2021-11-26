@@ -28,7 +28,7 @@ func PublicUsers(c *gin.Context, users []*models.UserModel) {
 
 func extractPublicUserData(user *models.UserModel) gin.H {
 	return gin.H{
-		"uid":       user.UID,
+		"uid":       user.UID.Hex(),
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
 		"username":  user.Username}
@@ -36,7 +36,7 @@ func extractPublicUserData(user *models.UserModel) gin.H {
 
 func extractAuthorizedUserData(user *models.UserModel) gin.H {
 	return gin.H{
-		"uid":       user.UID,
+		"uid":       user.UID.Hex(),
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
 		"username":  user.Username,

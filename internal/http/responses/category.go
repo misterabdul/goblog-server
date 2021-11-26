@@ -43,14 +43,14 @@ func IncorrectCategoryId(c *gin.Context, err error) {
 
 func extractPublicCategoryData(category *models.CategoryModel) (extracted gin.H) {
 	return gin.H{
-		"uid":  category.UID,
+		"uid":  category.UID.Hex(),
 		"slug": category.Slug,
 		"name": category.Name}
 }
 
 func extractAuthorizedCategoryData(category *models.CategoryModel) (extracted gin.H) {
 	return gin.H{
-		"uid":       category.UID,
+		"uid":       category.UID.Hex(),
 		"slug":      category.Slug,
 		"name":      category.Name,
 		"createdAt": category.CreatedAt,
