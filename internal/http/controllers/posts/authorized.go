@@ -12,6 +12,7 @@ import (
 
 	"github.com/misterabdul/goblog-server/internal/http/controllers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
+	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -40,7 +41,6 @@ func GetPost(
 		}
 		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
 				{"_id": postId}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
@@ -64,17 +64,35 @@ func GetPosts(
 		defer cancel()
 
 		var (
-			posts      []*models.PostModel
-			trashQuery interface{} = primitive.Null{}
-			err        error
+			me        *models.UserModel
+			posts     []*models.PostModel
+			typeParam = c.DefaultQuery("type", "draft")
+			typeQuery []bson.M
+			err       error
 		)
 
-		if trashParam := c.DefaultQuery("trash", "false"); trashParam == "true" {
-			trashQuery = bson.M{"$ne": primitive.Null{}}
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
+		switch true {
+		case typeParam == "trash":
+			typeQuery = []bson.M{
+				{"deletedat": bson.M{"$ne": primitive.Null{}}},
+				{"author.username": me.Username}}
+		case typeParam == "published":
+			typeQuery = []bson.M{
+				{"publishedat": bson.M{"$ne": primitive.Null{}}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
+		case typeParam == "draft":
+			fallthrough
+		default:
+			typeQuery = []bson.M{
+				{"publishedat": bson.M{"$eq": primitive.Null{}}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
 		}
 		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
-			"$and": []bson.M{
-				{"deletedat": trashQuery}},
+			"$and": typeQuery,
 		}, helpers.GetFindOptionsPost(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return

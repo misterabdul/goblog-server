@@ -72,23 +72,35 @@ func GetMyPosts(
 		defer cancel()
 
 		var (
-			me         *models.UserModel
-			posts      []*models.PostModel
-			trashQuery interface{} = primitive.Null{}
-			err        error
+			me        *models.UserModel
+			posts     []*models.PostModel
+			typeParam = c.DefaultQuery("type", "draft")
+			typeQuery []bson.M
+			err       error
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if trashParam := c.DefaultQuery("trash", "false"); trashParam == "true" {
-			trashQuery = bson.M{"$ne": primitive.Null{}}
+		switch true {
+		case typeParam == "trash":
+			typeQuery = []bson.M{
+				{"deletedat": bson.M{"$ne": primitive.Null{}}}}
+		case typeParam == "published":
+			typeQuery = []bson.M{
+				{"publishedat": bson.M{"$ne": primitive.Null{}}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
+		case typeParam == "draft":
+			fallthrough
+		default:
+			typeQuery = []bson.M{
+				{"publishedat": bson.M{"$eq": primitive.Null{}}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
 		}
 		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
-			"$and": []bson.M{
-				{"deletedat": trashQuery},
-				{"author.username": me.Username}},
+			"$and": append(typeQuery,
+				bson.M{"author.username": me.Username}),
 		}, helpers.GetFindOptionsPost(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
