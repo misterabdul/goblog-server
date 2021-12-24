@@ -107,6 +107,7 @@ func GetMyPosts(
 		}
 		if len(posts) == 0 {
 			responses.NoContent(c)
+			return
 		}
 
 		responses.MyPosts(c, posts)
@@ -580,6 +581,7 @@ func GetMyPostComments(
 		}
 		if len(comments) == 0 {
 			responses.NoContent(c)
+			return
 		}
 
 		responses.AuthorizedComments(c, comments)
