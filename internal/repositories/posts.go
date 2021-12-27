@@ -64,11 +64,12 @@ func GetPostWithContent(
 		}
 		return nil, nil, err
 	}
-	if err = getPostContentCollection(dbConn).FindOne(ctx, bson.M{"_id": post.UID}).
+	if err = getPostContentCollection(dbConn).FindOne(ctx, bson.M{"_id": _post.UID}).
 		Decode(&_postContent); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return &_post, nil, err
+			return &_post, nil, nil
 		}
+		return nil, nil, err
 	}
 
 	return &_post, &_postContent, err

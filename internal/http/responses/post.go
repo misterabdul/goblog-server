@@ -72,9 +72,9 @@ func extractPublicPostData(
 			"title":              post.Title,
 			"featuringImagePath": post.FeaturingImagePath,
 			"description":        post.Description,
-			"categories":         post.Categories,
+			"categories":         extractPostCategoryData(post.Categories),
 			"tags":               post.Tags,
-			"author":             post.Author,
+			"author":             extractPostAuthorData(post.Author),
 			"publishedAt":        post.PublishedAt}
 	}
 	return gin.H{
@@ -83,10 +83,10 @@ func extractPublicPostData(
 		"title":              post.Title,
 		"featuringImagePath": post.FeaturingImagePath,
 		"description":        post.Description,
-		"categories":         post.Categories,
+		"categories":         extractPostCategoryData(post.Categories),
 		"tags":               post.Tags,
 		"content":            postContent.Content,
-		"author":             post.Author,
+		"author":             extractPostAuthorData(post.Author),
 		"publishedAt":        post.PublishedAt}
 }
 
@@ -101,9 +101,9 @@ func extractAuthorizedPostData(
 			"title":              post.Title,
 			"featuringImagePath": post.FeaturingImagePath,
 			"description":        post.Description,
-			"categories":         post.Categories,
+			"categories":         extractPostCategoryData(post.Categories),
 			"tags":               post.Tags,
-			"author":             post.Author,
+			"author":             extractPostAuthorData(post.Author),
 			"publishedAt":        post.PublishedAt,
 			"createdAt":          post.CreatedAt,
 			"updatedAt":          post.UpdatedAt,
@@ -115,10 +115,10 @@ func extractAuthorizedPostData(
 		"title":              post.Title,
 		"featuringImagePath": post.FeaturingImagePath,
 		"description":        post.Description,
-		"categories":         post.Categories,
+		"categories":         extractPostCategoryData(post.Categories),
 		"tags":               post.Tags,
 		"content":            postContent.Content,
-		"author":             post.Author,
+		"author":             extractPostAuthorData(post.Author),
 		"publishedAt":        post.PublishedAt,
 		"createdAt":          post.CreatedAt,
 		"updatedAt":          post.UpdatedAt,

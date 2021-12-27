@@ -57,6 +57,7 @@ func GetMyPost(
 		}
 		if post.Author.Username != me.Username {
 			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
+			return
 		}
 
 		responses.MyPost(c, post, postContent)

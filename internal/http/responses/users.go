@@ -45,3 +45,12 @@ func extractAuthorizedUserData(user *models.UserModel) gin.H {
 		"createdAt": user.CreatedAt,
 		"updatedAt": user.UpdatedAt}
 }
+
+func extractPostAuthorData(user models.UserCommonModel) gin.H {
+	return gin.H{
+		"username":  user.Username,
+		"email":     user.Email,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+	}
+}

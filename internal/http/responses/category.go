@@ -57,3 +57,14 @@ func extractAuthorizedCategoryData(category *models.CategoryModel) (extracted gi
 		"updatedAt": category.UpdatedAt,
 		"deletedat": category.DeletedAt}
 }
+
+func extractPostCategoryData(categories []models.CategoryCommonModel) (extracted []gin.H) {
+	for _, category := range categories {
+		extracted = append(extracted, gin.H{
+			"slug": category.Slug,
+			"name": category.Name,
+		})
+	}
+
+	return extracted
+}
