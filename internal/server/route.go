@@ -85,6 +85,7 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 					writer.PATCH("/post/:post", postController.UpdateMyPost(maxCtxDuration, dbConn))
 					writer.DELETE("/post/:post", postController.TrashMyPost(maxCtxDuration, dbConn))
 					writer.PUT("/post/:post/detrash", postController.DetrashMyPost(maxCtxDuration, dbConn))
+					writer.PATCH("/post/:post/detrash", postController.DetrashMyPost(maxCtxDuration, dbConn))
 					writer.DELETE("/post/:post/permanent", postController.DeleteMyPost(maxCtxDuration, dbConn))
 					writer.PUT("/post/:post/publish", postController.PublishMyPost(maxCtxDuration, dbConn))
 					writer.PATCH("/post/:post/publish", postController.PublishMyPost(maxCtxDuration, dbConn))
@@ -107,6 +108,7 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 					editor.PUT("/category/:category", categoryController.UpdateCategory(maxCtxDuration, dbConn))
 					editor.PATCH("/category/:category", categoryController.UpdateCategory(maxCtxDuration, dbConn))
 					editor.PUT("/category/:category/detrash", categoryController.DetrashCategory(maxCtxDuration, dbConn))
+					editor.PATCH("/category/:category/detrash", categoryController.DetrashCategory(maxCtxDuration, dbConn))
 					editor.DELETE("/category/:category", categoryController.TrashCategory(maxCtxDuration, dbConn))
 					editor.DELETE("/category/:category/permanent", categoryController.DeleteCategory(maxCtxDuration, dbConn))
 

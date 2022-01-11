@@ -32,7 +32,7 @@ func GetPost(
 	var _post models.PostModel
 
 	if err = getPostCollection(dbConn).FindOne(ctx, filter, opts...).
-		Decode(&post); err != nil {
+		Decode(&_post); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
