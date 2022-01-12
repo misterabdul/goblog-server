@@ -3,6 +3,7 @@ package users
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -37,7 +38,7 @@ func GetPublicUser(
 		}
 		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"$or": []bson.M{
 					{"_id": userId},
 					{"username": userQuery}}}},
@@ -70,11 +71,12 @@ func GetPublicUsers(
 
 		if users, err = repositories.GetUsers(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": bson.M{"$ne": primitive.Null{}}}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}}},
 		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
+		log.Println(users)
 		if len(users) == 0 {
 			responses.NoContent(c)
 			return

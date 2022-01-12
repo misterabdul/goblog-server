@@ -102,7 +102,8 @@ func UpdateUser(
 ) (err error) {
 	now := primitive.NewDateTimeFromTime(time.Now())
 	user.UpdatedAt = now
-	_, err = getUserCollection(dbConn).UpdateByID(ctx, user.UID, bson.M{"$set": user})
+	_, err = getUserCollection(dbConn).
+		UpdateByID(ctx, user.UID, bson.M{"$set": user})
 
 	return err
 }
@@ -115,7 +116,20 @@ func TrashUser(
 ) (err error) {
 	now := primitive.NewDateTimeFromTime(time.Now())
 	user.DeletedAt = now
-	_, err = getUserCollection(dbConn).UpdateByID(ctx, user.UID, user)
+	_, err = getUserCollection(dbConn).
+		UpdateByID(ctx, user.UID, user)
+
+	return err
+}
+
+func DetrashUser(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	user *models.UserModel,
+) (err error) {
+	user.DeletedAt = nil
+	_, err = getUserCollection(dbConn).
+		UpdateByID(ctx, user.UID, bson.M{"$set": user})
 
 	return err
 }
@@ -126,7 +140,8 @@ func DeleteUser(
 	dbConn *mongo.Database,
 	user *models.UserModel,
 ) (err error) {
-	_, err = getUserCollection(dbConn).DeleteOne(ctx, bson.M{"_id": user.UID})
+	_, err = getUserCollection(dbConn).
+		DeleteOne(ctx, bson.M{"_id": user.UID})
 
 	return err
 }

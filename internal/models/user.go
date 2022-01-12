@@ -27,6 +27,8 @@ type UserCommonModel struct {
 // 1 => Admin
 //
 // 2 => Editor
+//
+// 3 => Writer
 type UserRoles struct {
 	Level int                `json:"level"`
 	Name  string             `json:"name"`

@@ -135,7 +135,8 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 					admin.PUT("/user/:user", userController.UpdateUser(maxCtxDuration, dbConn))
 					admin.PATCH("/user/:user", userController.UpdateUser(maxCtxDuration, dbConn))
 					admin.DELETE("/user/:user", userController.TrashUser(maxCtxDuration, dbConn))
-					admin.DELETE("/user/:user/permanent", userController.DeleteUser(maxCtxDuration, dbConn))
+					admin.PUT("/user/:user/detrash", userController.DetrashUser(maxCtxDuration, dbConn))
+					admin.PATCH("/user/:user/detrash", userController.DetrashUser(maxCtxDuration, dbConn))
 				}
 
 				superadmin := auth.Group("/superadmin")
@@ -145,6 +146,7 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 					superadmin.PATCH("/adminize/:user", userController.AdminizeUser(maxCtxDuration, dbConn))
 					superadmin.PUT("/deadminize/:user", userController.DeadminizeUser(maxCtxDuration, dbConn))
 					superadmin.PATCH("/deadminize/:user", userController.DeadminizeUser(maxCtxDuration, dbConn))
+					superadmin.DELETE("/user/:user/permanent", userController.DeleteUser(maxCtxDuration, dbConn))
 				}
 			}
 		}
