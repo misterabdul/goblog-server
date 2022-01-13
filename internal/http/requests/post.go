@@ -7,7 +7,9 @@ import (
 )
 
 func GetCreatePostForm(c *gin.Context) (form *forms.CreatePostForm, err error) {
-	var _form forms.CreatePostForm
+	var (
+		_form = forms.CreatePostForm{}
+	)
 
 	err = shouldBind(c, &_form)
 
@@ -15,7 +17,9 @@ func GetCreatePostForm(c *gin.Context) (form *forms.CreatePostForm, err error) {
 }
 
 func GetUpdatePostForm(c *gin.Context) (form *forms.UpdatePostForm, err error) {
-	var _form forms.UpdatePostForm
+	var (
+		_form = forms.UpdatePostForm{}
+	)
 
 	err = shouldBind(c, &_form)
 

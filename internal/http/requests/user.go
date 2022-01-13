@@ -8,7 +8,7 @@ import (
 
 func GetCreateUserForm(c *gin.Context) (form *forms.CreateUserForm, err error) {
 	var (
-		_form forms.CreateUserForm
+		_form = forms.CreateUserForm{}
 	)
 
 	err = shouldBind(c, &_form)
@@ -18,7 +18,7 @@ func GetCreateUserForm(c *gin.Context) (form *forms.CreateUserForm, err error) {
 
 func GetUpdateUserForm(c *gin.Context) (form *forms.UpdateUserForm, err error) {
 	var (
-		_form forms.UpdateUserForm
+		_form = forms.UpdateUserForm{}
 	)
 
 	err = shouldBind(c, &_form)

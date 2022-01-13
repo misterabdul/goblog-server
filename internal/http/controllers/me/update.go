@@ -25,21 +25,27 @@ func UpdateMe(
 		defer cancel()
 
 		var (
-			me       *models.UserModel
-			form     *forms.UpdateMeForm
-			err      error
-			writeErr mongo.WriteException
+			me        *models.UserModel
+			updatedMe *models.UserModel
+			form      *forms.UpdateMeForm
+			err       error
+			writeErr  mongo.WriteException
 		)
 
-		if form, err = requests.GetUpdateMeForm(c); err != nil {
-			responses.FormIncorrect(c, err)
-		}
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if err = repositories.UpdateUser(ctx, dbConn,
-			forms.UpdateMeUserModel(form, me)); err != nil {
+		if form, err = requests.GetUpdateMeForm(c); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		if err = form.Validate(ctx, dbConn, me); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		updatedMe = form.ToUserModel(me)
+		if err = repositories.UpdateUser(ctx, dbConn, updatedMe); err != nil {
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, err)
 				return

@@ -23,7 +23,7 @@ func noteRevokeToken(
 	if revokeTokenData, err = createRevokeModelFromClaims(refreshClaims); err != nil {
 		return err
 	}
-	revokeTokenData.Owner = models.CreateUserCommonModel(*user)
+	revokeTokenData.Owner = user.ToCommonModel()
 
 	return repositories.CreateRevokedToken(ctx, dbConn, revokeTokenData)
 }

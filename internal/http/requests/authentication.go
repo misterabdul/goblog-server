@@ -7,7 +7,9 @@ import (
 )
 
 func GetSignInForm(c *gin.Context) (form *forms.SignInForm, err error) {
-	var _form forms.SignInForm
+	var (
+		_form = forms.SignInForm{}
+	)
 
 	err = shouldBind(c, &_form)
 

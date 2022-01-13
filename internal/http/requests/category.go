@@ -7,7 +7,9 @@ import (
 )
 
 func GetCreateCategoryForm(c *gin.Context) (form *forms.CreateCategoryForm, err error) {
-	var _form forms.CreateCategoryForm
+	var (
+		_form = forms.CreateCategoryForm{}
+	)
 
 	err = shouldBind(c, &_form)
 
@@ -15,7 +17,9 @@ func GetCreateCategoryForm(c *gin.Context) (form *forms.CreateCategoryForm, err 
 }
 
 func GetUpdateCategoryForm(c *gin.Context) (form *forms.UpdateCategoryForm, err error) {
-	var _form forms.UpdateCategoryForm
+	var (
+		_form = forms.UpdateCategoryForm{}
+	)
 
 	err = shouldBind(c, &_form)
 

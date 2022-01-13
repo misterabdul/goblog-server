@@ -62,16 +62,29 @@ func extractAuthorizedUserData(user *models.UserModel) gin.H {
 		"email":     user.Email,
 		"firstName": user.FirstName,
 		"lastName":  user.LastName,
-		"roles":     user.Roles,
+		"roles":     extractRoles(user.Roles),
 		"createdAt": user.CreatedAt,
 		"updatedAt": user.UpdatedAt}
 }
 
 func extractPostAuthorData(user models.UserCommonModel) gin.H {
 	return gin.H{
+		"uid":       user.UID,
 		"username":  user.Username,
 		"email":     user.Email,
 		"firstName": user.FirstName,
-		"lastName":  user.LastName,
+		"lastName":  user.LastName}
+}
+
+func extractRoles(roles []models.UserRole) []gin.H {
+	var data = []gin.H{}
+
+	for _, role := range roles {
+		data = append(data, gin.H{
+			"level": role.Level,
+			"name":  role.Name,
+			"since": role.Since})
 	}
+
+	return data
 }

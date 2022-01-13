@@ -203,13 +203,14 @@ func UpdatePost(
 		defer cancel()
 
 		var (
-			post        *models.PostModel
-			postContent *models.PostContentModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			form        *forms.UpdatePostForm
-			err         error
-			writeErr    mongo.WriteException
+			post               *models.PostModel
+			updatedPost        *models.PostModel
+			postContent        *models.PostContentModel
+			updatedPostContent *models.PostContentModel
+			postId             primitive.ObjectID
+			postIdQuery        = c.Param("post")
+			form               *forms.UpdatePostForm
+			err                error
 		)
 
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
@@ -232,12 +233,17 @@ func UpdatePost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		post, postContent = forms.UpdatePostModel(form, post, postContent)
-		if err = repositories.UpdatePost(ctx, dbConn, post, postContent); err != nil {
-			if errors.As(err, &writeErr) {
-				responses.FormIncorrect(c, err)
-				return
-			}
+		if err = form.Validate(ctx, dbConn); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		if updatedPost, updatedPostContent, err = form.
+			ToPostModel(post, postContent); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		if err = repositories.UpdatePost(ctx, dbConn,
+			updatedPost, updatedPostContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

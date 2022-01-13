@@ -72,7 +72,7 @@ func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) (err error) {
 		Email:     "superadmin@example.com",
 		Username:  "superadmin",
 		Password:  password,
-		Roles: []models.UserRoles{{
+		Roles: []models.UserRole{{
 			Level: 0,
 			Name:  "SuperAdmin",
 			Since: now,

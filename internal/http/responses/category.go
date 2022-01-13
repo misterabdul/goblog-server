@@ -61,6 +61,7 @@ func extractAuthorizedCategoryData(category *models.CategoryModel) (extracted gi
 func extractPostCategoryData(categories []models.CategoryCommonModel) (extracted []gin.H) {
 	for _, category := range categories {
 		extracted = append(extracted, gin.H{
+			"uid":  category.UID,
 			"slug": category.Slug,
 			"name": category.Name,
 		})

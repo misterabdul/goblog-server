@@ -7,7 +7,9 @@ import (
 )
 
 func GetCreateCommentForm(c *gin.Context) (form *forms.CreateCommentForm, err error) {
-	var _form forms.CreateCommentForm
+	var (
+		_form = forms.CreateCommentForm{}
+	)
 
 	err = shouldBind(c, &_form)
 
@@ -15,7 +17,9 @@ func GetCreateCommentForm(c *gin.Context) (form *forms.CreateCommentForm, err er
 }
 
 func GetReplyCommentForm(c *gin.Context) (form *forms.ReplyCommmentForm, err error) {
-	var _form forms.ReplyCommmentForm
+	var (
+		_form = forms.ReplyCommmentForm{}
+	)
 
 	err = shouldBind(c, &_form)
 

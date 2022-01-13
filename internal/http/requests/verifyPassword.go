@@ -7,7 +7,9 @@ import (
 )
 
 func GetPasswordConfirmForm(c *gin.Context) (form *forms.PasswordConfirmForm, err error) {
-	var _form forms.PasswordConfirmForm
+	var (
+		_form = forms.PasswordConfirmForm{}
+	)
 
 	err = shouldBind(c, &_form)
 

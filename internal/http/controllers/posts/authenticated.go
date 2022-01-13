@@ -129,7 +129,6 @@ func CreatePost(
 			postContent *models.PostContentModel
 			form        *forms.CreatePostForm
 			err         error
-			writeErr    mongo.WriteException
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
@@ -140,12 +139,15 @@ func CreatePost(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		post, postContent = forms.CreatePostModel(form, me)
+		if err = form.Validate(ctx, dbConn); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		if post, postContent, err = form.ToPostModel(me); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
 		if err = repositories.CreatePost(ctx, dbConn, post, postContent); err != nil {
-			if errors.As(err, &writeErr) {
-				responses.FormIncorrect(c, err)
-				return
-			}
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -269,14 +271,15 @@ func UpdateMyPost(
 		defer cancel()
 
 		var (
-			me          *models.UserModel
-			post        *models.PostModel
-			postContent *models.PostContentModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			form        *forms.UpdatePostForm
-			err         error
-			writeErr    mongo.WriteException
+			me                 *models.UserModel
+			post               *models.PostModel
+			updatedPost        *models.PostModel
+			postContent        *models.PostContentModel
+			updatedPostContent *models.PostContentModel
+			postId             primitive.ObjectID
+			postIdQuery        = c.Param("post")
+			form               *forms.UpdatePostForm
+			err                error
 		)
 
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
@@ -307,12 +310,17 @@ func UpdateMyPost(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		post, postContent = forms.UpdatePostModel(form, post, postContent)
-		if err = repositories.UpdatePost(ctx, dbConn, post, postContent); err != nil {
-			if errors.As(err, &writeErr) {
-				responses.FormIncorrect(c, err)
-				return
-			}
+		if err = form.Validate(ctx, dbConn); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		if updatedPost, updatedPostContent, err = form.
+			ToPostModel(post, postContent); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		if err = repositories.UpdatePost(ctx, dbConn,
+			updatedPost, updatedPostContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

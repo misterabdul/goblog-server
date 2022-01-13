@@ -7,7 +7,9 @@ import (
 )
 
 func GetUpdateMeForm(c *gin.Context) (form *forms.UpdateMeForm, err error) {
-	var _form forms.UpdateMeForm
+	var (
+		_form = forms.UpdateMeForm{}
+	)
 
 	err = shouldBind(c, &_form)
 
@@ -15,7 +17,9 @@ func GetUpdateMeForm(c *gin.Context) (form *forms.UpdateMeForm, err error) {
 }
 
 func GetUpdateMePasswordForm(c *gin.Context) (form *forms.UpdateMePasswordForm, err error) {
-	var _form forms.UpdateMePasswordForm
+	var (
+		_form = forms.UpdateMePasswordForm{}
+	)
 
 	err = shouldBind(c, &_form)
 

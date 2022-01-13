@@ -37,10 +37,10 @@ func GetCategory(
 			responses.NotFound(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn,
-			bson.M{"$and": []bson.M{
-				{"_id": categoryId},
-			}}); err != nil {
+		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+			"$and": []bson.M{
+				{"_id": categoryId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -70,10 +70,10 @@ func GetCategories(
 		if trashParam := c.DefaultQuery("trash", "false"); trashParam == "true" {
 			trashQuery = bson.M{"$ne": primitive.Null{}}
 		}
-		if categories, err = repositories.GetCategories(ctx, dbConn,
-			bson.M{"$and": []bson.M{
-				{"deletedat": trashQuery},
-			}}, helpers.GetFindOptions(c)); err != nil {
+		if categories, err = repositories.GetCategories(ctx, dbConn, bson.M{
+			"$and": []bson.M{
+				{"deletedat": trashQuery}},
+		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -105,7 +105,11 @@ func CreateCategory(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		category = forms.CreateCategoryModel(form)
+		if err = form.Validate(ctx, dbConn); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		category = form.ToCategoryModel()
 		if err = repositories.CreateCategory(ctx, dbConn, category); err != nil {
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, writeErr.WriteErrors)
@@ -129,6 +133,7 @@ func UpdateCategory(
 
 		var (
 			category        *models.CategoryModel
+			updatedCategory *models.CategoryModel
 			categoryId      primitive.ObjectID
 			form            *forms.UpdateCategoryForm
 			categoryIdQuery = c.Param("category")
@@ -140,15 +145,11 @@ func UpdateCategory(
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if form, err = requests.GetUpdateCategoryForm(c); err != nil {
-			responses.FormIncorrect(c, err)
-			return
-		}
-		if category, err = repositories.GetCategory(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
-				{"_id": categoryId},
-			}}); err != nil {
+				{"_id": categoryId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -156,8 +157,17 @@ func UpdateCategory(
 			responses.NotFound(c, errors.New("category not found"))
 			return
 		}
+		if form, err = requests.GetUpdateCategoryForm(c); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		if err = form.Validate(ctx, dbConn); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		updatedCategory = form.ToCategoryModel(category)
 		if err = repositories.UpdateCategory(
-			ctx, dbConn, forms.UpdateCategoryModel(form, category)); err != nil {
+			ctx, dbConn, updatedCategory); err != nil {
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, writeErr.WriteErrors)
 				return
@@ -189,10 +199,11 @@ func TrashCategory(
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{"$and": []bson.M{
-			{"deletedat": primitive.Null{}},
-			{"_id": categoryId},
-		}}); err != nil {
+		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+			"$and": []bson.M{
+				{"deletedat": primitive.Null{}},
+				{"_id": categoryId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -232,11 +243,11 @@ func DetrashCategory(
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn,
-			bson.M{"$and": []bson.M{
+		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": categoryId},
-			}}); err != nil {
+				{"_id": categoryId}},
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -129,39 +129,24 @@ func CreatePublicPostComment(
 		defer cancel()
 
 		var (
-			comment  *models.CommentModel
-			post     *models.PostModel
-			form     *forms.CreateCommentForm
-			err      error
-			writeErr mongo.WriteException
+			comment *models.CommentModel
+			form    *forms.CreateCommentForm
+			err     error
 		)
 
 		if form, err = requests.GetCreateCommentForm(c); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if comment, err = forms.CreateCommentModel(form); err != nil {
+		if err = form.Validate(ctx, dbConn); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
-			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": comment.PostUid}},
-		}); err != nil {
+		if comment, err = form.ToCommentModel(); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		if post == nil {
-			responses.NotFound(c, errors.New("post not found"))
-			return
-		}
 		if err = repositories.CreateComment(ctx, dbConn, comment); err != nil {
-			if errors.As(err, &writeErr) {
-				responses.FormIncorrect(c, err)
-				return
-			}
 			responses.InternalServerError(c, err)
 			return
 		}
