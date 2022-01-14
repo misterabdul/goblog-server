@@ -14,8 +14,8 @@ import (
 )
 
 type CreateUserForm struct {
-	FirstName       string `json:"firstName" binding:"max:50"`
-	LastName        string `json:"lastName" binding:"max:50"`
+	FirstName       string `json:"firstName" binding:"max=50"`
+	LastName        string `json:"lastName" binding:"max=50"`
 	Username        string `json:"username" binding:"required,alphanum,min=5,max=16"`
 	Email           string `json:"email" binding:"required,email"`
 	Password        string `json:"password" binding:"required,min=8,max=32"`
