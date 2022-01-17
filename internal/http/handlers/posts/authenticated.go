@@ -10,8 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/http/controllers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
+	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
@@ -19,7 +19,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-func GetPost(
+func GetMyPost(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -28,6 +28,7 @@ func GetPost(
 		defer cancel()
 
 		var (
+			me          *models.UserModel
 			post        *models.PostModel
 			postContent *models.PostContentModel
 			postId      primitive.ObjectID
@@ -35,6 +36,10 @@ func GetPost(
 			err         error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -50,12 +55,16 @@ func GetPost(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
+			return
+		}
 
-		responses.AuthorizedPost(c, post, postContent)
+		responses.MyPost(c, post, postContent)
 	}
 }
 
-func GetPosts(
+func GetMyPosts(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -78,8 +87,7 @@ func GetPosts(
 		switch true {
 		case typeParam == "trash":
 			typeQuery = []bson.M{
-				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"author.username": me.Username}}
+				{"deletedat": bson.M{"$ne": primitive.Null{}}}}
 		case typeParam == "published":
 			typeQuery = []bson.M{
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
@@ -92,7 +100,8 @@ func GetPosts(
 				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
 		}
 		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
-			"$and": typeQuery,
+			"$and": append(typeQuery,
+				bson.M{"author.username": me.Username}),
 		}, helpers.GetFindOptionsPost(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -102,11 +111,11 @@ func GetPosts(
 			return
 		}
 
-		responses.AuthorizedPosts(c, posts)
+		responses.MyPosts(c, posts)
 	}
 }
 
-func PublishPost(
+func CreatePost(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -115,12 +124,58 @@ func PublishPost(
 		defer cancel()
 
 		var (
+			me          *models.UserModel
+			post        *models.PostModel
+			postContent *models.PostContentModel
+			form        *forms.CreatePostForm
+			err         error
+		)
+
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
+		if form, err = requests.GetCreatePostForm(c); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		if err = form.Validate(ctx, dbConn); err != nil {
+			responses.FormIncorrect(c, err)
+			return
+		}
+		if post, postContent, err = form.ToPostModel(me); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		if err = repositories.CreatePost(ctx, dbConn, post, postContent); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+
+		responses.MyPost(c, post, postContent)
+	}
+}
+
+func PublishMyPost(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
+		defer cancel()
+
+		var (
+			me          *models.UserModel
 			post        *models.PostModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -134,7 +189,11 @@ func PublishPost(
 			return
 		}
 		if post == nil {
-			responses.NotFound(c, err)
+			responses.NotFound(c, errors.New("post not found"))
+			return
+		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if post.PublishedAt != nil {
@@ -150,7 +209,7 @@ func PublishPost(
 	}
 }
 
-func DepublishPost(
+func DepublishMyPost(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -159,12 +218,17 @@ func DepublishPost(
 		defer cancel()
 
 		var (
+			me          *models.UserModel
 			post        *models.PostModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -179,6 +243,10 @@ func DepublishPost(
 		}
 		if post == nil {
 			responses.NotFound(c, errors.New("post not found"))
+			return
+		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if post.PublishedAt == nil {
@@ -194,7 +262,7 @@ func DepublishPost(
 	}
 }
 
-func UpdatePost(
+func UpdateMyPost(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -203,6 +271,7 @@ func UpdatePost(
 		defer cancel()
 
 		var (
+			me                 *models.UserModel
 			post               *models.PostModel
 			updatedPost        *models.PostModel
 			postContent        *models.PostContentModel
@@ -213,6 +282,10 @@ func UpdatePost(
 			err                error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -229,8 +302,12 @@ func UpdatePost(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
+			return
+		}
 		if form, err = requests.GetUpdatePostForm(c); err != nil {
-			responses.IncorrectPostId(c, err)
+			responses.FormIncorrect(c, err)
 			return
 		}
 		if err = form.Validate(ctx, dbConn); err != nil {
@@ -239,7 +316,7 @@ func UpdatePost(
 		}
 		if updatedPost, updatedPostContent, err = form.
 			ToPostModel(post, postContent); err != nil {
-			responses.InternalServerError(c, err)
+			responses.FormIncorrect(c, err)
 			return
 		}
 		if err = repositories.UpdatePost(ctx, dbConn,
@@ -252,7 +329,7 @@ func UpdatePost(
 	}
 }
 
-func TrashPost(
+func TrashMyPost(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -261,12 +338,17 @@ func TrashPost(
 		defer cancel()
 
 		var (
+			me          *models.UserModel
 			post        *models.PostModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -283,8 +365,8 @@ func TrashPost(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if post.DeletedAt != nil {
-			responses.NoContent(c)
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("your are not the author of the post"))
 			return
 		}
 		if err = repositories.TrashPost(ctx, dbConn, post); err != nil {
@@ -296,7 +378,7 @@ func TrashPost(
 	}
 }
 
-func DetrashPost(
+func DetrashMyPost(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -305,12 +387,17 @@ func DetrashPost(
 		defer cancel()
 
 		var (
+			me          *models.UserModel
 			post        *models.PostModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -324,7 +411,11 @@ func DetrashPost(
 			return
 		}
 		if post == nil {
-			responses.NotFound(c, errors.New("post not found"))
+			responses.NotFound(c, err)
+			return
+		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if err = repositories.DetrashPost(ctx, dbConn, post); err != nil {
@@ -336,7 +427,7 @@ func DetrashPost(
 	}
 }
 
-func DeletePost(
+func DeleteMyPost(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -345,6 +436,7 @@ func DeletePost(
 		defer cancel()
 
 		var (
+			me          *models.UserModel
 			post        *models.PostModel
 			postContent *models.PostContentModel
 			postId      primitive.ObjectID
@@ -352,6 +444,10 @@ func DeletePost(
 			err         error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -365,7 +461,11 @@ func DeletePost(
 			return
 		}
 		if post == nil {
-			responses.NotFound(c, errors.New("post not found"))
+			responses.NotFound(c, err)
+			return
+		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if err = repositories.DeletePost(ctx, dbConn, post, postContent); err != nil {
@@ -377,7 +477,7 @@ func DeletePost(
 	}
 }
 
-func GetPostComment(
+func GetMyPostComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -386,6 +486,7 @@ func GetPostComment(
 		defer cancel()
 
 		var (
+			me             *models.UserModel
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -393,6 +494,10 @@ func GetPostComment(
 			err            error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
@@ -411,7 +516,8 @@ func GetPostComment(
 		}
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}}},
+				{"deletedat": primitive.Null{}},
+				{"_id": comment.PostUid}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -420,12 +526,16 @@ func GetPostComment(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
+			return
+		}
 
 		responses.AuthorizedComment(c, comment)
 	}
 }
 
-func GetPostComments(
+func GetMyPostComments(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -434,6 +544,7 @@ func GetPostComments(
 		defer cancel()
 
 		var (
+			me          *models.UserModel
 			post        *models.PostModel
 			comments    []*models.CommentModel
 			postId      primitive.ObjectID
@@ -442,6 +553,10 @@ func GetPostComments(
 			err         error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -461,10 +576,14 @@ func GetPostComments(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
+			return
+		}
 		if comments, err = repositories.GetComments(ctx, dbConn, bson.M{
 			"$and": []bson.M{
 				{"deletedat": trashQuery},
-				{"_id": post.UID}},
+				{"postuid": post.UID}},
 		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -478,7 +597,7 @@ func GetPostComments(
 	}
 }
 
-func TrashPostComment(
+func TrashMyPostComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -487,6 +606,7 @@ func TrashPostComment(
 		defer cancel()
 
 		var (
+			me             *models.UserModel
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -494,13 +614,17 @@ func TrashPostComment(
 			err            error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
 		}
 		if comment, err = repositories.GetComment(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
+				{"deleted": primitive.Null{}},
 				{"_id": commentId}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
@@ -512,7 +636,7 @@ func TrashPostComment(
 		}
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
+				{"deleted": primitive.Null{}},
 				{"_id": comment.PostUid}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
@@ -520,6 +644,10 @@ func TrashPostComment(
 		}
 		if post == nil {
 			responses.NotFound(c, errors.New("post not found"))
+			return
+		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if err = repositories.TrashComment(ctx, dbConn, comment); err != nil {
@@ -531,7 +659,7 @@ func TrashPostComment(
 	}
 }
 
-func DetrashPostComment(
+func DetrashMyPostComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -540,6 +668,7 @@ func DetrashPostComment(
 		defer cancel()
 
 		var (
+			me             *models.UserModel
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -547,6 +676,10 @@ func DetrashPostComment(
 			err            error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
@@ -575,6 +708,10 @@ func DetrashPostComment(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
+			return
+		}
 		if err = repositories.DetrashComment(ctx, dbConn, comment); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -584,7 +721,7 @@ func DetrashPostComment(
 	}
 }
 
-func DeletePostComment(
+func DeleteMyPostComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -593,6 +730,7 @@ func DeletePostComment(
 		defer cancel()
 
 		var (
+			me             *models.UserModel
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -600,6 +738,10 @@ func DeletePostComment(
 			err            error
 		)
 
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
@@ -618,7 +760,7 @@ func DeletePostComment(
 		}
 		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": bson.M{"$ne": primitive.Null{}}},
+				{"deletedat": primitive.Null{}},
 				{"_id": comment.PostUid}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
@@ -626,6 +768,10 @@ func DeletePostComment(
 		}
 		if post == nil {
 			responses.NotFound(c, errors.New("post not found"))
+			return
+		}
+		if post.Author.Username != me.Username {
+			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if err = repositories.DeleteComment(ctx, dbConn, comment); err != nil {

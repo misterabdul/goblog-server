@@ -1,9 +1,8 @@
-package users
+package categories
 
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,14 +10,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/http/controllers/helpers"
+	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
-// Get single user record publicly
-func GetPublicUser(
+func GetPublicCategory(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -27,36 +25,34 @@ func GetPublicUser(
 		defer cancel()
 
 		var (
-			user      *models.UserModel
-			userId    primitive.ObjectID
-			userQuery = c.Param("user")
-			err       error
+			category      *models.CategoryModel
+			categoryId    primitive.ObjectID
+			categoryQuery = c.Param("category")
+			err           error
 		)
 
-		if userId, err = primitive.ObjectIDFromHex(userQuery); err != nil {
-			userId = primitive.ObjectID{}
+		if categoryId, err = primitive.ObjectIDFromHex(categoryQuery); err != nil {
+			categoryId = primitive.ObjectID{}
 		}
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"deletedat": primitive.Null{}},
 				{"$or": []bson.M{
-					{"_id": userId},
-					{"username": userQuery}}}},
+					{"_id": categoryId},
+					{"slug": categoryQuery}}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		if user == nil {
-			responses.NotFound(c, errors.New("user not found"))
-			return
+		if category == nil {
+			responses.NotFound(c, errors.New("category not found"))
 		}
 
-		responses.PublicUser(c, user)
+		responses.PublicCategory(c, category)
 	}
 }
 
-// Get multiple user records publicly
-func GetPublicUsers(
+func GetPublicCategories(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
@@ -65,23 +61,21 @@ func GetPublicUsers(
 		defer cancel()
 
 		var (
-			users []*models.UserModel
-			err   error
+			categories []*models.CategoryModel
+			err        error
 		)
 
-		if users, err = repositories.GetUsers(ctx, dbConn, bson.M{
+		if categories, err = repositories.GetCategories(ctx, dbConn, bson.M{
 			"$and": []bson.M{
-				{"deletedat": bson.M{"$eq": primitive.Null{}}}},
+				{"deletedat": primitive.Null{}}},
 		}, helpers.GetFindOptions(c)); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		log.Println(users)
-		if len(users) == 0 {
+		if len(categories) == 0 {
 			responses.NoContent(c)
-			return
 		}
 
-		responses.PublicUsers(c, users)
+		responses.PublicCategories(c, categories)
 	}
 }

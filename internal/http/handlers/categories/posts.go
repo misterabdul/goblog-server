@@ -9,7 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/http/controllers/helpers"
+	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"

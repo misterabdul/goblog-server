@@ -10,8 +10,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/http/controllers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
+	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
