@@ -117,7 +117,7 @@ func TrashUser(
 	now := primitive.NewDateTimeFromTime(time.Now())
 	user.DeletedAt = now
 	_, err = getUserCollection(dbConn).
-		UpdateByID(ctx, user.UID, user)
+		UpdateByID(ctx, user.UID, bson.M{"$set": user})
 
 	return err
 }
