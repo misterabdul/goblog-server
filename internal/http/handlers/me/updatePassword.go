@@ -12,7 +12,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func UpdateMePassword(
@@ -20,16 +20,16 @@ func UpdateMePassword(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			me        *models.UserModel
-			updatedMe *models.UserModel
-			form      *forms.UpdateMePasswordForm
-			err       error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
+			me          *models.UserModel
+			updatedMe   *models.UserModel
+			form        *forms.UpdateMePasswordForm
+			err         error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -46,7 +46,7 @@ func UpdateMePassword(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = repositories.UpdateUser(ctx, dbConn, updatedMe); err != nil {
+		if err = userService.UpdateUser(updatedMe); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

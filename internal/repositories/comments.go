@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,7 +12,9 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getCommentCollection(dbConn *mongo.Database) (commentCollection *mongo.Collection) {
+func getCommentCollection(
+	dbConn *mongo.Database,
+) (commentCollection *mongo.Collection) {
 	return dbConn.Collection("comments")
 }
 
@@ -25,7 +26,9 @@ func GetComment(
 	opts ...*options.FindOneOptions,
 ) (comment *models.CommentModel, err error) {
 	var _comment models.CommentModel
-	if err = getCommentCollection(dbConn).FindOne(ctx, filter, opts...).
+	if err = getCommentCollection(dbConn).FindOne(
+		ctx, filter, opts...,
+	).
 		Decode(&_comment); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -48,7 +51,9 @@ func GetComments(
 		cursor  *mongo.Cursor
 	)
 
-	if cursor, err = getCommentCollection(dbConn).Find(ctx, filter, opts...); err != nil {
+	if cursor, err = getCommentCollection(dbConn).Find(
+		ctx, filter, opts...,
+	); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -63,23 +68,21 @@ func GetComments(
 	return comments, nil
 }
 
-// Create new comment
-func CreateComment(
+// Save new comment
+func SaveComment(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	comment *models.CommentModel,
 ) (err error) {
 	var (
-		now        = primitive.NewDateTimeFromTime(time.Now())
 		insRes     *mongo.InsertOneResult
 		insertedID primitive.ObjectID
 		ok         bool
 	)
 
-	comment.UID = primitive.NewObjectID()
-	comment.CreatedAt = now
-	comment.DeletedAt = nil
-	if insRes, err = getCommentCollection(dbConn).InsertOne(ctx, comment); err != nil {
+	if insRes, err = getCommentCollection(dbConn).InsertOne(
+		ctx, comment,
+	); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -92,38 +95,26 @@ func CreateComment(
 	return nil
 }
 
-// Mark comment trash
-func TrashComment(
+// Update comment
+func UpdateComment(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	comment *models.CommentModel,
 ) (err error) {
-	now := primitive.NewDateTimeFromTime(time.Now())
-	comment.DeletedAt = now
-	_, err = getCommentCollection(dbConn).UpdateByID(ctx, comment.UID, bson.M{"$set": comment})
+	_, err = getCommentCollection(dbConn).UpdateByID(
+		ctx, comment.UID, bson.M{"$set": comment})
 
 	return err
 }
 
-// Unmark the trash from comment
-func DetrashComment(
-	ctx context.Context,
-	dbConn *mongo.Database,
-	comment *models.CommentModel,
-) (err error) {
-	comment.DeletedAt = nil
-	_, err = getCommentCollection(dbConn).UpdateByID(ctx, comment.UID, bson.M{"$set": comment})
-
-	return err
-}
-
-// Permanently delete comment
+// Delete comment
 func DeleteComment(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	comment *models.CommentModel,
 ) (err error) {
-	_, err = getCommentCollection(dbConn).DeleteOne(ctx, bson.M{"_id": comment.UID})
+	_, err = getCommentCollection(dbConn).DeleteOne(
+		ctx, bson.M{"_id": comment.UID})
 
 	return err
 }

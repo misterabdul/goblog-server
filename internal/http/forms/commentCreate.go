@@ -1,16 +1,14 @@
 package forms
 
 import (
-	"context"
 	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 type CreateCommentForm struct {
@@ -23,14 +21,13 @@ type CreateCommentForm struct {
 }
 
 func (form *CreateCommentForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	commentService *service.Service,
 ) (err error) {
 	var (
 		post *models.PostModel
 	)
 
-	if post, err = findPostForComment(ctx, dbConn, form.PostUid); err != nil {
+	if post, err = findPostForComment(commentService, form.PostUid); err != nil {
 		return err
 	}
 	form.realPostUid = post.UID
@@ -59,11 +56,10 @@ func (form *CreateCommentForm) ToCommentModel() (model *models.CommentModel, err
 }
 
 func findPostForComment(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	commentService *service.Service,
 	formPostUid string,
 ) (post *models.PostModel, err error) {
-	if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+	if post, err = commentService.GetPost(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
 			{"publishedat": bson.M{"$ne": primitive.Null{}}},

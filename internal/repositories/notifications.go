@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,7 +12,9 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getNotificationCollection(dbConn *mongo.Database) (notificationCollection *mongo.Collection) {
+func getNotificationCollection(
+	dbConn *mongo.Database,
+) (notificationCollection *mongo.Collection) {
 	return dbConn.Collection("notifications")
 }
 
@@ -26,8 +27,9 @@ func GetNotification(
 ) (notification *models.NotificationModel, err error) {
 	var _notification models.NotificationModel
 
-	if err = getNotificationCollection(dbConn).FindOne(ctx, filter, opts...).
-		Decode(&_notification); err != nil {
+	if err = getNotificationCollection(dbConn).FindOne(
+		ctx, filter, opts...,
+	).Decode(&_notification); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -49,7 +51,9 @@ func GetNotifications(
 		cursor       *mongo.Cursor
 	)
 
-	if cursor, err = getNotificationCollection(dbConn).Find(ctx, filter, opts...); err != nil {
+	if cursor, err = getNotificationCollection(dbConn).Find(
+		ctx, filter, opts...,
+	); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -64,23 +68,21 @@ func GetNotifications(
 	return notifications, nil
 }
 
-// Create new notification
-func CreateNotification(
+// Save new notification
+func SaveNotification(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	notification *models.NotificationModel,
 ) (err error) {
 	var (
-		now        = primitive.NewDateTimeFromTime(time.Now())
 		insRes     *mongo.InsertOneResult
 		insertedID primitive.ObjectID
 		ok         bool
 	)
 
-	notification.UID = primitive.NewObjectID()
-	notification.CreatedAt = now
-	notification.DeletedAt = nil
-	if insRes, err = getNotificationCollection(dbConn).InsertOne(ctx, notification); err != nil {
+	if insRes, err = getNotificationCollection(dbConn).InsertOne(
+		ctx, notification,
+	); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -93,27 +95,26 @@ func CreateNotification(
 	return nil
 }
 
-// Read notification
-func ReadNotification(
+// Update notification
+func UpdateNotification(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	notification *models.NotificationModel,
 ) (err error) {
-	now := primitive.NewDateTimeFromTime(time.Now())
-	notification.ReadAt = now
-	_, err = getNotificationCollection(dbConn).
-		UpdateByID(ctx, notification.UID, bson.M{"$set": notification})
+	_, err = getNotificationCollection(dbConn).UpdateByID(
+		ctx, notification.UID, bson.M{"$set": notification})
 
 	return err
 }
 
-// Permanently delete notification
+// Delete notification
 func DeleteNotification(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	notification *models.NotificationModel,
 ) (err error) {
-	_, err = getNotificationCollection(dbConn).DeleteOne(ctx, bson.M{"_id": notification.UID})
+	_, err = getNotificationCollection(dbConn).DeleteOne(
+		ctx, bson.M{"_id": notification.UID})
 
 	return err
 }

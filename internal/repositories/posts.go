@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,7 +12,9 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getPostCollection(dbConn *mongo.Database) (postCollection *mongo.Collection) {
+func getPostCollection(
+	dbConn *mongo.Database,
+) (postCollection *mongo.Collection) {
 	return dbConn.Collection("posts")
 }
 
@@ -31,8 +32,9 @@ func GetPost(
 ) (post *models.PostModel, err error) {
 	var _post models.PostModel
 
-	if err = getPostCollection(dbConn).FindOne(ctx, filter, opts...).
-		Decode(&_post); err != nil {
+	if err = getPostCollection(dbConn).FindOne(
+		ctx, filter, opts...,
+	).Decode(&_post); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -57,15 +59,17 @@ func GetPostWithContent(
 		_postContent models.PostContentModel
 	)
 
-	if err = getPostCollection(dbConn).FindOne(ctx, filter).
-		Decode(&_post); err != nil {
+	if err = getPostCollection(dbConn).FindOne(
+		ctx, filter,
+	).Decode(&_post); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil, nil
 		}
 		return nil, nil, err
 	}
-	if err = getPostContentCollection(dbConn).FindOne(ctx, bson.M{"_id": _post.UID}).
-		Decode(&_postContent); err != nil {
+	if err = getPostContentCollection(dbConn).FindOne(
+		ctx, bson.M{"_id": _post.UID},
+	).Decode(&_postContent); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return &_post, nil, nil
 		}
@@ -87,7 +91,9 @@ func GetPosts(
 		cursor *mongo.Cursor
 	)
 
-	if cursor, err = getPostCollection(dbConn).Find(ctx, filter, opts...); err != nil {
+	if cursor, err = getPostCollection(dbConn).Find(
+		ctx, filter, opts...,
+	); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -102,15 +108,14 @@ func GetPosts(
 	return posts, nil
 }
 
-// Create new post
-func CreatePost(
+// Save new post with its content
+func SavePostWithContent(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	post *models.PostModel,
 	postContent *models.PostContentModel,
 ) (err error) {
 	var (
-		now        = primitive.NewDateTimeFromTime(time.Now())
 		session    mongo.Session
 		insRes     *mongo.InsertOneResult
 		insertedID interface{}
@@ -126,12 +131,9 @@ func CreatePost(
 			return sErr
 		}
 
-		post.UID = primitive.NewObjectID()
-		post.CreatedAt = now
-		post.UpdatedAt = now
-		post.DeletedAt = nil
-		if insRes, sErr = getPostCollection(dbConn).
-			InsertOne(sCtx, post); sErr != nil {
+		if insRes, sErr = getPostCollection(dbConn).InsertOne(
+			sCtx, post,
+		); sErr != nil {
 			return sErr
 		}
 		if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -140,9 +142,9 @@ func CreatePost(
 		if post.UID != insertedID {
 			return errors.New("inserted uid is not same with database")
 		}
-		postContent.UID = post.UID
-		if insRes, sErr = getPostContentCollection(dbConn).
-			InsertOne(sCtx, postContent); sErr != nil {
+		if insRes, sErr = getPostContentCollection(dbConn).InsertOne(
+			sCtx, postContent,
+		); sErr != nil {
 			return sErr
 		}
 		if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -163,44 +165,29 @@ func CreatePost(
 	return nil
 }
 
-// Publish the post
-func PublishPost(
-	ctx context.Context,
-	dbConn *mongo.Database,
-	post *models.PostModel,
-) (err error) {
-	now := primitive.NewDateTimeFromTime(time.Now())
-	post.PublishedAt = now
-	_, err = getPostCollection(dbConn).
-		UpdateByID(ctx, post.UID, bson.M{"$set": post})
-
-	return err
-}
-
-// Depublish the post
-func DepublishPost(
-	ctx context.Context,
-	dbConn *mongo.Database,
-	post *models.PostModel,
-) (err error) {
-	post.PublishedAt = nil
-	_, err = getPostCollection(dbConn).
-		UpdateByID(ctx, post.UID, bson.M{"$set": post})
-
-	return err
-}
-
 // Update post
 func UpdatePost(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	post *models.PostModel,
+) (err error) {
+	if _, err = getPostCollection(dbConn).UpdateByID(
+		ctx, post.UID, bson.M{"$set": post},
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Update post with its content
+func UpdatePostWithContent(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	post *models.PostModel,
 	postContent *models.PostContentModel,
 ) (err error) {
-	var (
-		now     = primitive.NewDateTimeFromTime(time.Now())
-		session mongo.Session
-	)
+	var session mongo.Session
 
 	if post.UID != postContent.UID {
 		return errors.New("post id not same as post content id")
@@ -213,13 +200,14 @@ func UpdatePost(
 		if sErr = sCtx.StartTransaction(); sErr != nil {
 			return sErr
 		}
-		post.UpdatedAt = now
-		if _, sErr = getPostCollection(dbConn).
-			UpdateByID(sCtx, post.UID, bson.M{"$set": post}); sErr != nil {
+		if _, sErr = getPostCollection(dbConn).UpdateByID(
+			sCtx, post.UID, bson.M{"$set": post},
+		); sErr != nil {
 			return sErr
 		}
-		if _, sErr = getPostContentCollection(dbConn).
-			UpdateByID(sCtx, postContent.UID, bson.M{"$set": postContent}); sErr != nil {
+		if _, sErr = getPostContentCollection(dbConn).UpdateByID(
+			sCtx, postContent.UID, bson.M{"$set": postContent},
+		); sErr != nil {
 			return sErr
 		}
 		if sErr = session.CommitTransaction(sCtx); sErr != nil {
@@ -234,35 +222,23 @@ func UpdatePost(
 	return nil
 }
 
-// Mark the post trash
-func TrashPost(
-	ctx context.Context,
-	dbConn *mongo.Database,
-	post *models.PostModel,
-) (err error) {
-	now := primitive.NewDateTimeFromTime(time.Now())
-	post.DeletedAt = now
-	_, err = getPostCollection(dbConn).
-		UpdateByID(ctx, post.UID, bson.M{"$set": post})
-
-	return err
-}
-
-// Unmark the trash from post
-func DetrashPost(
-	ctx context.Context,
-	dbConn *mongo.Database,
-	post *models.PostModel,
-) (err error) {
-	post.DeletedAt = nil
-	_, err = getPostCollection(dbConn).
-		UpdateByID(ctx, post.UID, bson.M{"$set": post})
-
-	return err
-}
-
-// Permanently delete post
+// Update post
 func DeletePost(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	post *models.PostModel,
+) (err error) {
+	if _, err = getPostCollection(dbConn).DeleteOne(
+		ctx, bson.M{"_id": post.UID},
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Delete post with its content
+func DeletePostWithContent(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	post *models.PostModel,
@@ -282,13 +258,15 @@ func DeletePost(
 			return sErr
 		}
 
-		if _, sErr = getPostCollection(dbConn).
-			DeleteOne(sCtx, bson.M{"_id": post.UID}); sErr != nil {
+		if _, sErr = getPostCollection(dbConn).DeleteOne(
+			sCtx, bson.M{"_id": post.UID},
+		); sErr != nil {
 			return sErr
 		}
 
-		if _, sErr = getPostContentCollection(dbConn).
-			DeleteOne(sCtx, bson.M{"_id": postContent.UID}); sErr != nil {
+		if _, sErr = getPostContentCollection(dbConn).DeleteOne(
+			sCtx, bson.M{"_id": postContent.UID},
+		); sErr != nil {
 			return sErr
 		}
 

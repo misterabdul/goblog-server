@@ -11,11 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/http/forms"
-	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func GetPublicPostComment(
@@ -23,10 +22,9 @@ func GetPublicPostComment(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -34,11 +32,12 @@ func GetPublicPostComment(
 			err            error
 		)
 
+		defer cancel()
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.NotFound(c, err)
 			return
 		}
-		if comment, err = repositories.GetComment(ctx, dbConn, bson.M{
+		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": commentId}},
@@ -50,7 +49,7 @@ func GetPublicPostComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = commentService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
@@ -72,21 +71,21 @@ func GetPublicPostComments(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			comments  []*models.CommentModel
-			post      *models.PostModel
-			postId    primitive.ObjectID
-			postQuery = c.Param("post")
-			err       error
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
+			comments       []*models.CommentModel
+			post           *models.PostModel
+			postId         primitive.ObjectID
+			postQuery      = c.Param("post")
+			err            error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postQuery); err != nil {
 			postId = primitive.ObjectID{}
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = commentService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
@@ -101,13 +100,13 @@ func GetPublicPostComments(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if comments, err = repositories.GetComments(ctx, dbConn, bson.M{
+		if comments, err = commentService.GetComments(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"$or": []bson.M{
 					{"postslug": postQuery},
 					{"postuid": postId}}}},
-		}, helpers.GetFindOptions(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -125,20 +124,20 @@ func CreatePublicPostComment(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			comment *models.CommentModel
-			form    *forms.CreateCommentForm
-			err     error
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
+			comment        *models.CommentModel
+			form           *forms.CreateCommentForm
+			err            error
 		)
 
+		defer cancel()
 		if form, err = requests.GetCreateCommentForm(c); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(ctx, dbConn); err != nil {
+		if err = form.Validate(commentService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -146,7 +145,7 @@ func CreatePublicPostComment(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = repositories.CreateComment(ctx, dbConn, comment); err != nil {
+		if err = commentService.CreateComment(comment); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -1,20 +1,17 @@
 package authentications
 
 import (
-	"context"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
 func noteRevokeToken(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	service *service.Service,
 	refreshClaims *jwt.CustomClaims,
 	user *models.UserModel,
 ) (err error) {
@@ -25,7 +22,7 @@ func noteRevokeToken(
 	}
 	revokeTokenData.Owner = user.ToCommonModel()
 
-	return repositories.CreateRevokedToken(ctx, dbConn, revokeTokenData)
+	return service.CreateRevokedToken(revokeTokenData)
 }
 
 func createRevokeModelFromClaims(refreshClaims *jwt.CustomClaims) (

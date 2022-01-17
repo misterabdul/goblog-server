@@ -24,6 +24,10 @@ func Basic(c *gin.Context, code int, obj interface{}) {
 	c.Data(http.StatusNotFound, "*/*", nil)
 }
 
+func Success(c *gin.Context, obj interface{}) {
+	Basic(c, http.StatusOK, obj)
+}
+
 func NoContent(c *gin.Context) {
 	Basic(c, http.StatusNoContent, nil)
 }
@@ -41,6 +45,10 @@ func NotFound(c *gin.Context, err error) {
 func FormIncorrect(c *gin.Context, err error) {
 	Basic(c, http.StatusUnprocessableEntity, gin.H{
 		"message": err.Error()})
+}
+
+func NotImplemented(c *gin.Context, err error) {
+	Basic(c, http.StatusNotImplemented, err)
 }
 
 func InternalServerError(c *gin.Context, err error) {

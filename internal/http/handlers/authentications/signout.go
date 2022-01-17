@@ -10,6 +10,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
@@ -18,15 +19,15 @@ func SignOut(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService   = service.New(c, ctx, dbConn)
 			me            *models.UserModel
 			refreshClaims *jwt.CustomClaims
 			err           error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetRefreshedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -35,7 +36,7 @@ func SignOut(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if err = noteRevokeToken(ctx, dbConn, refreshClaims, me); err != nil {
+		if err = noteRevokeToken(userService, refreshClaims, me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

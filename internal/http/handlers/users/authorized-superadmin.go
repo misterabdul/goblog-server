@@ -1,11 +1,12 @@
 package users
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
+
+	"github.com/misterabdul/goblog-server/internal/http/responses"
 )
 
 func AdminizeUser(
@@ -13,7 +14,7 @@ func AdminizeUser(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{})
+		responses.NotImplemented(c, nil)
 	}
 }
 
@@ -22,6 +23,6 @@ func DeadminizeUser(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusNotImplemented, gin.H{})
+		responses.NotImplemented(c, nil)
 	}
 }

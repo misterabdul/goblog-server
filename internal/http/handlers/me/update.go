@@ -2,7 +2,6 @@ package me
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func UpdateMe(
@@ -21,17 +20,16 @@ func UpdateMe(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			me        *models.UserModel
-			updatedMe *models.UserModel
-			form      *forms.UpdateMeForm
-			err       error
-			writeErr  mongo.WriteException
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
+			me          *models.UserModel
+			updatedMe   *models.UserModel
+			form        *forms.UpdateMeForm
+			err         error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -40,16 +38,12 @@ func UpdateMe(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(ctx, dbConn, me); err != nil {
+		if err = form.Validate(userService, me); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
 		updatedMe = form.ToUserModel(me)
-		if err = repositories.UpdateUser(ctx, dbConn, updatedMe); err != nil {
-			if errors.As(err, &writeErr) {
-				responses.FormIncorrect(c, err)
-				return
-			}
+		if err = userService.UpdateUser(updatedMe); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

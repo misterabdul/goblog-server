@@ -1,15 +1,14 @@
 package forms
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
@@ -24,8 +23,7 @@ type CreateUserForm struct {
 }
 
 func (form *CreateUserForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	postService *service.Service,
 	creator *models.UserModel,
 ) (err error) {
 	if err = isProperRoles(form.Roles); err != nil {
@@ -34,10 +32,10 @@ func (form *CreateUserForm) Validate(
 	if strings.Compare(form.Password, form.PasswordConfirm) != 0 {
 		return errors.New("password confirm not same")
 	}
-	if err = checkUsername(ctx, dbConn, form.Username); err != nil {
+	if err = checkUsername(postService, form.Username); err != nil {
 		return err
 	}
-	if err = checkEmail(ctx, dbConn, form.Email); err != nil {
+	if err = checkEmail(postService, form.Email); err != nil {
 		return err
 	}
 

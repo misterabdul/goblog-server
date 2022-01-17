@@ -8,7 +8,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func MyNotifiation(c *gin.Context, notification *models.NotificationModel) {
+func MyNotification(c *gin.Context, notification *models.NotificationModel) {
 	extractMyNotificationData(notification)
 }
 

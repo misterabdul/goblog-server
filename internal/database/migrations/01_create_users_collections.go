@@ -93,5 +93,5 @@ func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) (err error) {
 		UpdatedAt: now,
 	}
 
-	return repositories.CreateUser(ctx, dbConn, &superAdmin)
+	return repositories.SaveUser(ctx, dbConn, &superAdmin)
 }

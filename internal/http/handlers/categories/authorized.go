@@ -11,11 +11,10 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/http/forms"
-	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func GetCategory(
@@ -23,21 +22,21 @@ func GetCategory(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
 			category        *models.CategoryModel
 			categoryId      primitive.ObjectID
 			categoryIdQuery = c.Param("category")
 			err             error
 		)
 
+		defer cancel()
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
 			responses.NotFound(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+		if category, err = categoryService.GetCategory(bson.M{
 			"$and": []bson.M{
 				{"_id": categoryId}},
 		}); err != nil {
@@ -58,22 +57,22 @@ func GetCategories(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			categories []*models.CategoryModel
-			trashQuery interface{} = primitive.Null{}
-			err        error
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
+			categories      []*models.CategoryModel
+			trashQuery      interface{} = primitive.Null{}
+			err             error
 		)
 
+		defer cancel()
 		if trashParam := c.DefaultQuery("trash", "false"); trashParam == "true" {
 			trashQuery = bson.M{"$ne": primitive.Null{}}
 		}
-		if categories, err = repositories.GetCategories(ctx, dbConn, bson.M{
+		if categories, err = categoryService.GetCategories(bson.M{
 			"$and": []bson.M{
 				{"deletedat": trashQuery}},
-		}, helpers.GetFindOptions(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -91,30 +90,25 @@ func CreateCategory(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			category *models.CategoryModel
-			form     *forms.CreateCategoryForm
-			err      error
-			writeErr mongo.WriteException
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
+			category        *models.CategoryModel
+			form            *forms.CreateCategoryForm
+			err             error
 		)
 
+		defer cancel()
 		if form, err = requests.GetCreateCategoryForm(c); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(ctx, dbConn); err != nil {
+		if err = form.Validate(categoryService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
 		category = form.ToCategoryModel()
-		if err = repositories.CreateCategory(ctx, dbConn, category); err != nil {
-			if errors.As(err, &writeErr) {
-				responses.FormIncorrect(c, writeErr.WriteErrors)
-				return
-			}
+		if err = categoryService.CreateCategory(category); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -128,24 +122,23 @@ func UpdateCategory(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
 			category        *models.CategoryModel
 			updatedCategory *models.CategoryModel
 			categoryId      primitive.ObjectID
 			form            *forms.UpdateCategoryForm
 			categoryIdQuery = c.Param("category")
 			err             error
-			writeErr        mongo.WriteException
 		)
 
+		defer cancel()
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+		if category, err = categoryService.GetCategory(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": categoryId}},
@@ -161,17 +154,12 @@ func UpdateCategory(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(ctx, dbConn); err != nil {
+		if err = form.Validate(categoryService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
 		updatedCategory = form.ToCategoryModel(category)
-		if err = repositories.UpdateCategory(
-			ctx, dbConn, updatedCategory); err != nil {
-			if errors.As(err, &writeErr) {
-				responses.FormIncorrect(c, writeErr.WriteErrors)
-				return
-			}
+		if err = categoryService.UpdateCategory(updatedCategory); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -185,21 +173,21 @@ func TrashCategory(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
 			category        *models.CategoryModel
 			categoryId      primitive.ObjectID
 			categoryIdQuery = c.Param("category")
 			err             error
 		)
 
+		defer cancel()
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+		if category, err = categoryService.GetCategory(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": categoryId}},
@@ -215,7 +203,7 @@ func TrashCategory(
 			responses.NoContent(c)
 			return
 		}
-		if err = repositories.TrashCategory(ctx, dbConn, category); err != nil {
+		if err = categoryService.TrashCategory(category); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -229,21 +217,21 @@ func DetrashCategory(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
 			category        *models.CategoryModel
 			categoryId      primitive.ObjectID
 			categoryIdQuery = c.Param("category")
 			err             error
 		)
 
+		defer cancel()
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+		if category, err = categoryService.GetCategory(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": categoryId}},
@@ -259,7 +247,7 @@ func DetrashCategory(
 			responses.NoContent(c)
 			return
 		}
-		if err = repositories.DetrashCategory(ctx, dbConn, category); err != nil {
+		if err = categoryService.DetrashCategory(category); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -273,21 +261,21 @@ func DeleteCategory(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
 			category        *models.CategoryModel
 			categoryId      primitive.ObjectID
 			categoryIdQuery = c.Param("category")
 			err             error
 		)
 
+		defer cancel()
 		if categoryId, err = primitive.ObjectIDFromHex(categoryIdQuery); err != nil {
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+		if category, err = categoryService.GetCategory(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": categoryId}},
@@ -299,7 +287,7 @@ func DeleteCategory(
 			responses.NotFound(c, errors.New("category not found"))
 			return
 		}
-		if err = repositories.DeleteCategory(ctx, dbConn, category); err != nil {
+		if err = categoryService.DeleteCategory(category); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

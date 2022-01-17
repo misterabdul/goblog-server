@@ -10,10 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func GetPublicCategory(
@@ -21,20 +20,20 @@ func GetPublicCategory(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			category      *models.CategoryModel
-			categoryId    primitive.ObjectID
-			categoryQuery = c.Param("category")
-			err           error
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
+			category        *models.CategoryModel
+			categoryId      primitive.ObjectID
+			categoryQuery   = c.Param("category")
+			err             error
 		)
 
+		defer cancel()
 		if categoryId, err = primitive.ObjectIDFromHex(categoryQuery); err != nil {
 			categoryId = primitive.ObjectID{}
 		}
-		if category, err = repositories.GetCategory(ctx, dbConn, bson.M{
+		if category, err = categoryService.GetCategory(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"$or": []bson.M{
@@ -46,6 +45,7 @@ func GetPublicCategory(
 		}
 		if category == nil {
 			responses.NotFound(c, errors.New("category not found"))
+			return
 		}
 
 		responses.PublicCategory(c, category)
@@ -57,23 +57,24 @@ func GetPublicCategories(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			categories []*models.CategoryModel
-			err        error
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			categoryService = service.New(c, ctx, dbConn)
+			categories      []*models.CategoryModel
+			err             error
 		)
 
-		if categories, err = repositories.GetCategories(ctx, dbConn, bson.M{
+		defer cancel()
+		if categories, err = categoryService.GetCategories(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}}},
-		}, helpers.GetFindOptions(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 		if len(categories) == 0 {
 			responses.NoContent(c)
+			return
 		}
 
 		responses.PublicCategories(c, categories)

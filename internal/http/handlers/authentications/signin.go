@@ -14,7 +14,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	internalJwt "github.com/misterabdul/goblog-server/internal/pkg/jwt"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/hash"
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
@@ -24,10 +24,9 @@ func SignIn(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService   = service.New(c, ctx, dbConn)
 			input         *forms.SignInForm
 			user          *models.UserModel
 			accessClaims  *jwt.CustomClaims
@@ -37,11 +36,12 @@ func SignIn(
 			err           error
 		)
 
+		defer cancel()
 		if input, err = requests.GetSignInForm(c); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+		if user, err = userService.GetUser(bson.M{
 			"$or": []bson.M{
 				{"username": input.Username},
 				{"email": input.Username}},

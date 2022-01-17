@@ -50,7 +50,7 @@ func Generate(ctx context.Context) {
 		postContent = &models.PostContentModel{
 			UID:     postId,
 			Content: lipsumMarkdown()}
-		if err = repositories.CreatePost(
+		if err = repositories.SavePostWithContent(
 			ctx,
 			dbConn,
 			post,

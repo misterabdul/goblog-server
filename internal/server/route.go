@@ -1,7 +1,6 @@
 package server
 
 import (
-	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +10,7 @@ import (
 	categoryHandler "github.com/misterabdul/goblog-server/internal/http/handlers/categories"
 	meHandler "github.com/misterabdul/goblog-server/internal/http/handlers/me"
 	notificationHandler "github.com/misterabdul/goblog-server/internal/http/handlers/notifications"
+	otherHandler "github.com/misterabdul/goblog-server/internal/http/handlers/others"
 	postHandler "github.com/misterabdul/goblog-server/internal/http/handlers/posts"
 	userHandler "github.com/misterabdul/goblog-server/internal/http/handlers/users"
 	authenticateMiddleware "github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
@@ -18,17 +18,18 @@ import (
 )
 
 // Initialize all routes.
-func initRoute(server *gin.Engine, dbConn *mongo.Database) {
-	maxCtxDuration := 10 * time.Second
+func InitRoutes(
+	server *gin.Engine,
+	dbConn *mongo.Database,
+	maxCtxDuration time.Duration,
+) {
+	server.NoRoute(otherHandler.NotFound())
 
 	api := server.Group("/api")
 	{
 		v1 := api.Group("/v1")
 		{
-			v1.GET("/ping", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{
-					"message": "pong"})
-			})
+			v1.GET("/ping", otherHandler.Ping())
 
 			v1.GET("/users", userHandler.GetPublicUsers(maxCtxDuration, dbConn))
 			v1.GET("/user/:user", userHandler.GetPublicUser(maxCtxDuration, dbConn))
@@ -151,9 +152,4 @@ func initRoute(server *gin.Engine, dbConn *mongo.Database) {
 			}
 		}
 	}
-
-	server.NoRoute(func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{
-			"message": "not found."})
-	})
 }

@@ -10,10 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func GetPublicPost(
@@ -21,10 +20,9 @@ func GetPublicPost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
 			post        *models.PostModel
 			postContent *models.PostContentModel
 			postId      primitive.ObjectID
@@ -32,10 +30,11 @@ func GetPublicPost(
 			err         error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postQuery); err != nil {
 			postId = primitive.ObjectID{}
 		}
-		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn, bson.M{
+		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
@@ -60,19 +59,19 @@ func GetPublicPosts(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			posts []*models.PostModel
-			err   error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
+			posts       []*models.PostModel
+			err         error
 		)
 
-		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
+		defer cancel()
+		if posts, err = postService.GetPosts(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
-		}, helpers.GetFindOptionsPost(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -91,22 +90,22 @@ func SearchPublicPosts(
 ) (handler gin.HandlerFunc) {
 
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
 			searchQuery = c.Query("q")
 			posts       []*models.PostModel
 			err         error
 		)
 
-		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
+		defer cancel()
+		if posts, err = postService.GetPosts(bson.M{
 			"$text": bson.M{
 				"$search": searchQuery},
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
-		}, helpers.GetFindOptionsPost(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

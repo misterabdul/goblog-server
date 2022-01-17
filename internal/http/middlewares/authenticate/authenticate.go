@@ -14,7 +14,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	internalJwt "github.com/misterabdul/goblog-server/internal/pkg/jwt"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
@@ -29,10 +29,9 @@ func Authenticate(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService  = service.New(c, ctx, dbConn)
 			me           *models.UserModel
 			accessClaims *jwt.CustomClaims
 			userId       primitive.ObjectID
@@ -40,6 +39,7 @@ func Authenticate(
 			err          error
 		)
 
+		defer cancel()
 		if auth = c.GetHeader("Authorization"); !strings.Contains(auth, "Bearer ") {
 			responses.Unauthenticated(c, errors.New("no bearer type authorization header found"))
 			c.Abort()
@@ -56,7 +56,7 @@ func Authenticate(
 			c.Abort()
 			return
 		}
-		if me, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
+		if me, err = userService.GetUser(bson.M{"_id": userId}); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return

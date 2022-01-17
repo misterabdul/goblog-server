@@ -10,11 +10,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func GetNotification(
@@ -22,10 +21,9 @@ func GetNotification(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
+			notificationService = service.New(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID
@@ -33,6 +31,7 @@ func GetNotification(
 			err                 error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -41,7 +40,7 @@ func GetNotification(
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = repositories.GetNotification(ctx, dbConn, bson.M{
+		if notification, err = notificationService.GetNotification(bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username},
 				{"_id": notificationId}},
@@ -54,7 +53,7 @@ func GetNotification(
 			return
 		}
 
-		responses.MyNotifiation(c, notification)
+		responses.MyNotification(c, notification)
 	}
 }
 
@@ -63,23 +62,23 @@ func GetNotifications(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			me            *models.UserModel
-			notifications []*models.NotificationModel
-			err           error
+			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
+			notificationService = service.New(c, ctx, dbConn)
+			me                  *models.UserModel
+			notifications       []*models.NotificationModel
+			err                 error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if notifications, err = repositories.GetNotifications(ctx, dbConn, bson.M{
+		if notifications, err = notificationService.GetNotifications(bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username}},
-		}, helpers.GetFindOptions(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -97,10 +96,10 @@ func ReadNotification(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
 
 		var (
+			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
+			notificationService = service.New(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID
@@ -108,6 +107,7 @@ func ReadNotification(
 			err                 error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -116,7 +116,7 @@ func ReadNotification(
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = repositories.GetNotification(ctx, dbConn, bson.M{
+		if notification, err = notificationService.GetNotification(bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username},
 				{"_id": notificationId}},
@@ -132,7 +132,7 @@ func ReadNotification(
 			responses.NoContent(c)
 			return
 		}
-		if err = repositories.ReadNotification(ctx, dbConn, notification); err != nil {
+		if err = notificationService.ReadNotification(notification); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -146,10 +146,9 @@ func DeleteNotification(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
+			notificationService = service.New(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID
@@ -157,6 +156,7 @@ func DeleteNotification(
 			err                 error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -165,7 +165,7 @@ func DeleteNotification(
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = repositories.GetNotification(ctx, dbConn, bson.M{
+		if notification, err = notificationService.GetNotification(bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username},
 				{"_id": notificationId}},
@@ -177,7 +177,7 @@ func DeleteNotification(
 			responses.NotFound(c, errors.New("notification not found"))
 			return
 		}
-		if err = repositories.DeleteNotification(ctx, dbConn, notification); err != nil {
+		if err = notificationService.DeleteNotification(notification); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

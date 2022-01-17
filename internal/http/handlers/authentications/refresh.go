@@ -11,6 +11,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	internalJwt "github.com/misterabdul/goblog-server/internal/pkg/jwt"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
@@ -19,10 +20,9 @@ func Refresh(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService      = service.New(c, ctx, dbConn)
 			oldRefreshClaims *jwt.CustomClaims
 			me               *models.UserModel
 			newAccessClaims  *jwt.CustomClaims
@@ -32,6 +32,7 @@ func Refresh(
 			err              error
 		)
 
+		defer cancel()
 		if oldRefreshClaims, err = authenticate.GetRefreshClaims(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -40,7 +41,7 @@ func Refresh(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if err = noteRevokeToken(ctx, dbConn, oldRefreshClaims, me); err != nil {
+		if err = noteRevokeToken(userService, oldRefreshClaims, me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

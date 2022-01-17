@@ -1,15 +1,14 @@
 package forms
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
@@ -24,8 +23,7 @@ type UpdateUserForm struct {
 }
 
 func (form *UpdateUserForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	userService *service.Service,
 	creator *models.UserModel,
 	target *models.UserModel,
 ) (err error) {
@@ -36,12 +34,12 @@ func (form *UpdateUserForm) Validate(
 		return errors.New("password confirm not same")
 	}
 	if strings.Compare(form.Username, target.Username) != 0 {
-		if err = checkUsername(ctx, dbConn, form.Username); err != nil {
+		if err = checkUsername(userService, form.Username); err != nil {
 			return err
 		}
 	}
 	if strings.Compare(form.Email, target.Email) != 0 {
-		if err = checkEmail(ctx, dbConn, form.Email); err != nil {
+		if err = checkEmail(userService, form.Email); err != nil {
 			return err
 		}
 	}

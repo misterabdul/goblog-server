@@ -12,10 +12,10 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
@@ -24,9 +24,6 @@ func ServeListenedNotifications(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		_, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
 			me          *models.UserModel
 			messageChan = make(chan string)
@@ -76,7 +73,7 @@ func checkNotifications(
 			"$and": []bson.M{
 				{"owner.username": me.Username},
 				{"createdat": bson.M{"$gt": primitive.NewDateTimeFromTime(latestCheck)}}},
-		}, helpers.CreateFindOptions(25, 1, "createdat", false)); err != nil {
+		}, internalGin.CreateFindOptions(25, 1, "createdat", false)); err != nil {
 			continue
 		}
 		messageBuff = fmt.Sprintf("There is %d new notification(s)", len(notifications))

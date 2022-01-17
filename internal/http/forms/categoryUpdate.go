@@ -1,10 +1,8 @@
 package forms
 
 import (
-	"context"
-
 	"github.com/misterabdul/goblog-server/internal/models"
-	"go.mongodb.org/mongo-driver/mongo"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 type UpdateCategoryForm struct {
@@ -13,11 +11,10 @@ type UpdateCategoryForm struct {
 }
 
 func (form *UpdateCategoryForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	categoryService *service.Service,
 ) (err error) {
 	if len(form.Slug) > 0 {
-		if err = checkCategorySlug(ctx, dbConn, form.Slug); err != nil {
+		if err = checkCategorySlug(categoryService, form.Slug); err != nil {
 			return err
 		}
 	}

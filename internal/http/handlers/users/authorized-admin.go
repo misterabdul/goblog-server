@@ -11,12 +11,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/http/forms"
-	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func GetUser(
@@ -24,21 +23,21 @@ func GetUser(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
 			user        *models.UserModel
 			userId      primitive.ObjectID
 			userIdQuery = c.Param("user")
 			err         error
 		)
 
+		defer cancel()
 		if userId, err = primitive.ObjectIDFromHex(userIdQuery); err != nil {
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+		if user, err = userService.GetUser(bson.M{
 			"$and": []bson.M{
 				{"_id": userId}},
 		}); err != nil {
@@ -59,16 +58,16 @@ func GetUsers(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			users     []*models.UserModel
-			typeParam = c.DefaultQuery("type", "draft")
-			typeQuery []bson.M
-			err       error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
+			users       []*models.UserModel
+			typeParam   = c.DefaultQuery("type", "draft")
+			typeQuery   []bson.M
+			err         error
 		)
 
+		defer cancel()
 		switch true {
 		case typeParam == "trash":
 			typeQuery = []bson.M{
@@ -80,9 +79,9 @@ func GetUsers(
 				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
 		}
 
-		if users, err = repositories.GetUsers(ctx, dbConn, bson.M{
+		if users, err = userService.GetUsers(bson.M{
 			"$and": typeQuery,
-		}, helpers.GetFindOptions(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -100,17 +99,16 @@ func CreateUser(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			me       *models.UserModel
-			newUser  *models.UserModel
-			form     *forms.CreateUserForm
-			err      error
-			writeErr mongo.WriteException
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
+			me          *models.UserModel
+			newUser     *models.UserModel
+			form        *forms.CreateUserForm
+			err         error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -119,7 +117,7 @@ func CreateUser(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(ctx, dbConn, me); err != nil {
+		if err = form.Validate(userService, me); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -127,11 +125,7 @@ func CreateUser(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = repositories.CreateUser(ctx, dbConn, newUser); err != nil {
-			if errors.As(err, &writeErr) {
-				responses.FormIncorrect(c, err)
-				return
-			}
+		if err = userService.CreateUser(newUser); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -145,10 +139,9 @@ func UpdateUser(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
 			me          *models.UserModel
 			user        *models.UserModel
 			userId      primitive.ObjectID
@@ -158,6 +151,7 @@ func UpdateUser(
 			writeErr    mongo.WriteException
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -166,7 +160,7 @@ func UpdateUser(
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+		if user, err = userService.GetUser(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": userId}},
@@ -182,7 +176,7 @@ func UpdateUser(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(ctx, dbConn, me, user); err != nil {
+		if err = form.Validate(userService, me, user); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -190,7 +184,7 @@ func UpdateUser(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = repositories.UpdateUser(ctx, dbConn, user); err != nil {
+		if err = userService.UpdateUser(user); err != nil {
 			if errors.As(err, &writeErr) {
 				responses.FormIncorrect(c, err)
 				return
@@ -208,21 +202,21 @@ func TrashUser(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
 			user        *models.UserModel
 			userId      primitive.ObjectID
 			userIdQuery = c.Param("user")
 			err         error
 		)
 
+		defer cancel()
 		if userId, err = primitive.ObjectIDFromHex(userIdQuery); err != nil {
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+		if user, err = userService.GetUser(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": userId}},
@@ -234,7 +228,7 @@ func TrashUser(
 			responses.NotFound(c, errors.New("user not found"))
 			return
 		}
-		if err = repositories.TrashUser(ctx, dbConn, user); err != nil {
+		if err = userService.TrashUser(user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -248,21 +242,21 @@ func DetrashUser(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
 			user        *models.UserModel
 			userId      primitive.ObjectID
 			userIdQuery = c.Param("user")
 			err         error
 		)
 
+		defer cancel()
 		if userId, err = primitive.ObjectIDFromHex(userIdQuery); err != nil {
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+		if user, err = userService.GetUser(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": userId}},
@@ -274,7 +268,7 @@ func DetrashUser(
 			responses.NotFound(c, errors.New("user not found"))
 			return
 		}
-		if err = repositories.DetrashUser(ctx, dbConn, user); err != nil {
+		if err = userService.DetrashUser(user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -288,21 +282,21 @@ func DeleteUser(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService = service.New(c, ctx, dbConn)
 			user        *models.UserModel
 			userId      primitive.ObjectID
 			userIdQuery = c.Param("user")
 			err         error
 		)
 
+		defer cancel()
 		if userId, err = primitive.ObjectIDFromHex(userIdQuery); err != nil {
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = repositories.GetUser(ctx, dbConn, bson.M{
+		if user, err = userService.GetUser(bson.M{
 			"$and": []bson.M{
 				{"_id": userId}},
 		}); err != nil {
@@ -313,7 +307,7 @@ func DeleteUser(
 			responses.NotFound(c, errors.New("user not found"))
 			return
 		}
-		if err = repositories.DeleteUser(ctx, dbConn, user); err != nil {
+		if err = userService.DeleteUser(user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

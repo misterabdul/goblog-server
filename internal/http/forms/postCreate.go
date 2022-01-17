@@ -1,16 +1,14 @@
 package forms
 
 import (
-	"context"
 	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 type CreatePostForm struct {
@@ -27,13 +25,12 @@ type CreatePostForm struct {
 }
 
 func (form *CreatePostForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	postService *service.Service,
 ) (err error) {
-	if err = checkPostSlug(ctx, dbConn, form.Slug); err != nil {
+	if err = checkPostSlug(postService, form.Slug); err != nil {
 		return err
 	}
-	if form.realCategories, err = findCategories(ctx, dbConn, form.Categories); err != nil {
+	if form.realCategories, err = findCategories(postService, form.Categories); err != nil {
 		return err
 	}
 
@@ -80,12 +77,15 @@ func (form *CreatePostForm) ToPostModel(author *models.UserModel) (
 			Content: form.Content}, nil
 }
 
-func checkPostSlug(ctx context.Context, dbConn *mongo.Database, formSlug string) (err error) {
+func checkPostSlug(
+	postService *service.Service,
+	formSlug string,
+) (err error) {
 	var (
 		posts []*models.PostModel
 	)
 
-	if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
+	if posts, err = postService.GetPosts(bson.M{
 		"slug": bson.M{"$eq": formSlug},
 	}); err != nil {
 		return err
@@ -98,11 +98,10 @@ func checkPostSlug(ctx context.Context, dbConn *mongo.Database, formSlug string)
 }
 
 func findCategories(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	postService *service.Service,
 	formCategories []string,
 ) (categories []*models.CategoryModel, err error) {
-	if categories, err = repositories.GetCategories(ctx, dbConn, bson.M{
+	if categories, err = postService.GetCategories(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
 			{"_id": bson.M{"$in": formCategories}}},

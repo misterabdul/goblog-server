@@ -1,16 +1,14 @@
 package forms
 
 import (
-	"context"
 	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 type ReplyCommmentForm struct {
@@ -23,10 +21,9 @@ type ReplyCommmentForm struct {
 }
 
 func (form *ReplyCommmentForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	commentService *service.Service,
 ) (err error) {
-	if form.parentComment, err = findComment(ctx, dbConn, form.CommentUid); err != nil {
+	if form.parentComment, err = findComment(commentService, form.CommentUid); err != nil {
 		return err
 	}
 
@@ -56,11 +53,10 @@ func (form *ReplyCommmentForm) ToCommentModel() (model *models.CommentModel, err
 }
 
 func findComment(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	commentService *service.Service,
 	formCommentUid string,
 ) (comment *models.CommentModel, err error) {
-	if comment, err = repositories.GetComment(ctx, dbConn, bson.M{
+	if comment, err = commentService.GetComment(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
 			{"$or": []bson.M{

@@ -1,15 +1,13 @@
 package forms
 
 import (
-	"context"
 	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 type CreateCategoryForm struct {
@@ -18,10 +16,9 @@ type CreateCategoryForm struct {
 }
 
 func (form *CreateCategoryForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	categoryService *service.Service,
 ) (err error) {
-	if err = checkCategorySlug(ctx, dbConn, form.Slug); err != nil {
+	if err = checkCategorySlug(categoryService, form.Slug); err != nil {
 		return err
 	}
 
@@ -35,12 +32,12 @@ func (form *CreateCategoryForm) ToCategoryModel() (model *models.CategoryModel) 
 		Name: form.Name}
 }
 
-func checkCategorySlug(ctx context.Context, dbConn *mongo.Database, formSlug string) (err error) {
+func checkCategorySlug(categoryService *service.Service, formSlug string) (err error) {
 	var (
 		categories []*models.CategoryModel
 	)
 
-	if categories, err = repositories.GetCategories(ctx, dbConn, bson.M{
+	if categories, err = categoryService.GetCategories(bson.M{
 		"slug": bson.M{"$eq": formSlug},
 	}); err != nil {
 		return err

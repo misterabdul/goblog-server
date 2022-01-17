@@ -6,7 +6,6 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type serverRelatedEnv struct {
@@ -14,7 +13,7 @@ type serverRelatedEnv struct {
 }
 
 // Get the server engine.
-func GetServer(dbConn *mongo.Database) (serverInstance *gin.Engine) {
+func GetServer() (serverInstance *gin.Engine) {
 	serverEnv := getServerRelatedEnv()
 	switch serverEnv.Mode {
 	default:
@@ -32,7 +31,6 @@ func GetServer(dbConn *mongo.Database) (serverInstance *gin.Engine) {
 		serverInstance.Use(cors.Default())
 	}
 	serverInstance.Use(gzip.Gzip(gzip.DefaultCompression))
-	initRoute(serverInstance, dbConn)
 
 	return serverInstance
 }

@@ -1,14 +1,13 @@
 package forms
 
 import (
-	"context"
 	"errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 type UpdatePostForm struct {
@@ -25,13 +24,12 @@ type UpdatePostForm struct {
 }
 
 func (form *UpdatePostForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	postService *service.Service,
 ) (err error) {
-	if err = checkPostSlug(ctx, dbConn, form.Slug); err != nil {
+	if err = checkPostSlug(postService, form.Slug); err != nil {
 		return err
 	}
-	if form.realCategories, err = findCategories(ctx, dbConn, form.Categories); err != nil {
+	if form.realCategories, err = findCategories(postService, form.Categories); err != nil {
 		return err
 	}
 

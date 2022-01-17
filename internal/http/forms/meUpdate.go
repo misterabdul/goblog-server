@@ -1,14 +1,12 @@
 package forms
 
 import (
-	"context"
 	"errors"
 
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 type UpdateMeForm struct {
@@ -19,14 +17,13 @@ type UpdateMeForm struct {
 }
 
 func (form *UpdateMeForm) Validate(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	userService *service.Service,
 	me *models.UserModel,
 ) (err error) {
-	if err = checkUsername(ctx, dbConn, form.Username); err != nil {
+	if err = checkUsername(userService, form.Username); err != nil {
 		return err
 	}
-	if err = checkEmail(ctx, dbConn, form.Email); err != nil {
+	if err = checkEmail(userService, form.Email); err != nil {
 		return err
 	}
 
@@ -53,15 +50,14 @@ func (form *UpdateMeForm) ToUserModel(
 }
 
 func checkUsername(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	userService *service.Service,
 	formUsername string,
 ) (err error) {
 	var (
 		users []*models.UserModel
 	)
 
-	if users, err = repositories.GetUsers(ctx, dbConn, bson.M{
+	if users, err = userService.GetUsers(bson.M{
 		"username": bson.M{"$eq": formUsername},
 	}); err != nil {
 		return err
@@ -74,15 +70,14 @@ func checkUsername(
 }
 
 func checkEmail(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	userService *service.Service,
 	formEmail string,
 ) (err error) {
 	var (
 		users []*models.UserModel
 	)
 
-	if users, err = repositories.GetUsers(ctx, dbConn, bson.M{
+	if users, err = userService.GetUsers(bson.M{
 		"email": bson.M{"$eq": formEmail},
 	}); err != nil {
 		return err

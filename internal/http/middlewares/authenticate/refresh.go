@@ -12,7 +12,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
 	internalJwt "github.com/misterabdul/goblog-server/internal/pkg/jwt"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
@@ -26,10 +26,9 @@ func AuthenticateRefresh(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
+			userService   = service.New(c, ctx, dbConn)
 			refreshToken  string
 			refreshClaims *jwt.CustomClaims
 			revoked       bool
@@ -38,6 +37,7 @@ func AuthenticateRefresh(
 			err           error
 		)
 
+		defer cancel()
 		if refreshToken, err = c.Cookie(responses.RefreshTokenCookieName); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
@@ -48,7 +48,7 @@ func AuthenticateRefresh(
 			c.Abort()
 			return
 		}
-		if revoked, err = checkRevokedToken(ctx, dbConn, refreshClaims); err != nil {
+		if revoked, err = checkRevokedToken(userService, refreshClaims); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
@@ -63,7 +63,7 @@ func AuthenticateRefresh(
 			c.Abort()
 			return
 		}
-		if me, err = repositories.GetUser(ctx, dbConn, bson.M{"_id": userId}); err != nil {
+		if me, err = userService.GetUser(bson.M{"_id": userId}); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
@@ -75,8 +75,7 @@ func AuthenticateRefresh(
 }
 
 func checkRevokedToken(
-	ctx context.Context,
-	dbConn *mongo.Database,
+	userService *service.Service,
 	refreshClaims *jwt.CustomClaims,
 ) (noted bool, err error) {
 	var (
@@ -87,8 +86,9 @@ func checkRevokedToken(
 	if tokenID, err = primitive.ObjectIDFromHex(refreshClaims.Id); err != nil {
 		return false, err
 	}
-	if revokedTokenData, err = repositories.GetRevokedToken(
-		ctx, dbConn, bson.M{"_id": tokenID}); err != nil {
+	if revokedTokenData, err = userService.GetRevokedToken(bson.M{
+		"_id": tokenID,
+	}); err != nil {
 		return false, err
 	}
 	if revokedTokenData != nil {

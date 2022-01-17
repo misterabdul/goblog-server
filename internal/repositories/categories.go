@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"errors"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -13,7 +12,9 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getCategoryCollection(dbConn *mongo.Database) (cateogryCollection *mongo.Collection) {
+func getCategoryCollection(
+	dbConn *mongo.Database,
+) (cateogryCollection *mongo.Collection) {
 	return dbConn.Collection("categories")
 }
 
@@ -26,8 +27,9 @@ func GetCategory(
 ) (category *models.CategoryModel, err error) {
 	var _category models.CategoryModel
 
-	if err = getCategoryCollection(dbConn).FindOne(ctx, filter, opts...).
-		Decode(&_category); err != nil {
+	if err = getCategoryCollection(dbConn).FindOne(
+		ctx, filter, opts...,
+	).Decode(&_category); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -49,7 +51,9 @@ func GetCategories(
 		cursor   *mongo.Cursor
 	)
 
-	if cursor, err = getCategoryCollection(dbConn).Find(ctx, filter, opts...); err != nil {
+	if cursor, err = getCategoryCollection(dbConn).Find(
+		ctx, filter, opts...,
+	); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -64,24 +68,21 @@ func GetCategories(
 	return categories, nil
 }
 
-// Create new category
-func CreateCategory(
+// Save new category
+func SaveCategory(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	category *models.CategoryModel,
 ) (err error) {
 	var (
-		now        = primitive.NewDateTimeFromTime(time.Now())
 		insRes     *mongo.InsertOneResult
 		insertedID primitive.ObjectID
 		ok         bool
 	)
 
-	category.UID = primitive.NewObjectID()
-	category.CreatedAt = now
-	category.UpdatedAt = now
-	category.DeletedAt = nil
-	if insRes, err = getCategoryCollection(dbConn).InsertOne(ctx, category); err != nil {
+	if insRes, err = getCategoryCollection(dbConn).InsertOne(
+		ctx, category,
+	); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -100,45 +101,20 @@ func UpdateCategory(
 	dbConn *mongo.Database,
 	category *models.CategoryModel,
 ) (err error) {
-	now := primitive.NewDateTimeFromTime(time.Now())
-	category.UpdatedAt = now
-	_, err = getCategoryCollection(dbConn).UpdateByID(ctx, category.UID, bson.M{"$set": category})
+	_, err = getCategoryCollection(dbConn).UpdateByID(
+		ctx, category.UID, bson.M{"$set": category})
 
 	return err
 }
 
-// Mark category trash
-func TrashCategory(
-	ctx context.Context,
-	dbConn *mongo.Database,
-	category *models.CategoryModel,
-) (err error) {
-	now := primitive.NewDateTimeFromTime(time.Now())
-	category.DeletedAt = now
-	_, err = getCategoryCollection(dbConn).UpdateByID(ctx, category.UID, bson.M{"$set": category})
-
-	return err
-}
-
-// Unmark the trash from category
-func DetrashCategory(
-	ctx context.Context,
-	dbConn *mongo.Database,
-	category *models.CategoryModel,
-) (err error) {
-	category.DeletedAt = nil
-	_, err = getCategoryCollection(dbConn).UpdateByID(ctx, category.UID, bson.M{"$set": category})
-
-	return err
-}
-
-// Permanently delete category
+// Delete category
 func DeleteCategory(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	category *models.CategoryModel,
 ) (err error) {
-	_, err = getCategoryCollection(dbConn).DeleteOne(ctx, bson.M{"_id": category.UID})
+	_, err = getCategoryCollection(dbConn).DeleteOne(
+		ctx, bson.M{"_id": category.UID})
 
 	return err
 }

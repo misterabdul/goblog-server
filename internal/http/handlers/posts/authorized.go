@@ -11,12 +11,11 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/http/forms"
-	"github.com/misterabdul/goblog-server/internal/http/handlers/helpers"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func GetPost(
@@ -24,10 +23,10 @@ func GetPost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
 
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
 			post        *models.PostModel
 			postContent *models.PostContentModel
 			postId      primitive.ObjectID
@@ -35,11 +34,12 @@ func GetPost(
 			err         error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn, bson.M{
+		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
 				{"_id": postId}},
 		}); err != nil {
@@ -60,17 +60,18 @@ func GetPosts(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
 
 		var (
-			me        *models.UserModel
-			posts     []*models.PostModel
-			typeParam = c.DefaultQuery("type", "draft")
-			typeQuery []bson.M
-			err       error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
+			me          *models.UserModel
+			posts       []*models.PostModel
+			typeParam   = c.DefaultQuery("type", "draft")
+			typeQuery   []bson.M
+			err         error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -91,9 +92,9 @@ func GetPosts(
 				{"publishedat": bson.M{"$eq": primitive.Null{}}},
 				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
 		}
-		if posts, err = repositories.GetPosts(ctx, dbConn, bson.M{
+		if posts, err = postService.GetPosts(bson.M{
 			"$and": typeQuery,
-		}, helpers.GetFindOptionsPost(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -111,21 +112,21 @@ func PublishPost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
 			post        *models.PostModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": postId}},
@@ -141,7 +142,7 @@ func PublishPost(
 			responses.NoContent(c)
 			return
 		}
-		if err = repositories.PublishPost(ctx, dbConn, post); err != nil {
+		if err = postService.PublishPost(post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -155,21 +156,21 @@ func DepublishPost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
 			post        *models.PostModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": postId}},
@@ -185,7 +186,7 @@ func DepublishPost(
 			responses.NoContent(c)
 			return
 		}
-		if err = repositories.DepublishPost(ctx, dbConn, post); err != nil {
+		if err = postService.DepublishPost(post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -199,10 +200,9 @@ func UpdatePost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel        = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService        = service.New(c, ctx, dbConn)
 			post               *models.PostModel
 			updatedPost        *models.PostModel
 			postContent        *models.PostContentModel
@@ -213,11 +213,12 @@ func UpdatePost(
 			err                error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn, bson.M{
+		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": postId}},
@@ -233,7 +234,7 @@ func UpdatePost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if err = form.Validate(ctx, dbConn); err != nil {
+		if err = form.Validate(postService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -242,8 +243,7 @@ func UpdatePost(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = repositories.UpdatePost(ctx, dbConn,
-			updatedPost, updatedPostContent); err != nil {
+		if err = postService.UpdatePost(updatedPost, updatedPostContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -257,21 +257,21 @@ func TrashPost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
 			post        *models.PostModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": postId}},
@@ -287,7 +287,7 @@ func TrashPost(
 			responses.NoContent(c)
 			return
 		}
-		if err = repositories.TrashPost(ctx, dbConn, post); err != nil {
+		if err = postService.TrashPost(post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -301,21 +301,21 @@ func DetrashPost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
 			post        *models.PostModel
 			postId      primitive.ObjectID
 			postIdQuery = c.Param("post")
 			err         error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": postId}},
@@ -327,7 +327,7 @@ func DetrashPost(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if err = repositories.DetrashPost(ctx, dbConn, post); err != nil {
+		if err = postService.DetrashPost(post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -341,10 +341,9 @@ func DeletePost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
 			post        *models.PostModel
 			postContent *models.PostContentModel
 			postId      primitive.ObjectID
@@ -352,11 +351,12 @@ func DeletePost(
 			err         error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, postContent, err = repositories.GetPostWithContent(ctx, dbConn, bson.M{
+		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": postId}},
@@ -368,7 +368,7 @@ func DeletePost(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if err = repositories.DeletePost(ctx, dbConn, post, postContent); err != nil {
+		if err = postService.DeletePost(post, postContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -382,10 +382,9 @@ func GetPostComment(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -393,11 +392,12 @@ func GetPostComment(
 			err            error
 		)
 
+		defer cancel()
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
 		}
-		if comment, err = repositories.GetComment(ctx, dbConn, bson.M{
+		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": commentId}},
@@ -409,7 +409,7 @@ func GetPostComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = commentService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}}},
 		}); err != nil {
@@ -430,18 +430,18 @@ func GetPostComments(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			post        *models.PostModel
-			comments    []*models.CommentModel
-			postId      primitive.ObjectID
-			postIdQuery             = c.Param("post")
-			trashQuery  interface{} = primitive.Null{}
-			err         error
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
+			post           *models.PostModel
+			comments       []*models.CommentModel
+			postId         primitive.ObjectID
+			postIdQuery                = c.Param("post")
+			trashQuery     interface{} = primitive.Null{}
+			err            error
 		)
 
+		defer cancel()
 		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
@@ -449,7 +449,7 @@ func GetPostComments(
 		if trashParam := c.DefaultQuery("trash", "false"); trashParam == "true" {
 			trashQuery = bson.M{"$ne": primitive.Null{}}
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = commentService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": postId}},
@@ -461,11 +461,11 @@ func GetPostComments(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if comments, err = repositories.GetComments(ctx, dbConn, bson.M{
+		if comments, err = commentService.GetComments(bson.M{
 			"$and": []bson.M{
 				{"deletedat": trashQuery},
 				{"_id": post.UID}},
-		}, helpers.GetFindOptions(c)); err != nil {
+		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -483,10 +483,9 @@ func TrashPostComment(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -494,11 +493,12 @@ func TrashPostComment(
 			err            error
 		)
 
+		defer cancel()
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
 		}
-		if comment, err = repositories.GetComment(ctx, dbConn, bson.M{
+		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": commentId}},
@@ -510,7 +510,7 @@ func TrashPostComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = commentService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": comment.PostUid}},
@@ -522,7 +522,7 @@ func TrashPostComment(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if err = repositories.TrashComment(ctx, dbConn, comment); err != nil {
+		if err = commentService.TrashComment(comment); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -536,10 +536,9 @@ func DetrashPostComment(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -547,11 +546,12 @@ func DetrashPostComment(
 			err            error
 		)
 
+		defer cancel()
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
 		}
-		if comment, err = repositories.GetComment(ctx, dbConn, bson.M{
+		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": commentId}},
@@ -563,7 +563,7 @@ func DetrashPostComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = commentService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"_id": comment.PostUid}},
@@ -575,7 +575,7 @@ func DetrashPostComment(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if err = repositories.DetrashComment(ctx, dbConn, comment); err != nil {
+		if err = commentService.DetrashComment(comment); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -589,10 +589,9 @@ func DeletePostComment(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		ctx, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
 			comment        *models.CommentModel
 			post           *models.PostModel
 			commentId      primitive.ObjectID
@@ -600,11 +599,12 @@ func DeletePostComment(
 			err            error
 		)
 
+		defer cancel()
 		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
 		}
-		if comment, err = repositories.GetComment(ctx, dbConn, bson.M{
+		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": commentId}},
@@ -616,7 +616,7 @@ func DeletePostComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = repositories.GetPost(ctx, dbConn, bson.M{
+		if post, err = commentService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"_id": comment.PostUid}},
@@ -628,7 +628,7 @@ func DeletePostComment(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if err = repositories.DeleteComment(ctx, dbConn, comment); err != nil {
+		if err = commentService.DeleteComment(comment); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
