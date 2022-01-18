@@ -16,10 +16,10 @@ type CreatePostForm struct {
 	Title              string   `json:"title" binding:"required,max=100"`
 	Description        string   `json:"description" binding:"omitempty,max=255"`
 	FeaturingImagePath string   `json:"featuringImagePath" binding:"omitempty,url"`
-	Categories         []string `json:"categories" binding:"required,dive,len=12"`
+	Categories         []string `json:"categories" binding:"required,dive,len=24"`
 	Tags               []string `json:"tags" binding:"omitempty,dive,alphanum,max=32"`
 	Content            string   `json:"content" binding:"required"`
-	PublishNow         bool     `json:"publishNow" binding:"omitempty,boolean"`
+	PublishNow         bool     `json:"publishNow" binding:"omitempty"`
 
 	realCategories []*models.CategoryModel
 }
@@ -101,10 +101,15 @@ func findCategories(
 	postService *service.Service,
 	formCategories []string,
 ) (categories []*models.CategoryModel, err error) {
+	var categoryIds []primitive.ObjectID
+
+	if categoryIds, err = toObjectIdArray(formCategories); err != nil {
+		return nil, err
+	}
 	if categories, err = postService.GetCategories(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
-			{"_id": bson.M{"$in": formCategories}}},
+			{"_id": bson.M{"$in": categoryIds}}},
 	}); err != nil {
 		return nil, err
 	}

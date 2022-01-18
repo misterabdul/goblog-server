@@ -12,7 +12,7 @@ import (
 )
 
 type CreateCommentForm struct {
-	PostUid string `json:"postUid" binding:"required,alphanum,len=12"`
+	PostUid string `json:"postUid" binding:"required,alphanum,len=24"`
 	Email   string `json:"email" binding:"required,email"`
 	Name    string `json:"name" binding:"required,max=50"`
 	Content string `json:"content" bindinng:"required,max=255"`

@@ -12,7 +12,7 @@ import (
 )
 
 type ReplyCommmentForm struct {
-	CommentUid string `json:"commentUid" binding:"required,len=12"`
+	CommentUid string `json:"commentUid" binding:"required,len=24"`
 	Email      string `json:"email" binding:"required,email"`
 	Name       string `json:"name" binding:"required,max=50"`
 	Content    string `json:"content" binding:"required,max=255"`

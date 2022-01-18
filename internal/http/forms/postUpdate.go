@@ -15,10 +15,10 @@ type UpdatePostForm struct {
 	Title              string   `json:"title" binding:"omitempty,max=100"`
 	Description        string   `json:"description" binding:"omitempty,max=255"`
 	FeaturingImagePath string   `json:"featuringImagePath" binding:"omitempty,url"`
-	Categories         []string `json:"categories" binding:"omitempty,dive,len=12"`
+	Categories         []string `json:"categories" binding:"omitempty,dive,len=24"`
 	Tags               []string `json:"tags" binding:"omitempty,dive,max=32"`
 	Content            string   `json:"content" binding:"omitempty"`
-	PublishNow         bool     `json:"publishNow" binding:"omitempty,boolean"`
+	PublishNow         bool     `json:"publishNow" binding:"omitempty"`
 
 	realCategories []*models.CategoryModel
 }
