@@ -12,6 +12,7 @@ import (
 	"github.com/misterabdul/goblog-server/internal/database"
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/repositories"
+	customMongo "github.com/misterabdul/goblog-server/pkg/mongo"
 	"github.com/misterabdul/goblog-server/pkg/utils"
 )
 
@@ -50,11 +51,25 @@ func Generate(ctx context.Context) {
 		postContent = &models.PostContentModel{
 			UID:     postId,
 			Content: lipsumMarkdown()}
-		if err = repositories.SavePostWithContent(
-			ctx,
-			dbConn,
-			post,
-			postContent,
+		if err = customMongo.Transaction(ctx, dbConn, false,
+			func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
+				if sErr = repositories.SavePost(
+					ctx,
+					dbConn,
+					post,
+				); sErr != nil {
+					return sErr
+				}
+				if sErr = repositories.SavePostContent(
+					ctx,
+					dbConn,
+					postContent,
+				); sErr != nil {
+					return sErr
+				}
+
+				return nil
+			},
 		); err != nil {
 			log.Fatal(err)
 		}

@@ -44,39 +44,28 @@ func GetPost(
 	return &_post, nil
 }
 
-// Get single post with its content
-func GetPostWithContent(
+// Get single post content
+func GetPostContent(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	filter interface{},
+	opts ...*options.FindOneOptions,
 ) (
-	post *models.PostModel,
 	postContent *models.PostContentModel,
 	err error,
 ) {
-	var (
-		_post        models.PostModel
-		_postContent models.PostContentModel
-	)
+	var _postContent models.PostContentModel
 
-	if err = getPostCollection(dbConn).FindOne(
-		ctx, filter,
-	).Decode(&_post); err != nil {
-		if err == mongo.ErrNoDocuments {
-			return nil, nil, nil
-		}
-		return nil, nil, err
-	}
 	if err = getPostContentCollection(dbConn).FindOne(
-		ctx, bson.M{"_id": _post.UID},
+		ctx, filter, opts...,
 	).Decode(&_postContent); err != nil {
 		if err == mongo.ErrNoDocuments {
-			return &_post, nil, nil
+			return nil, nil
 		}
-		return nil, nil, err
+		return nil, err
 	}
 
-	return &_post, &_postContent, err
+	return &_postContent, nil
 }
 
 // Get multiple posts
@@ -108,58 +97,55 @@ func GetPosts(
 	return posts, nil
 }
 
-// Save new post with its content
-func SavePostWithContent(
+// Save new post
+func SavePost(
 	ctx context.Context,
 	dbConn *mongo.Database,
 	post *models.PostModel,
-	postContent *models.PostContentModel,
 ) (err error) {
 	var (
-		session    mongo.Session
 		insRes     *mongo.InsertOneResult
 		insertedID interface{}
 		ok         bool
 	)
 
-	if session, err = dbConn.Client().StartSession(); err != nil {
+	if insRes, err = getPostCollection(dbConn).InsertOne(
+		ctx, post,
+	); err != nil {
 		return err
 	}
-	defer session.EndSession(ctx)
-	if err = mongo.WithSession(ctx, session, func(sCtx mongo.SessionContext) (sErr error) {
-		if sErr = sCtx.StartTransaction(); sErr != nil {
-			return sErr
-		}
+	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
+		return errors.New("unable to assert inserted uid")
+	}
+	if post.UID != insertedID {
+		return errors.New("inserted uid is not same with database")
+	}
 
-		if insRes, sErr = getPostCollection(dbConn).InsertOne(
-			sCtx, post,
-		); sErr != nil {
-			return sErr
-		}
-		if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
-			return errors.New("unable to assert inserted uid")
-		}
-		if post.UID != insertedID {
-			return errors.New("inserted uid is not same with database")
-		}
-		if insRes, sErr = getPostContentCollection(dbConn).InsertOne(
-			sCtx, postContent,
-		); sErr != nil {
-			return sErr
-		}
-		if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
-			return errors.New("unable to assert inserted uid")
-		}
-		if postContent.UID != insertedID {
-			return errors.New("inserted uid is not same with database")
-		}
-		if sErr = session.CommitTransaction(sCtx); sErr != nil {
-			return sErr
-		}
+	return nil
+}
 
-		return nil
-	}); err != nil {
+// Save new post content
+func SavePostContent(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	postContent *models.PostContentModel,
+) (err error) {
+	var (
+		insRes     *mongo.InsertOneResult
+		insertedID interface{}
+		ok         bool
+	)
+
+	if insRes, err = getPostContentCollection(dbConn).InsertOne(
+		ctx, postContent,
+	); err != nil {
 		return err
+	}
+	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
+		return errors.New("unable to assert inserted uid")
+	}
+	if postContent.UID != insertedID {
+		return errors.New("inserted uid is not same with database")
 	}
 
 	return nil
@@ -180,49 +166,22 @@ func UpdatePost(
 	return nil
 }
 
-// Update post with its content
-func UpdatePostWithContent(
+// Update post content
+func UpdatePostContent(
 	ctx context.Context,
 	dbConn *mongo.Database,
-	post *models.PostModel,
 	postContent *models.PostContentModel,
 ) (err error) {
-	var session mongo.Session
-
-	if post.UID != postContent.UID {
-		return errors.New("post id not same as post content id")
-	}
-	if session, err = dbConn.Client().StartSession(); err != nil {
-		return err
-	}
-	defer session.EndSession(ctx)
-	if err = mongo.WithSession(ctx, session, func(sCtx mongo.SessionContext) (sErr error) {
-		if sErr = sCtx.StartTransaction(); sErr != nil {
-			return sErr
-		}
-		if _, sErr = getPostCollection(dbConn).UpdateByID(
-			sCtx, post.UID, bson.M{"$set": post},
-		); sErr != nil {
-			return sErr
-		}
-		if _, sErr = getPostContentCollection(dbConn).UpdateByID(
-			sCtx, postContent.UID, bson.M{"$set": postContent},
-		); sErr != nil {
-			return sErr
-		}
-		if sErr = session.CommitTransaction(sCtx); sErr != nil {
-			return sErr
-		}
-
-		return nil
-	}); err != nil {
+	if _, err = getPostContentCollection(dbConn).UpdateByID(
+		ctx, postContent.UID, bson.M{"$set": postContent},
+	); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Update post
+// Delete post
 func DeletePost(
 	ctx context.Context,
 	dbConn *mongo.Database,
@@ -237,45 +196,15 @@ func DeletePost(
 	return nil
 }
 
-// Delete post with its content
-func DeletePostWithContent(
+// Delete post content
+func DeletePostContent(
 	ctx context.Context,
 	dbConn *mongo.Database,
-	post *models.PostModel,
 	postContent *models.PostContentModel,
 ) (err error) {
-	var session mongo.Session
-
-	if post.UID != postContent.UID {
-		return errors.New("post id not same as post content id")
-	}
-	if session, err = dbConn.Client().StartSession(); err != nil {
-		return err
-	}
-	defer session.EndSession(ctx)
-	if err = mongo.WithSession(ctx, session, func(sCtx mongo.SessionContext) (sErr error) {
-		if sErr = sCtx.StartTransaction(); sErr != nil {
-			return sErr
-		}
-
-		if _, sErr = getPostCollection(dbConn).DeleteOne(
-			sCtx, bson.M{"_id": post.UID},
-		); sErr != nil {
-			return sErr
-		}
-
-		if _, sErr = getPostContentCollection(dbConn).DeleteOne(
-			sCtx, bson.M{"_id": postContent.UID},
-		); sErr != nil {
-			return sErr
-		}
-
-		if sErr = session.CommitTransaction(sCtx); sErr != nil {
-			return sErr
-		}
-
-		return nil
-	}); err != nil {
+	if _, err = getPostContentCollection(dbConn).DeleteOne(
+		ctx, bson.M{"_id": postContent.UID},
+	); err != nil {
 		return err
 	}
 

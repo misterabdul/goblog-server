@@ -1,13 +1,16 @@
 package service
 
 import (
+	"context"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
 	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/repositories"
+	customMongo "github.com/misterabdul/goblog-server/pkg/mongo"
 )
 
 // Get single post
@@ -15,7 +18,6 @@ func (service *Service) GetPost(filter interface{}) (
 	post *models.PostModel,
 	err error,
 ) {
-
 	return repositories.GetPost(
 		service.ctx,
 		service.dbConn,
@@ -28,11 +30,18 @@ func (service *Service) GetPostWithContent(filter interface{}) (
 	content *models.PostContentModel,
 	err error,
 ) {
+	if post, err = repositories.GetPost(
+		service.ctx, service.dbConn, filter,
+	); err != nil {
+		return nil, nil, err
+	}
+	if content, err = repositories.GetPostContent(
+		service.ctx, service.dbConn, filter,
+	); err != nil {
+		return post, nil, err
+	}
 
-	return repositories.GetPostWithContent(
-		service.ctx,
-		service.dbConn,
-		filter)
+	return post, content, nil
 }
 
 // Get multiple posts
@@ -61,10 +70,22 @@ func (service *Service) CreatePost(
 	post.DeletedAt = nil
 	content.UID = post.UID
 
-	return repositories.SavePostWithContent(
-		service.ctx,
-		service.dbConn,
-		post, content)
+	return customMongo.Transaction(service.ctx, service.dbConn, false,
+		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
+			if sErr = repositories.SavePost(
+				sCtx, dbConn, post,
+			); sErr != nil {
+				return sErr
+			}
+			if sErr = repositories.SavePostContent(
+				sCtx, dbConn, content,
+			); sErr != nil {
+				return sErr
+			}
+
+			return nil
+		})
+
 }
 
 // Mark the post published
@@ -102,10 +123,21 @@ func (service *Service) UpdatePost(
 
 	post.UpdatedAt = now
 
-	return repositories.UpdatePostWithContent(
-		service.ctx,
-		service.dbConn,
-		post, content)
+	return customMongo.Transaction(service.ctx, service.dbConn, false,
+		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
+			if sErr = repositories.UpdatePost(
+				sCtx, dbConn, post,
+			); sErr != nil {
+				return sErr
+			}
+			if sErr = repositories.UpdatePostContent(
+				sCtx, dbConn, content,
+			); sErr != nil {
+				return sErr
+			}
+
+			return nil
+		})
 }
 
 // Delete post to trash
@@ -140,8 +172,19 @@ func (service *Service) DeletePost(
 	content *models.PostContentModel,
 ) (err error) {
 
-	return repositories.DeletePostWithContent(
-		service.ctx,
-		service.dbConn,
-		post, content)
+	return customMongo.Transaction(service.ctx, service.dbConn, false,
+		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
+			if sErr = repositories.DeletePost(
+				sCtx, dbConn, post,
+			); sErr != nil {
+				return sErr
+			}
+			if sErr = repositories.DeletePostContent(
+				sCtx, dbConn, content,
+			); sErr != nil {
+				return sErr
+			}
+
+			return nil
+		})
 }
