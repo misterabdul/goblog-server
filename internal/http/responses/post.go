@@ -75,6 +75,7 @@ func extractPublicPostData(
 			"categories":         extractPostCategoryData(post.Categories),
 			"tags":               post.Tags,
 			"author":             extractPostAuthorData(post.Author),
+			"commentCount":       post.CommentCount,
 			"publishedAt":        post.PublishedAt}
 	}
 	return gin.H{
@@ -87,6 +88,7 @@ func extractPublicPostData(
 		"tags":               post.Tags,
 		"content":            postContent.Content,
 		"author":             extractPostAuthorData(post.Author),
+		"commentCount":       post.CommentCount,
 		"publishedAt":        post.PublishedAt}
 }
 
@@ -104,6 +106,7 @@ func extractAuthorizedPostData(
 			"categories":         extractPostCategoryData(post.Categories),
 			"tags":               post.Tags,
 			"author":             extractPostAuthorData(post.Author),
+			"commentCount":       post.CommentCount,
 			"publishedAt":        post.PublishedAt,
 			"createdAt":          post.CreatedAt,
 			"updatedAt":          post.UpdatedAt,
@@ -119,6 +122,7 @@ func extractAuthorizedPostData(
 		"tags":               post.Tags,
 		"content":            postContent.Content,
 		"author":             extractPostAuthorData(post.Author),
+		"commentCount":       post.CommentCount,
 		"publishedAt":        post.PublishedAt,
 		"createdAt":          post.CreatedAt,
 		"updatedAt":          post.UpdatedAt,

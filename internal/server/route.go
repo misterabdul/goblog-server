@@ -8,6 +8,7 @@ import (
 
 	authenticationHandler "github.com/misterabdul/goblog-server/internal/http/handlers/authentications"
 	categoryHandler "github.com/misterabdul/goblog-server/internal/http/handlers/categories"
+	commentHandler "github.com/misterabdul/goblog-server/internal/http/handlers/comments"
 	meHandler "github.com/misterabdul/goblog-server/internal/http/handlers/me"
 	notificationHandler "github.com/misterabdul/goblog-server/internal/http/handlers/notifications"
 	otherHandler "github.com/misterabdul/goblog-server/internal/http/handlers/others"
@@ -41,9 +42,12 @@ func InitRoutes(
 			v1.GET("/posts", postHandler.GetPublicPosts(maxCtxDuration, dbConn))
 			v1.GET("/post/search", postHandler.SearchPublicPosts(maxCtxDuration, dbConn))
 			v1.GET("/post/:post", postHandler.GetPublicPost(maxCtxDuration, dbConn))
-			v1.GET("/post/:post/comments", postHandler.GetPublicPostComments(maxCtxDuration, dbConn))
-			v1.GET("/comment/:comment", postHandler.GetPublicPostComment(maxCtxDuration, dbConn))
-			v1.POST("/comment", postHandler.CreatePublicPostComment(maxCtxDuration, dbConn))
+			v1.GET("/post/:post/comments", commentHandler.GetPublicPostComments(maxCtxDuration, dbConn))
+
+			v1.GET("/comment/:comment", commentHandler.GetPublicComment(maxCtxDuration, dbConn))
+			v1.GET("/comment/:comment/replies", commentHandler.GetPublicCommentReplies(maxCtxDuration, dbConn))
+			v1.POST("/comment", commentHandler.CreatePublicPostComment(maxCtxDuration, dbConn))
+			v1.POST("/comment/reply", commentHandler.CreatePublicCommentReply(maxCtxDuration, dbConn))
 
 			v1.POST("/signin", authenticationHandler.SignIn(maxCtxDuration, dbConn))
 			v1.POST("/signup", authenticationHandler.SignUp(maxCtxDuration, dbConn))
@@ -92,12 +96,14 @@ func InitRoutes(
 					writer.PATCH("/post/:post/publish", postHandler.PublishMyPost(maxCtxDuration, dbConn))
 					writer.PUT("/post/:post/depublish", postHandler.DepublishMyPost(maxCtxDuration, dbConn))
 					writer.PATCH("/post/:post/depublish", postHandler.DepublishMyPost(maxCtxDuration, dbConn))
-					writer.GET("/post/:post/comments", postHandler.GetMyPostComments(maxCtxDuration, dbConn))
-					writer.GET("/comment/:comment", postHandler.GetMyPostComment(maxCtxDuration, dbConn))
-					writer.DELETE("/comment/:comment", postHandler.TrashMyPostComment(maxCtxDuration, dbConn))
-					writer.PUT("/comment/:comment/detrash", postHandler.DetrashMyPostComment(maxCtxDuration, dbConn))
-					writer.PATCH("/comment/:comment/detrash", postHandler.DetrashMyPostComment(maxCtxDuration, dbConn))
-					writer.DELETE("/comment/:comment/permanent", postHandler.DeleteMyPostComment(maxCtxDuration, dbConn))
+					writer.GET("/post/:post/comments", commentHandler.GetMyPostComments(maxCtxDuration, dbConn))
+
+					writer.GET("/comments", commentHandler.GetMyComments(maxCtxDuration, dbConn))
+					writer.GET("/comment/:comment", commentHandler.GetMyComment(maxCtxDuration, dbConn))
+					writer.DELETE("/comment/:comment", commentHandler.TrashMyComment(maxCtxDuration, dbConn))
+					writer.PUT("/comment/:comment/detrash", commentHandler.DetrashMyComment(maxCtxDuration, dbConn))
+					writer.PATCH("/comment/:comment/detrash", commentHandler.DetrashMyComment(maxCtxDuration, dbConn))
+					writer.DELETE("/comment/:comment/permanent", commentHandler.DeleteMyComment(maxCtxDuration, dbConn))
 				}
 
 				editor := auth.Group("/editor")
@@ -119,12 +125,14 @@ func InitRoutes(
 					editor.PATCH("/post/:post", postHandler.UpdatePost(maxCtxDuration, dbConn))
 					editor.DELETE("/post/:post", postHandler.TrashPost(maxCtxDuration, dbConn))
 					editor.DELETE("/post/:post/permanent", postHandler.DeletePost(maxCtxDuration, dbConn))
-					editor.GET("/post/:post/comments", postHandler.GetPostComments(maxCtxDuration, dbConn))
-					editor.GET("/comment/:comment", postHandler.GetPostComment(maxCtxDuration, dbConn))
-					editor.DELETE("/comment/:comment", postHandler.TrashPostComment(maxCtxDuration, dbConn))
-					editor.PUT("/comment/:comment/detrash", postHandler.DetrashPostComment(maxCtxDuration, dbConn))
-					editor.PATCH("/comment/:comment/detrash", postHandler.DetrashPostComment(maxCtxDuration, dbConn))
-					editor.DELETE("/comment/:comment/permanent", postHandler.DeletePostComment(maxCtxDuration, dbConn))
+					editor.GET("/post/:post/comments", commentHandler.GetPostComments(maxCtxDuration, dbConn))
+
+					editor.GET("/comments", commentHandler.GetComments(maxCtxDuration, dbConn))
+					editor.GET("/comment/:comment", commentHandler.GetComment(maxCtxDuration, dbConn))
+					editor.DELETE("/comment/:comment", commentHandler.TrashComment(maxCtxDuration, dbConn))
+					editor.PUT("/comment/:comment/detrash", commentHandler.DetrashComment(maxCtxDuration, dbConn))
+					editor.PATCH("/comment/:comment/detrash", commentHandler.DetrashComment(maxCtxDuration, dbConn))
+					editor.DELETE("/comment/:comment/permanent", commentHandler.DeleteComment(maxCtxDuration, dbConn))
 				}
 
 				admin := auth.Group("/admin")

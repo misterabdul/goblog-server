@@ -11,6 +11,7 @@ type PostModel struct {
 	Categories         []CategoryCommonModel `json:"categories"`
 	Tags               []string              `json:"tags"`
 	Author             UserCommonModel       `json:"author"`
+	CommentCount       int16                 `json:"commentCount"`
 	PublishedAt        interface{}           `json:"publishedAt"`
 	CreatedAt          interface{}           `json:"createdAt"`
 	UpdatedAt          interface{}           `json:"updatedAt"`

@@ -17,20 +17,26 @@ type CreateCommentForm struct {
 	Name    string `json:"name" binding:"required,max=50"`
 	Content string `json:"content" bindinng:"required,max=255"`
 
-	realPostUid primitive.ObjectID
+	realPostUid       primitive.ObjectID
+	realPostAuthorUid primitive.ObjectID
 }
 
 func (form *CreateCommentForm) Validate(
 	commentService *service.Service,
 ) (err error) {
 	var (
-		post *models.PostModel
+		postUid primitive.ObjectID
+		post    *models.PostModel
 	)
 
-	if post, err = findPostForComment(commentService, form.PostUid); err != nil {
+	if postUid, err = primitive.ObjectIDFromHex(form.PostUid); err != nil {
+		return errors.New("invalid post uid format")
+	}
+	if post, err = findPostForComment(commentService, postUid); err != nil {
 		return err
 	}
 	form.realPostUid = post.UID
+	form.realPostAuthorUid = post.Author.UID
 
 	return nil
 }
@@ -43,29 +49,33 @@ func (form *CreateCommentForm) ToCommentModel() (model *models.CommentModel, err
 	if len(form.realPostUid) == 0 {
 		return nil, errors.New("validate the form first")
 	}
+	if len(form.realPostAuthorUid) == 0 {
+		return nil, errors.New("validate the form first")
+	}
 
 	return &models.CommentModel{
-		UID:       primitive.NewObjectID(),
-		PostUid:   form.realPostUid,
-		Email:     form.Email,
-		Name:      form.Name,
-		Content:   form.Content,
-		Replies:   []models.CommentReplyModel{},
-		CreatedAt: now,
-		DeletedAt: nil}, nil
+		UID:              primitive.NewObjectID(),
+		PostUid:          form.realPostUid,
+		PostAuthorUid:    form.realPostAuthorUid,
+		ParentCommentUid: nil,
+		Email:            form.Email,
+		Name:             form.Name,
+		Content:          form.Content,
+		ReplyCount:       0,
+		CreatedAt:        now,
+		DeletedAt:        nil,
+	}, nil
 }
 
 func findPostForComment(
 	commentService *service.Service,
-	formPostUid string,
+	formPostUid primitive.ObjectID,
 ) (post *models.PostModel, err error) {
 	if post, err = commentService.GetPost(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
 			{"publishedat": bson.M{"$ne": primitive.Null{}}},
-			{"$or": []bson.M{
-				{"_id": bson.M{"$eq": formPostUid}},
-				{"slug": bson.M{"$eq": formPostUid}}}}},
+			{"_id": bson.M{"$eq": formPostUid}}},
 	}); err != nil {
 		return nil, err
 	}

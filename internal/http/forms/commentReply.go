@@ -11,61 +11,74 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
-type ReplyCommmentForm struct {
-	CommentUid string `json:"commentUid" binding:"required,len=24"`
-	Email      string `json:"email" binding:"required,email"`
-	Name       string `json:"name" binding:"required,max=50"`
-	Content    string `json:"content" binding:"required,max=255"`
+type CreateCommentReplyForm struct {
+	ParentCommentUid string `json:"commentUid" binding:"required,len=24"`
+	Email            string `json:"email" binding:"required,email"`
+	Name             string `json:"name" binding:"required,max=50"`
+	Content          string `json:"content" binding:"required,max=255"`
 
-	parentComment *models.CommentModel
+	realParentCommentUid primitive.ObjectID
+	realPostUid          primitive.ObjectID
+	realPostAuthorUid    primitive.ObjectID
 }
 
-func (form *ReplyCommmentForm) Validate(
+func (form *CreateCommentReplyForm) Validate(
 	commentService *service.Service,
 ) (err error) {
-	if form.parentComment, err = findComment(commentService, form.CommentUid); err != nil {
+	var (
+		parentCommnetUid primitive.ObjectID
+		parentComment    *models.CommentModel
+	)
+
+	if parentCommnetUid, err = primitive.ObjectIDFromHex(form.ParentCommentUid); err != nil {
+		return errors.New("invalid parent comment uid format")
+	}
+	if parentComment, err = findCommentForReply(commentService, parentCommnetUid); err != nil {
 		return err
 	}
+	form.realParentCommentUid = parentComment.UID
+	form.realPostUid = parentComment.PostUid
+	form.realPostAuthorUid = parentComment.PostAuthorUid
 
 	return nil
 }
 
-func (form *ReplyCommmentForm) ToCommentModel() (model *models.CommentModel, err error) {
+func (form *CreateCommentReplyForm) ToCommentReplyModel() (model *models.CommentModel, err error) {
 	var (
-		now           = primitive.NewDateTimeFromTime(time.Now())
-		parentComment = form.parentComment
-		replies       = parentComment.Replies
+		now = primitive.NewDateTimeFromTime(time.Now())
 	)
 
-	if form.parentComment == nil {
+	if len(form.realParentCommentUid) == 0 {
 		return nil, errors.New("validate the form first")
 	}
 
-	replies = append(replies, models.CommentReplyModel{
-		Email:     form.Email,
-		Name:      form.Name,
-		Content:   form.Content,
-		CreatedAt: now,
-		DeletedAt: nil})
-	parentComment.Replies = replies
-
-	return parentComment, nil
+	return &models.CommentModel{
+		UID:              primitive.NewObjectID(),
+		PostUid:          form.realPostUid,
+		PostAuthorUid:    form.realPostAuthorUid,
+		ParentCommentUid: form.realParentCommentUid,
+		Email:            form.Email,
+		Name:             form.Name,
+		Content:          form.Content,
+		ReplyCount:       0,
+		CreatedAt:        now,
+		DeletedAt:        nil,
+	}, nil
 }
 
-func findComment(
+func findCommentForReply(
 	commentService *service.Service,
-	formCommentUid string,
+	formCommentUid primitive.ObjectID,
 ) (comment *models.CommentModel, err error) {
 	if comment, err = commentService.GetComment(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
-			{"$or": []bson.M{
-				{"_id": bson.M{"$eq": formCommentUid}}}}},
+			{"_id": bson.M{"$eq": formCommentUid}}},
 	}); err != nil {
 		return nil, err
 	}
 	if comment == nil {
-		return nil, errors.New("comment not found")
+		return nil, errors.New("parent comment not found")
 	}
 
 	return comment, nil

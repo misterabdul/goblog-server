@@ -43,51 +43,26 @@ func IncorrectCommentId(c *gin.Context, err error) {
 
 func extractPublicCommentData(comment *models.CommentModel) (extracted gin.H) {
 	return gin.H{
-		"uid":       comment.UID.Hex(),
-		"postUid":   comment.PostUid,
-		"email":     comment.Email,
-		"name":      comment.Name,
-		"content":   comment.Content,
-		"replies":   extractPublicCommentRepliesData(comment.Replies),
-		"createdAt": comment.CreatedAt}
-}
-
-func extractPublicCommentRepliesData(replies []models.CommentReplyModel) (extracted []gin.H) {
-	var data []gin.H
-
-	for _, reply := range replies {
-		data = append(data, gin.H{
-			"email":     reply.Email,
-			"name":      reply.Name,
-			"content":   reply.Content,
-			"createdAt": reply.CreatedAt})
-	}
-	return data
+		"uid":              comment.UID.Hex(),
+		"postUid":          comment.PostUid,
+		"parentCommentUid": comment.ParentCommentUid,
+		"email":            comment.Email,
+		"name":             comment.Name,
+		"content":          comment.Content,
+		"replyCount":       comment.ReplyCount,
+		"createdAt":        comment.CreatedAt}
 }
 
 func extractAuthorizedCommentData(comment *models.CommentModel) (extracted gin.H) {
 	return gin.H{
-		"uid":       comment.UID.Hex(),
-		"postUid":   comment.PostUid,
-		"email":     comment.Email,
-		"name":      comment.Name,
-		"content":   comment.Content,
-		"replies":   extractAuthorizedCommentRepliesData(comment.Replies),
-		"createdAt": comment.CreatedAt,
-		"deletedAt": comment.DeletedAt}
-}
-
-func extractAuthorizedCommentRepliesData(replies []models.CommentReplyModel) (extracted []gin.H) {
-	var data []gin.H
-
-	for _, reply := range replies {
-		data = append(data, gin.H{
-			"email":     reply.Email,
-			"name":      reply.Name,
-			"content":   reply.Content,
-			"createdAt": reply.CreatedAt,
-			"deletedAt": reply.DeletedAt})
-	}
-
-	return data
+		"uid":              comment.UID.Hex(),
+		"postUid":          comment.PostUid,
+		"postAuthorUid":    comment.PostAuthorUid,
+		"parentCommentUid": comment.ParentCommentUid,
+		"email":            comment.Email,
+		"name":             comment.Name,
+		"content":          comment.Content,
+		"replyCount":       comment.ReplyCount,
+		"createdAt":        comment.CreatedAt,
+		"deletedAt":        comment.DeletedAt}
 }
