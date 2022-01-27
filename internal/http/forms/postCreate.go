@@ -101,15 +101,15 @@ func findCategories(
 	postService *service.Service,
 	formCategories []string,
 ) (categories []*models.CategoryModel, err error) {
-	var categoryIds []primitive.ObjectID
+	var categoryUids []primitive.ObjectID
 
-	if categoryIds, err = toObjectIdArray(formCategories); err != nil {
+	if categoryUids, err = toObjectIdArray(formCategories); err != nil {
 		return nil, err
 	}
 	if categories, err = postService.GetCategories(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
-			{"_id": bson.M{"$in": categoryIds}}},
+			{"_id": bson.M{"$in": categoryUids}}},
 	}); err != nil {
 		return nil, err
 	}

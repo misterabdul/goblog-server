@@ -25,22 +25,22 @@ func GetPublicPost(
 			postService = service.New(c, ctx, dbConn)
 			post        *models.PostModel
 			postContent *models.PostContentModel
-			postId      primitive.ObjectID
-			postQuery   = c.Param("post")
+			postUid     interface{}
+			postParam   = c.Param("post")
 			err         error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postQuery); err != nil {
-			postId = primitive.ObjectID{}
+		if postUid, err = primitive.ObjectIDFromHex(postParam); err != nil {
+			postUid = nil
 		}
 		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
-					{"_id": postId},
-					{"slug": postQuery}}}},
+					{"_id": bson.M{"$eq": postUid}},
+					{"slug": bson.M{"$eq": postParam}}}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -69,7 +69,7 @@ func GetPublicPosts(
 		defer cancel()
 		if posts, err = postService.GetPosts(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
@@ -100,10 +100,9 @@ func SearchPublicPosts(
 
 		defer cancel()
 		if posts, err = postService.GetPosts(bson.M{
-			"$text": bson.M{
-				"$search": searchQuery},
+			"$text": bson.M{"$search": searchQuery},
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)

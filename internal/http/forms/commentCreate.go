@@ -42,9 +42,7 @@ func (form *CreateCommentForm) Validate(
 }
 
 func (form *CreateCommentForm) ToCommentModel() (model *models.CommentModel, err error) {
-	var (
-		now = primitive.NewDateTimeFromTime(time.Now())
-	)
+	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	if len(form.realPostUid) == 0 {
 		return nil, errors.New("validate the form first")

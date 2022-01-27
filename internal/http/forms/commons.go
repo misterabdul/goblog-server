@@ -8,6 +8,7 @@ func toObjectIdArray(objectIdHexs []string) (
 ) {
 	var objectId primitive.ObjectID
 
+	objectIds = []primitive.ObjectID{}
 	for _, objectIdHex := range objectIdHexs {
 		if objectId, err = primitive.ObjectIDFromHex(objectIdHex); err != nil {
 			return nil, err

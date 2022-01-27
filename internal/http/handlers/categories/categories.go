@@ -24,21 +24,21 @@ func GetPublicCategory(
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
 			categoryService = service.New(c, ctx, dbConn)
 			category        *models.CategoryModel
-			categoryId      primitive.ObjectID
-			categoryQuery   = c.Param("category")
+			categoryUid     interface{}
+			categoryParam   = c.Param("category")
 			err             error
 		)
 
 		defer cancel()
-		if categoryId, err = primitive.ObjectIDFromHex(categoryQuery); err != nil {
-			categoryId = primitive.ObjectID{}
+		if categoryUid, err = primitive.ObjectIDFromHex(categoryParam); err != nil {
+			categoryUid = nil
 		}
 		if category, err = categoryService.GetCategory(bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"$or": []bson.M{
-					{"_id": categoryId},
-					{"slug": categoryQuery}}}},
+					{"_id": bson.M{"$eq": categoryUid}},
+					{"slug": bson.M{"$eq": categoryParam}}}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -66,8 +66,7 @@ func GetPublicCategories(
 
 		defer cancel()
 		if categories, err = categoryService.GetCategories(bson.M{
-			"$and": []bson.M{
-				{"deletedat": primitive.Null{}}},
+			"deletedat": primitive.Null{},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return

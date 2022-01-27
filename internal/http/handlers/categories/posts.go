@@ -23,22 +23,22 @@ func GetPublicCategoryPosts(
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
 			categoryService = service.New(c, ctx, dbConn)
 			posts           []*models.PostModel
-			categoryId      primitive.ObjectID
-			categoryQuery   = c.Param("category")
+			categoryUid     interface{}
+			categoryParam   = c.Param("category")
 			err             error
 		)
 
 		defer cancel()
-		if categoryId, err = primitive.ObjectIDFromHex(categoryQuery); err != nil {
-			categoryId = primitive.ObjectID{}
+		if categoryUid, err = primitive.ObjectIDFromHex(categoryParam); err != nil {
+			categoryUid = nil
 		}
 		if posts, err = categoryService.GetPosts(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
-					{"_id": categoryId},
-					{"slug": categoryQuery}}}},
+					{"_id": bson.M{"$eq": categoryUid}},
+					{"slug": bson.M{"$eq": categoryParam}}}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return

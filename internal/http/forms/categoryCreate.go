@@ -33,9 +33,7 @@ func (form *CreateCategoryForm) ToCategoryModel() (model *models.CategoryModel) 
 }
 
 func checkCategorySlug(categoryService *service.Service, formSlug string) (err error) {
-	var (
-		categories []*models.CategoryModel
-	)
+	var categories []*models.CategoryModel
 
 	if categories, err = categoryService.GetCategories(bson.M{
 		"slug": bson.M{"$eq": formSlug},

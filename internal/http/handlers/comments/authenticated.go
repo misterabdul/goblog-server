@@ -22,13 +22,13 @@ func GetMyComment(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
-			me             *models.UserModel
-			comment        *models.CommentModel
-			commentId      primitive.ObjectID
-			commentIdParam = c.Param("comment")
-			err            error
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService  = service.New(c, ctx, dbConn)
+			me              *models.UserModel
+			comment         *models.CommentModel
+			commentUid      primitive.ObjectID
+			commentUidParam = c.Param("comment")
+			err             error
 		)
 
 		defer cancel()
@@ -36,14 +36,14 @@ func GetMyComment(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if commentId, err = primitive.ObjectIDFromHex(commentIdParam); err != nil {
+		if commentUid, err = primitive.ObjectIDFromHex(commentUidParam); err != nil {
 			responses.IncorrectCommentId(c, err)
 			return
 		}
 		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
 				{"postauthoruid": bson.M{"$eq": me.UID}},
-				{"_id": bson.M{"$eq": commentId}}},
+				{"_id": bson.M{"$eq": commentUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return

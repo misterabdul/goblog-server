@@ -45,7 +45,6 @@ func (form *CreateUserForm) Validate(
 func (form *CreateUserForm) ToUserModel() (user *models.UserModel, err error) {
 	var (
 		now      = primitive.NewDateTimeFromTime(time.Now())
-		userId   = primitive.NewObjectID()
 		password string
 	)
 
@@ -53,7 +52,7 @@ func (form *CreateUserForm) ToUserModel() (user *models.UserModel, err error) {
 		return nil, err
 	}
 	return &models.UserModel{
-		UID:       userId,
+		UID:       primitive.NewObjectID(),
 		FirstName: form.FirstName,
 		LastName:  form.LastName,
 		Username:  form.Username,
@@ -67,9 +66,7 @@ func (form *CreateUserForm) ToUserModel() (user *models.UserModel, err error) {
 }
 
 func isProperRoles(createdRoles []int) (err error) {
-	var (
-		createdRoleLevel = 3
-	)
+	var createdRoleLevel = 3
 
 	for _, createdRole := range createdRoles {
 		if createdRole < createdRoleLevel {
@@ -84,9 +81,7 @@ func isProperRoles(createdRoles []int) (err error) {
 }
 
 func getRoles(formRoles []int, now primitive.DateTime) (roles []models.UserRole) {
-	var (
-		roleExists bool
-	)
+	var roleExists bool
 
 	roles = []models.UserRole{}
 	for _, roleNumber := range formRoles {

@@ -34,7 +34,7 @@ func Authenticate(
 			userService  = service.New(c, ctx, dbConn)
 			me           *models.UserModel
 			accessClaims *jwt.CustomClaims
-			userId       primitive.ObjectID
+			userUid      primitive.ObjectID
 			auth         string
 			err          error
 		)
@@ -51,12 +51,16 @@ func Authenticate(
 			c.Abort()
 			return
 		}
-		if userId, err = primitive.ObjectIDFromHex(accessClaims.Subject); err != nil {
+		if userUid, err = primitive.ObjectIDFromHex(accessClaims.Subject); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
 		}
-		if me, err = userService.GetUser(bson.M{"_id": userId}); err != nil {
+		if me, err = userService.GetUser(bson.M{
+			"$and": []bson.M{
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"_id": bson.M{"$eq": userUid}}},
+		}); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return

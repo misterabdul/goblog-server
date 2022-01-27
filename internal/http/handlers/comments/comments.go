@@ -23,24 +23,24 @@ func GetPublicComment(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
-			comment        *models.CommentModel
-			post           *models.PostModel
-			commentId      primitive.ObjectID
-			commentIdQuery = c.Param("comment")
-			err            error
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService  = service.New(c, ctx, dbConn)
+			comment         *models.CommentModel
+			post            *models.PostModel
+			commentUid      primitive.ObjectID
+			commentUidParam = c.Param("comment")
+			err             error
 		)
 
 		defer cancel()
-		if commentId, err = primitive.ObjectIDFromHex(commentIdQuery); err != nil {
+		if commentUid, err = primitive.ObjectIDFromHex(commentUidParam); err != nil {
 			responses.NotFound(c, err)
 			return
 		}
 		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": commentId}}},
+				{"_id": bson.M{"$eq": commentUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -76,22 +76,22 @@ func GetPublicPostComments(
 			commentService = service.New(c, ctx, dbConn)
 			comments       []*models.CommentModel
 			post           *models.PostModel
-			postId         interface{}
-			postQuery      = c.Param("post")
+			postUid        interface{}
+			postParam      = c.Param("post")
 			err            error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postQuery); err != nil {
-			postId = nil
+		if postUid, err = primitive.ObjectIDFromHex(postParam); err != nil {
+			postUid = nil
 		}
 		if post, err = commentService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
-					{"_id": bson.M{"$eq": postId}},
-					{"slug": bson.M{"$eq": postQuery}}}}},
+					{"_id": bson.M{"$eq": postUid}},
+					{"slug": bson.M{"$eq": postParam}}}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -129,20 +129,20 @@ func GetPublicCommentReplies(
 			replies        []*models.CommentModel
 			comment        *models.CommentModel
 			post           *models.PostModel
-			commentId      interface{}
-			commentQuery   = c.Param("comment")
+			commentUid     interface{}
+			commentParam   = c.Param("comment")
 			err            error
 		)
 
 		defer cancel()
-		if commentId, err = primitive.ObjectIDFromHex(commentQuery); err != nil {
+		if commentUid, err = primitive.ObjectIDFromHex(commentParam); err != nil {
 			responses.NotFound(c, errors.New("incorrent comment id format"))
 			return
 		}
 		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": commentId}}},
+				{"_id": bson.M{"$eq": commentUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return

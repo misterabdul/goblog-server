@@ -53,9 +53,7 @@ func checkUsername(
 	userService *service.Service,
 	formUsername string,
 ) (err error) {
-	var (
-		users []*models.UserModel
-	)
+	var users []*models.UserModel
 
 	if users, err = userService.GetUsers(bson.M{
 		"username": bson.M{"$eq": formUsername},
@@ -73,9 +71,7 @@ func checkEmail(
 	userService *service.Service,
 	formEmail string,
 ) (err error) {
-	var (
-		users []*models.UserModel
-	)
+	var users []*models.UserModel
 
 	if users, err = userService.GetUsers(bson.M{
 		"email": bson.M{"$eq": formEmail},

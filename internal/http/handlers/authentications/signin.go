@@ -43,8 +43,8 @@ func SignIn(
 		}
 		if user, err = userService.GetUser(bson.M{
 			"$or": []bson.M{
-				{"username": input.Username},
-				{"email": input.Username}},
+				{"username": bson.M{"$eq": input.Username}},
+				{"email": bson.M{"$eq": input.Username}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return

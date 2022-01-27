@@ -25,21 +25,21 @@ func GetPublicUser(
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
 			userService = service.New(c, ctx, dbConn)
 			user        *models.UserModel
-			userId      primitive.ObjectID
-			userQuery   = c.Param("user")
+			userUid     interface{}
+			userParam   = c.Param("user")
 			err         error
 		)
 
 		defer cancel()
-		if userId, err = primitive.ObjectIDFromHex(userQuery); err != nil {
-			userId = primitive.ObjectID{}
+		if userUid, err = primitive.ObjectIDFromHex(userParam); err != nil {
+			userUid = nil
 		}
 		if user, err = userService.GetUser(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"$or": []bson.M{
-					{"_id": userId},
-					{"username": userQuery}}}},
+					{"_id": bson.M{"$eq": userUid}},
+					{"username": bson.M{"$eq": userParam}}}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return

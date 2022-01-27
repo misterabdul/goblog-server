@@ -44,9 +44,7 @@ func (form *CreateCommentReplyForm) Validate(
 }
 
 func (form *CreateCommentReplyForm) ToCommentReplyModel() (model *models.CommentModel, err error) {
-	var (
-		now = primitive.NewDateTimeFromTime(time.Now())
-	)
+	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	if len(form.realParentCommentUid) == 0 {
 		return nil, errors.New("validate the form first")

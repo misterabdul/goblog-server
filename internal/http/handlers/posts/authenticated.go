@@ -24,14 +24,14 @@ func GetMyPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			me          *models.UserModel
-			post        *models.PostModel
-			postContent *models.PostContentModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			me           *models.UserModel
+			post         *models.PostModel
+			postContent  *models.PostContentModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
@@ -39,23 +39,20 @@ func GetMyPost(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
-				{"_id": postId}},
+				{"author._id": bson.M{"$eq": me.UID}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 		if post == nil {
 			responses.NotFound(c, errors.New("post not found"))
-			return
-		}
-		if post.Author.Username != me.Username {
-			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 
@@ -73,8 +70,8 @@ func GetMyPosts(
 			postService = service.New(c, ctx, dbConn)
 			me          *models.UserModel
 			posts       []*models.PostModel
-			typeParam   = c.DefaultQuery("type", "draft")
-			typeQuery   []bson.M
+			typeQuery   = c.DefaultQuery("type", "draft")
+			extraQuery  = []bson.M{}
 			err         error
 		)
 
@@ -84,23 +81,23 @@ func GetMyPosts(
 			return
 		}
 		switch true {
-		case typeParam == "trash":
-			typeQuery = []bson.M{
-				{"deletedat": bson.M{"$ne": primitive.Null{}}}}
-		case typeParam == "published":
-			typeQuery = []bson.M{
-				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
-		case typeParam == "draft":
+		case typeQuery == "trash":
+			extraQuery = append(extraQuery,
+				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
+		case typeQuery == "published":
+			extraQuery = append(extraQuery,
+				bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
+				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
+		case typeQuery == "draft":
 			fallthrough
 		default:
-			typeQuery = []bson.M{
-				{"publishedat": bson.M{"$eq": primitive.Null{}}},
-				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
+			extraQuery = append(extraQuery,
+				bson.M{"publishedat": bson.M{"$eq": primitive.Null{}}},
+				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
 		}
 		if posts, err = postService.GetPosts(bson.M{
-			"$and": append(typeQuery,
-				bson.M{"author.username": me.Username}),
+			"$and": append(extraQuery,
+				bson.M{"author._id": bson.M{"$eq": me.UID}}),
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -161,13 +158,13 @@ func PublishMyPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			me          *models.UserModel
-			post        *models.PostModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			me           *models.UserModel
+			post         *models.PostModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
@@ -175,24 +172,21 @@ func PublishMyPost(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": postId}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"author._id": bson.M{"$eq": me.UID}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 		if post == nil {
 			responses.NotFound(c, errors.New("post not found"))
-			return
-		}
-		if post.Author.Username != me.Username {
-			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if post.PublishedAt != nil {
@@ -214,13 +208,13 @@ func DepublishMyPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			me          *models.UserModel
-			post        *models.PostModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			me           *models.UserModel
+			post         *models.PostModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
@@ -228,24 +222,21 @@ func DepublishMyPost(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": postId}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"author._id": bson.M{"$eq": me.UID}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 		if post == nil {
 			responses.NotFound(c, errors.New("post not found"))
-			return
-		}
-		if post.Author.Username != me.Username {
-			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if post.PublishedAt == nil {
@@ -274,8 +265,8 @@ func UpdateMyPost(
 			updatedPost        *models.PostModel
 			postContent        *models.PostContentModel
 			updatedPostContent *models.PostContentModel
-			postId             primitive.ObjectID
-			postIdQuery        = c.Param("post")
+			postUid            primitive.ObjectID
+			postUidParam       = c.Param("post")
 			form               *forms.UpdatePostForm
 			err                error
 		)
@@ -285,24 +276,21 @@ func UpdateMyPost(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": postId}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"author._id": bson.M{"$eq": me.UID}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 		if post == nil {
 			responses.NotFound(c, errors.New("post not found"))
-			return
-		}
-		if post.Author.Username != me.Username {
-			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if form, err = requests.GetUpdatePostForm(c); err != nil {
@@ -313,12 +301,16 @@ func UpdateMyPost(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if updatedPost, updatedPostContent, err = form.
-			ToPostModel(post, postContent); err != nil {
+		if updatedPost, updatedPostContent, err = form.ToPostModel(
+			post, postContent,
+		); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = postService.UpdatePost(updatedPost, updatedPostContent); err != nil {
+		if err = postService.UpdatePost(
+			updatedPost,
+			updatedPostContent,
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -333,13 +325,13 @@ func TrashMyPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			me          *models.UserModel
-			post        *models.PostModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			me           *models.UserModel
+			post         *models.PostModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
@@ -347,24 +339,21 @@ func TrashMyPost(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": postId}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"author._id": bson.M{"$eq": me.UID}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 		if post == nil {
 			responses.NotFound(c, errors.New("post not found"))
-			return
-		}
-		if post.Author.Username != me.Username {
-			responses.UnauthorizedAction(c, errors.New("your are not the author of the post"))
 			return
 		}
 		if err = postService.TrashPost(post); err != nil {
@@ -382,13 +371,13 @@ func DetrashMyPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			me          *models.UserModel
-			post        *models.PostModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			me           *models.UserModel
+			post         *models.PostModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
@@ -396,24 +385,21 @@ func DetrashMyPost(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": postId}},
+				{"author._id": bson.M{"$eq": me.UID}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 		if post == nil {
 			responses.NotFound(c, err)
-			return
-		}
-		if post.Author.Username != me.Username {
-			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if err = postService.DetrashPost(post); err != nil {
@@ -431,14 +417,14 @@ func DeleteMyPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			me          *models.UserModel
-			post        *models.PostModel
-			postContent *models.PostContentModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			me           *models.UserModel
+			post         *models.PostModel
+			postContent  *models.PostContentModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
@@ -446,24 +432,20 @@ func DeleteMyPost(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
-				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": postId}},
+				{"author._id": bson.M{"$eq": me.UID}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
 		if post == nil {
 			responses.NotFound(c, err)
-			return
-		}
-		if post.Author.Username != me.Username {
-			responses.UnauthorizedAction(c, errors.New("you are not the author of the post"))
 			return
 		}
 		if err = postService.DeletePost(post, postContent); err != nil {

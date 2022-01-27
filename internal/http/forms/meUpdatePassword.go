@@ -27,9 +27,7 @@ func (form *UpdateMePasswordForm) Validate(me *models.UserModel) (err error) {
 func (form *UpdateMePasswordForm) ToUserModel(
 	me *models.UserModel,
 ) (updatedMe *models.UserModel, err error) {
-	var (
-		newPassword string
-	)
+	var newPassword string
 
 	if newPassword, err = hash.Make(form.NewPassword); err != nil {
 		return nil, err

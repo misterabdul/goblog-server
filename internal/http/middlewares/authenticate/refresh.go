@@ -32,7 +32,7 @@ func AuthenticateRefresh(
 			refreshToken  string
 			refreshClaims *jwt.CustomClaims
 			revoked       bool
-			userId        primitive.ObjectID
+			userUid       primitive.ObjectID
 			me            *models.UserModel
 			err           error
 		)
@@ -58,12 +58,16 @@ func AuthenticateRefresh(
 			c.Abort()
 			return
 		}
-		if userId, err = primitive.ObjectIDFromHex(refreshClaims.Subject); err != nil {
+		if userUid, err = primitive.ObjectIDFromHex(refreshClaims.Subject); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
 		}
-		if me, err = userService.GetUser(bson.M{"_id": userId}); err != nil {
+		if me, err = userService.GetUser(bson.M{
+			"$and": []bson.M{
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"_id": bson.M{"$eq": userUid}}},
+		}); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
@@ -79,15 +83,15 @@ func checkRevokedToken(
 	refreshClaims *jwt.CustomClaims,
 ) (noted bool, err error) {
 	var (
-		tokenID          primitive.ObjectID
+		tokenUid         primitive.ObjectID
 		revokedTokenData *models.RevokedTokenModel
 	)
 
-	if tokenID, err = primitive.ObjectIDFromHex(refreshClaims.Id); err != nil {
+	if tokenUid, err = primitive.ObjectIDFromHex(refreshClaims.Id); err != nil {
 		return false, err
 	}
 	if revokedTokenData, err = userService.GetRevokedToken(bson.M{
-		"_id": tokenID,
+		"_id": tokenUid,
 	}); err != nil {
 		return false, err
 	}

@@ -11,7 +11,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/http/forms"
-	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -23,25 +22,23 @@ func GetPost(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			post        *models.PostModel
-			postContent *models.PostContentModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			post         *models.PostModel
+			postContent  *models.PostContentModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, postContent, err = postService.GetPostWithContent(bson.M{
-			"$and": []bson.M{
-				{"_id": postId}},
+			"_id": bson.M{"$eq": postUid},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -60,40 +57,33 @@ func GetPosts(
 	dbConn *mongo.Database,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
 			postService = service.New(c, ctx, dbConn)
-			me          *models.UserModel
 			posts       []*models.PostModel
-			typeParam   = c.DefaultQuery("type", "draft")
-			typeQuery   []bson.M
+			typeQuery   = c.DefaultQuery("type", "draft")
+			extraQuery  = []bson.M{}
 			err         error
 		)
 
 		defer cancel()
-		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
-			responses.Unauthenticated(c, err)
-			return
-		}
 		switch true {
-		case typeParam == "trash":
-			typeQuery = []bson.M{
-				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"author.username": me.Username}}
-		case typeParam == "published":
-			typeQuery = []bson.M{
-				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
-		case typeParam == "draft":
+		case typeQuery == "trash":
+			extraQuery = append(extraQuery,
+				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
+		case typeQuery == "published":
+			extraQuery = append(extraQuery,
+				bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
+				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
+		case typeQuery == "draft":
 			fallthrough
 		default:
-			typeQuery = []bson.M{
-				{"publishedat": bson.M{"$eq": primitive.Null{}}},
-				{"deletedat": bson.M{"$eq": primitive.Null{}}}}
+			extraQuery = append(extraQuery,
+				bson.M{"publishedat": bson.M{"$eq": primitive.Null{}}},
+				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
 		}
 		if posts, err = postService.GetPosts(bson.M{
-			"$and": typeQuery,
+			"$and": extraQuery,
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -113,23 +103,23 @@ func PublishPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			post        *models.PostModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			post         *models.PostModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": postId}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -157,23 +147,23 @@ func DepublishPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			post        *models.PostModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			post         *models.PostModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": postId}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -207,21 +197,21 @@ func UpdatePost(
 			updatedPost        *models.PostModel
 			postContent        *models.PostContentModel
 			updatedPostContent *models.PostContentModel
-			postId             primitive.ObjectID
-			postIdQuery        = c.Param("post")
+			postUid            primitive.ObjectID
+			postUidParam       = c.Param("post")
 			form               *forms.UpdatePostForm
 			err                error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, postContent, err = postService.GetPostWithContent(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": postId}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -238,12 +228,15 @@ func UpdatePost(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if updatedPost, updatedPostContent, err = form.
-			ToPostModel(post, postContent); err != nil {
+		if updatedPost, updatedPostContent, err = form.ToPostModel(
+			post, postContent,
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = postService.UpdatePost(updatedPost, updatedPostContent); err != nil {
+		if err = postService.UpdatePost(
+			updatedPost, updatedPostContent,
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -258,23 +251,23 @@ func TrashPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			post        *models.PostModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			post         *models.PostModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
-				{"deletedat": primitive.Null{}},
-				{"_id": postId}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -302,23 +295,23 @@ func DetrashPost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			post        *models.PostModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			post         *models.PostModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": postId}},
+				{"_id": bson.M{"$eq": postUid}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -342,24 +335,22 @@ func DeletePost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			post        *models.PostModel
-			postContent *models.PostContentModel
-			postId      primitive.ObjectID
-			postIdQuery = c.Param("post")
-			err         error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService  = service.New(c, ctx, dbConn)
+			post         *models.PostModel
+			postContent  *models.PostContentModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			err          error
 		)
 
 		defer cancel()
-		if postId, err = primitive.ObjectIDFromHex(postIdQuery); err != nil {
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
 			responses.IncorrectPostId(c, err)
 			return
 		}
 		if post, postContent, err = postService.GetPostWithContent(bson.M{
-			"$and": []bson.M{
-				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": postId}},
+			"_id": bson.M{"$eq": postUid},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
