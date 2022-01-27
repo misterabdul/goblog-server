@@ -191,6 +191,7 @@ func CreatePublicPostComment(
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
 			commentService = service.New(c, ctx, dbConn)
 			comment        *models.CommentModel
+			post           *models.PostModel
 			form           *forms.CreateCommentForm
 			err            error
 		)
@@ -200,7 +201,7 @@ func CreatePublicPostComment(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(commentService); err != nil {
+		if post, err = form.Validate(commentService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -208,7 +209,7 @@ func CreatePublicPostComment(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = commentService.CreateComment(comment); err != nil {
+		if err = commentService.CreateComment(comment, post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -226,6 +227,7 @@ func CreatePublicCommentReply(
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
 			commentService = service.New(c, ctx, dbConn)
 			reply          *models.CommentModel
+			comment        *models.CommentModel
 			form           *forms.CreateCommentReplyForm
 			err            error
 		)
@@ -235,7 +237,7 @@ func CreatePublicCommentReply(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(commentService); err != nil {
+		if comment, err = form.Validate(commentService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -243,7 +245,7 @@ func CreatePublicCommentReply(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = commentService.CreateComment(reply); err != nil {
+		if err = commentService.CreateCommentReply(reply, comment); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

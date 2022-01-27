@@ -158,6 +158,8 @@ func TrashMyComment(
 			commentService  = service.New(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
+			parentComment   *models.CommentModel
+			post            *models.PostModel
 			commentUid      primitive.ObjectID
 			commentUidParam = c.Param("comment")
 			err             error
@@ -174,7 +176,7 @@ func TrashMyComment(
 		}
 		if comment, err = commentService.GetComment(bson.M{
 			"$and": []bson.M{
-				{"deleted": bson.M{"$eq": primitive.Null{}}},
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"postauthoruid": bson.M{"$eq": me.UID}},
 				{"_id": bson.M{"$eq": commentUid}}},
 		}); err != nil {
@@ -185,9 +187,22 @@ func TrashMyComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if err = commentService.TrashComment(comment); err != nil {
-			responses.InternalServerError(c, err)
-			return
+		if comment.ParentCommentUid == nil {
+			if post, err = findCommentPost(c, commentService, comment); err != nil {
+				return
+			}
+			if err = commentService.TrashComment(comment, post); err != nil {
+				responses.InternalServerError(c, err)
+				return
+			}
+		} else {
+			if parentComment, err = findReplyParentComment(c, commentService, comment); err != nil {
+				return
+			}
+			if err = commentService.TrashCommentReply(comment, parentComment); err != nil {
+				responses.InternalServerError(c, err)
+				return
+			}
 		}
 
 		responses.NoContent(c)
@@ -204,6 +219,8 @@ func DetrashMyComment(
 			commentService  = service.New(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
+			parentComment   *models.CommentModel
+			post            *models.PostModel
 			commentUid      primitive.ObjectID
 			commentUidParam = c.Param("comment")
 			err             error
@@ -231,9 +248,22 @@ func DetrashMyComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if err = commentService.DetrashComment(comment); err != nil {
-			responses.InternalServerError(c, err)
-			return
+		if comment.ParentCommentUid == nil {
+			if post, err = findCommentPost(c, commentService, comment); err != nil {
+				return
+			}
+			if err = commentService.DetrashComment(comment, post); err != nil {
+				responses.InternalServerError(c, err)
+				return
+			}
+		} else {
+			if parentComment, err = findReplyParentComment(c, commentService, comment); err != nil {
+				return
+			}
+			if err = commentService.DetrashCommentReply(comment, parentComment); err != nil {
+				responses.InternalServerError(c, err)
+				return
+			}
 		}
 
 		responses.NoContent(c)
@@ -250,6 +280,8 @@ func DeleteMyComment(
 			commentService  = service.New(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
+			parentComment   *models.CommentModel
+			post            *models.PostModel
 			commentUid      primitive.ObjectID
 			commentUidParam = c.Param("comment")
 			err             error
@@ -276,11 +308,67 @@ func DeleteMyComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if err = commentService.DeleteComment(comment); err != nil {
-			responses.InternalServerError(c, err)
-			return
+		if comment.ParentCommentUid == nil {
+			if post, err = findCommentPost(c, commentService, comment); err != nil {
+				return
+			}
+			if err = commentService.DeleteComment(comment, post); err != nil {
+				responses.InternalServerError(c, err)
+				return
+			}
+		} else {
+			if parentComment, err = findReplyParentComment(c, commentService, comment); err != nil {
+				return
+			}
+			if err = commentService.DeleteCommentReply(comment, parentComment); err != nil {
+				responses.InternalServerError(c, err)
+				return
+			}
 		}
 
 		responses.NoContent(c)
 	}
+}
+
+func findCommentPost(
+	c *gin.Context,
+	commentService *service.Service,
+	comment *models.CommentModel,
+) (post *models.PostModel, err error) {
+
+	if post, err = commentService.GetPost(bson.M{
+		"$and": []bson.M{
+			{"deletedat": bson.M{"$eq": primitive.Null{}}},
+			{"_id": bson.M{"$eq": comment.PostUid}}},
+	}); err != nil {
+		responses.InternalServerError(c, err)
+		return nil, err
+	}
+	if post == nil {
+		responses.NotFound(c, errors.New("post not found"))
+		return nil, err
+	}
+
+	return post, nil
+}
+
+func findReplyParentComment(
+	c *gin.Context,
+	commentService *service.Service,
+	reply *models.CommentModel,
+) (comment *models.CommentModel, err error) {
+	if comment, err = commentService.GetComment(bson.M{
+		"$and": []bson.M{
+			{"deletedat": bson.M{"$eq": primitive.Null{}}},
+			{"_id": bson.M{"$eq": reply.ParentCommentUid}}},
+	}); err != nil {
+		responses.InternalServerError(c, err)
+		return nil, err
+	}
+	if comment == nil {
+		responses.NotFound(c, errors.New("parent comment not found"))
+		return nil, err
+	}
+
+	return comment, nil
 }

@@ -24,23 +24,23 @@ type CreateCommentReplyForm struct {
 
 func (form *CreateCommentReplyForm) Validate(
 	commentService *service.Service,
-) (err error) {
-	var (
-		parentCommnetUid primitive.ObjectID
-		parentComment    *models.CommentModel
-	)
+) (parentComment *models.CommentModel, err error) {
+	var parentCommnetUid primitive.ObjectID
 
 	if parentCommnetUid, err = primitive.ObjectIDFromHex(form.ParentCommentUid); err != nil {
-		return errors.New("invalid parent comment uid format")
+		return nil, errors.New("invalid parent comment uid format")
 	}
 	if parentComment, err = findCommentForReply(commentService, parentCommnetUid); err != nil {
-		return err
+		return nil, err
+	}
+	if _, err = findPostForComment(commentService, parentComment.UID); err != nil {
+		return nil, err
 	}
 	form.realParentCommentUid = parentComment.UID
 	form.realPostUid = parentComment.PostUid
 	form.realPostAuthorUid = parentComment.PostAuthorUid
 
-	return nil
+	return parentComment, nil
 }
 
 func (form *CreateCommentReplyForm) ToCommentReplyModel() (model *models.CommentModel, err error) {
