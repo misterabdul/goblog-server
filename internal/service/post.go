@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
@@ -36,7 +37,8 @@ func (service *Service) GetPostWithContent(filter interface{}) (
 		return nil, nil, err
 	}
 	if content, err = repositories.GetPostContent(
-		service.ctx, service.dbConn, filter,
+		service.ctx, service.dbConn, bson.M{
+			"_id": bson.M{"$eq": post.UID}},
 	); err != nil {
 		return post, nil, err
 	}
