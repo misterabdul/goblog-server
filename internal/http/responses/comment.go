@@ -10,12 +10,12 @@ import (
 
 func PublicComment(c *gin.Context, comment *models.CommentModel) {
 	data := extractPublicCommentData(comment)
-	Basic(c, http.StatusOK, data)
+	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
 func AuthorizedComment(c *gin.Context, comment *models.CommentModel) {
 	data := extractAuthorizedCommentData(comment)
-	Basic(c, http.StatusOK, data)
+	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
 func PublicComments(c *gin.Context, comments []*models.CommentModel) {

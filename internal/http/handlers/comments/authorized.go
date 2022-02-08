@@ -72,7 +72,7 @@ func GetComments(
 		}
 		if comments, err = commentService.GetComments(bson.M{
 			"$and": extraQuery,
-		}); err != nil {
+		}, false); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -115,7 +115,7 @@ func GetPostComments(
 		if comments, err = commentService.GetComments(bson.M{
 			"$and": append(extraQuery,
 				bson.M{"postuid": bson.M{"$eq": postUid}}),
-		}); err != nil {
+		}, false); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

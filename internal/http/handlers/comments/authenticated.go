@@ -86,7 +86,7 @@ func GetMyComments(
 		if comments, err = commentService.GetComments(bson.M{
 			"$and": append(extraQuery,
 				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
-		}); err != nil {
+		}, false); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -135,7 +135,7 @@ func GetMyPostComments(
 			"$and": append(extraQuery,
 				bson.M{"postuid": bson.M{"$eq": postUid}},
 				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
-		}); err != nil {
+		}, false); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

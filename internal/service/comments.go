@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/models"
 	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
@@ -27,13 +29,25 @@ func (service *Service) GetComment(
 // Get multiple comments
 func (service *Service) GetComments(
 	filter interface{},
+	dateDesc bool,
 ) (comments []*models.CommentModel, err error) {
+	var (
+		_options *options.FindOptions
+	)
+
+	if dateDesc {
+		_options = &options.FindOptions{
+			Sort: bson.M{"createdat": 1},
+		}
+	} else {
+		_options = internalGin.GetFindOptions(service.c)
+	}
 
 	return repositories.GetComments(
 		service.ctx,
 		service.dbConn,
 		filter,
-		internalGin.GetFindOptions(service.c))
+		_options)
 }
 
 // Create new comment

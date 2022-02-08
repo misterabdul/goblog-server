@@ -105,7 +105,7 @@ func GetPublicPostComments(
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"parentcommentuid": bson.M{"$eq": primitive.Null{}}},
 				{"postuid": bson.M{"$eq": post.UID}}},
-		}); err != nil {
+		}, true); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -169,7 +169,7 @@ func GetPublicCommentReplies(
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"postuid": bson.M{"$eq": post.UID}},
 				{"parentcommentuid": bson.M{"$eq": comment.UID}}},
-		}); err != nil {
+		}, true); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
