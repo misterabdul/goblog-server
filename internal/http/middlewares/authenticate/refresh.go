@@ -2,6 +2,7 @@ package authenticate
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -69,6 +70,11 @@ func AuthenticateRefresh(
 				{"_id": bson.M{"$eq": userUid}}},
 		}); err != nil {
 			responses.Unauthenticated(c, err)
+			c.Abort()
+			return
+		}
+		if me == nil {
+			responses.Unauthenticated(c, errors.New("user not found"))
 			c.Abort()
 			return
 		}

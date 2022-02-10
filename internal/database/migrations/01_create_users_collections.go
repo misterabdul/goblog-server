@@ -68,9 +68,10 @@ func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) (err error) {
 		return err
 	}
 	superAdmin = models.UserModel{
-		FirstName: "Super Admin",
-		Email:     "superadmin@example.com",
+		UID:       primitive.NewObjectID(),
 		Username:  "superadmin",
+		Email:     "superadmin@example.com",
+		FirstName: "Super Admin",
 		Password:  password,
 		Roles: []models.UserRole{{
 			Level: 0,

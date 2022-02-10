@@ -65,6 +65,11 @@ func Authenticate(
 			c.Abort()
 			return
 		}
+		if me == nil {
+			responses.Unauthenticated(c, errors.New("user not found"))
+			c.Abort()
+			return
+		}
 		c.Set(AuthenticatedClaims, *accessClaims)
 		c.Set(AuthenticatedUser, *me)
 		c.Next()

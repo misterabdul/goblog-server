@@ -36,18 +36,19 @@ func Generate(ctx context.Context) {
 			UID:                postId,
 			Slug:               fmt.Sprintf("lorem-ipsum-%d", i),
 			Title:              fmt.Sprintf("Lorem Ipsum %d", i),
-			Description:        lipsumParagraph(),
 			FeaturingImagePath: "./statics/images/image-example.jpg",
+			Description:        lipsumParagraph(),
 			Categories:         []models.CategoryCommonModel{},
 			Tags:               []string{"lorem", "ipsum", "dolor", "sit", "amet"},
+			CommentCount:       0,
+			PublishedAt:        now,
+			CreatedAt:          now,
+			UpdatedAt:          now,
+			DeletedAt:          nil,
 			Author: models.UserCommonModel{
 				FirstName: "Super Admin",
 				Username:  "superadmin",
-				Email:     "superadmin@example.com"},
-			PublishedAt: now,
-			CreatedAt:   now,
-			UpdatedAt:   now,
-			DeletedAt:   nil}
+				Email:     "superadmin@example.com"}}
 		postContent = &models.PostContentModel{
 			UID:     postId,
 			Content: lipsumMarkdown()}
