@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -103,6 +104,35 @@ func Rollback(ctx context.Context, dbConn *mongo.Database) (err error) {
 	return nil
 }
 
+// Check database migration status.
+func Status(ctx context.Context, dbConn *mongo.Database) (err error) {
+	var (
+		migrationsData   []*migrationModel
+		migration        MigrationInterface
+		latestMigration  string = "<empty>"
+		countNotMigrated uint32 = 0
+	)
+
+	if migrationsData, _, err = getMigrationsData(ctx, dbConn); err != nil {
+		migrationsData = []*migrationModel{}
+	}
+
+	if len(migrationsData) > 0 {
+		latestMigration = migrationsData[len(migrationsData)-1].Name
+	}
+
+	for _, migration = range getMigrations() {
+		if !alreadyMigrated(migration, migrationsData) {
+			countNotMigrated++
+		}
+	}
+
+	utils.ConsolePrintlnWhite("Latest migration : " + latestMigration)
+	utils.ConsolePrintlnWhite("New migrations   : " + fmt.Sprintf("%d", countNotMigrated))
+
+	return nil
+}
+
 // Create the migrations collection.
 func createMigrationsCollection(ctx context.Context, dbConn *mongo.Database) (err error) {
 	if err = dbConn.CreateCollection(ctx, migrationCollectionName); err != nil {
@@ -131,11 +161,13 @@ func getMigrationsData(ctx context.Context, dbConn *mongo.Database) (
 ) {
 	var (
 		cursor *mongo.Cursor
-		data   migrationModel
+		data   *migrationModel
 	)
 
-	if cursor, err = dbConn.Collection(migrationCollectionName).
-		Find(ctx, bson.M{}); err != nil {
+	if cursor, err = dbConn.Collection(migrationCollectionName).Find(
+		ctx, bson.M{}, &options.FindOptions{
+			Sort: bson.M{"name": 1}},
+	); err != nil {
 		// Maybe there's no migrations collection, try to create one.
 		if err = createMigrationsCollection(ctx, dbConn); err != nil {
 			return nil, 1, err
@@ -145,13 +177,14 @@ func getMigrationsData(ctx context.Context, dbConn *mongo.Database) (
 	}
 	batch = 1
 	for cursor.Next(ctx) {
-		if err = cursor.Decode(&data); err != nil {
+		data = &migrationModel{}
+		if err = cursor.Decode(data); err != nil {
 			return nil, batch, err
 		}
 		if data.Batch > batch {
 			batch = data.Batch
 		}
-		migrationsData = append(migrationsData, &data)
+		migrationsData = append(migrationsData, data)
 	}
 
 	return migrationsData, batch, nil

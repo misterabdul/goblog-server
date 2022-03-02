@@ -61,6 +61,9 @@ func getAvailableCommands() (
 		"migrations:rollback": func(ctx context.Context, reader *bufio.Reader) {
 			migration.Rollback(ctx)
 		},
+		"migrations:status": func(ctx context.Context, reader *bufio.Reader) {
+			migration.Status(ctx)
+		},
 		"post:generate": func(ctx context.Context, reader *bufio.Reader) {
 			post.Generate(ctx)
 		},
