@@ -30,11 +30,13 @@ func GetDBConn(
 
 // Get default DB connection instance
 func GetDBConnDefault(ctx context.Context) (dbConn *mongo.Database, err error) {
-	return GetDBConn(ctx, getDbUri(), getDbName())
+	var dbName = getDbName()
+
+	return GetDBConn(ctx, getDbUri(dbName), dbName)
 }
 
 // Get databse URI
-func getDbUri() (dbUri string) {
+func getDbUri(dbName string) (dbUri string) {
 	var (
 		protocol    = "mongodb"
 		host        = "localhost"
@@ -69,7 +71,9 @@ func getDbUri() (dbUri string) {
 		user + ":" +
 		password + "@" +
 		host + ":" +
-		port
+		port + "/" +
+		dbName + "?authSource=" +
+		dbName
 }
 
 // Get database name
