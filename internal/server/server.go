@@ -14,7 +14,11 @@ type serverRelatedEnv struct {
 
 // Get the server engine.
 func GetServer() (serverInstance *gin.Engine) {
-	serverEnv := getServerRelatedEnv()
+	var (
+		serverEnv  *serverRelatedEnv = getServerRelatedEnv()
+		corsConfig cors.Config
+	)
+
 	switch serverEnv.Mode {
 	default:
 		fallthrough
@@ -28,7 +32,10 @@ func GetServer() (serverInstance *gin.Engine) {
 	case 2:
 		gin.SetMode(gin.DebugMode)
 		serverInstance = gin.Default()
-		serverInstance.Use(cors.Default())
+		corsConfig = cors.DefaultConfig()
+		corsConfig.AllowAllOrigins = true
+		corsConfig.AllowCredentials = true
+		serverInstance.Use(cors.New(corsConfig))
 	}
 	serverInstance.Use(gzip.Gzip(gzip.DefaultCompression))
 
