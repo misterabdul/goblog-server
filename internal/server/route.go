@@ -56,7 +56,7 @@ func InitRoutes(
 			refresh.Use(authenticateMiddleware.AuthenticateRefresh(maxCtxDuration, dbConn))
 			{
 				refresh.POST("/signout", authenticationHandler.SignOut(maxCtxDuration, dbConn))
-				refresh.POST("/", authenticationHandler.Refresh(maxCtxDuration, dbConn))
+				refresh.POST("", authenticationHandler.Refresh(maxCtxDuration, dbConn))
 			}
 
 			auth := v1.Group("/auth")
