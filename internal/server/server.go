@@ -2,6 +2,7 @@ package server
 
 import (
 	"os"
+	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/gzip"
@@ -9,15 +10,15 @@ import (
 )
 
 type serverRelatedEnv struct {
-	Mode int
+	Mode           int
+	TrustedProxies *[]string
+	UseCors        bool
+	CorsMiddleware *gin.HandlerFunc
 }
 
 // Get the server engine.
 func GetServer() (serverInstance *gin.Engine) {
-	var (
-		serverEnv  *serverRelatedEnv = getServerRelatedEnv()
-		corsConfig cors.Config
-	)
+	var serverEnv *serverRelatedEnv = getServerRelatedEnv()
 
 	switch serverEnv.Mode {
 	default:
@@ -32,10 +33,12 @@ func GetServer() (serverInstance *gin.Engine) {
 	case 2:
 		gin.SetMode(gin.DebugMode)
 		serverInstance = gin.Default()
-		corsConfig = cors.DefaultConfig()
-		corsConfig.AllowAllOrigins = true
-		corsConfig.AllowCredentials = true
-		serverInstance.Use(cors.New(corsConfig))
+	}
+	if serverEnv.TrustedProxies != nil {
+		serverInstance.SetTrustedProxies(*serverEnv.TrustedProxies)
+	}
+	if serverEnv.UseCors {
+		serverInstance.Use(*serverEnv.CorsMiddleware)
 	}
 	serverInstance.Use(gzip.Gzip(gzip.DefaultCompression))
 
@@ -43,8 +46,21 @@ func GetServer() (serverInstance *gin.Engine) {
 }
 
 func getServerRelatedEnv() (envs *serverRelatedEnv) {
-	_envs := serverRelatedEnv{
-		Mode: 0,
+	var (
+		_envs              serverRelatedEnv
+		_trustedProxiesEnv string
+		_trustedProxies    []string
+		_allowedOriginsEnv string
+		corsConfig         cors.Config
+		corsMiddleware     gin.HandlerFunc
+		ok                 bool
+	)
+
+	_envs = serverRelatedEnv{
+		Mode:           0,
+		TrustedProxies: nil,
+		UseCors:        false,
+		CorsMiddleware: nil,
 	}
 
 	if mode, ok := os.LookupEnv("APP_MODE"); ok {
@@ -58,6 +74,21 @@ func getServerRelatedEnv() (envs *serverRelatedEnv) {
 		case mode == "debug":
 			_envs.Mode = 2
 		}
+	}
+
+	if _trustedProxiesEnv, ok = os.LookupEnv("TRUSTED_PROXIES"); ok {
+		_trustedProxies = strings.Split(_trustedProxiesEnv, ",")
+		_envs.TrustedProxies = &_trustedProxies
+	}
+
+	if _allowedOriginsEnv, ok = os.LookupEnv("CORS_ALLOWED_ORIGINS"); ok {
+		corsConfig = cors.DefaultConfig()
+		corsConfig.AllowAllOrigins = false
+		corsConfig.AllowOrigins = strings.Split(_allowedOriginsEnv, ",")
+		corsConfig.AllowCredentials = true
+		corsMiddleware = cors.New(corsConfig)
+		_envs.CorsMiddleware = &corsMiddleware
+		_envs.UseCors = true
 	}
 
 	return &_envs
