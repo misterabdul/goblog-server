@@ -86,6 +86,7 @@ func getServerRelatedEnv() (envs *serverRelatedEnv) {
 		corsConfig.AllowAllOrigins = false
 		corsConfig.AllowOrigins = strings.Split(_allowedOriginsEnv, ",")
 		corsConfig.AllowCredentials = true
+		corsConfig.AllowHeaders = append(corsConfig.AllowHeaders, "authorization")
 		corsMiddleware = cors.New(corsConfig)
 		_envs.CorsMiddleware = &corsMiddleware
 		_envs.UseCors = true
