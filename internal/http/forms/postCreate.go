@@ -33,6 +33,9 @@ func (form *CreatePostForm) Validate(
 	if form.realCategories, err = findCategories(postService, form.Categories); err != nil {
 		return err
 	}
+	if len(form.realCategories) == 0 {
+		return errors.New("couldn't find any categories from the input")
+	}
 
 	return nil
 }
