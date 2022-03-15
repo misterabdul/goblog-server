@@ -56,8 +56,9 @@ func SignedIn(
 		true)
 
 	Basic(c, http.StatusOK, gin.H{
-		"tokenType":   "Bearer",
-		"accessToken": accessToken})
+		"data": gin.H{
+			"tokenType":   "Bearer",
+			"accessToken": accessToken}})
 }
 
 func SigningOut(c *gin.Context) {

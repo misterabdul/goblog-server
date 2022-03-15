@@ -10,12 +10,12 @@ import (
 
 func PublicCategory(c *gin.Context, category *models.CategoryModel) {
 	data := extractPublicCategoryData(category)
-	Basic(c, http.StatusOK, data)
+	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
 func AuthorizedCategory(c *gin.Context, category *models.CategoryModel) {
 	data := extractAuthorizedCategoryData(category)
-	Basic(c, http.StatusOK, data)
+	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
 func PublicCategories(c *gin.Context, categories []*models.CategoryModel) {

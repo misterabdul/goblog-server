@@ -14,7 +14,7 @@ func PublicPost(
 	postContent *models.PostContentModel,
 ) {
 	data := extractPublicPostData(post, postContent)
-	Basic(c, http.StatusOK, data)
+	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
 func AuthorizedPost(
@@ -23,7 +23,7 @@ func AuthorizedPost(
 	postContent *models.PostContentModel,
 ) {
 	data := extractAuthorizedPostData(post, postContent)
-	Basic(c, http.StatusOK, data)
+	Basic(c, http.StatusOK, gin.H{"data": data})
 }
 
 func MyPost(
