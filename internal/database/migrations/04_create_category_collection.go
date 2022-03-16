@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const categoryCollectionName = "category"
+const categoryCollectionName = "categories"
 
 // Create the category collection.
 type CreateCategoryCollection struct{}

@@ -60,15 +60,19 @@ func GetCategories(
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
 			categoryService = service.New(c, ctx, dbConn)
 			categories      []*models.CategoryModel
+			typeParam       = c.DefaultQuery("type", "active")
 			extraQuery      = []bson.M{}
 			err             error
 		)
 
 		defer cancel()
-		if trashParam := c.DefaultQuery("trash", "false"); trashParam == "true" {
+		switch true {
+		case typeParam == "trash":
 			extraQuery = append(extraQuery,
 				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
-		} else {
+		case typeParam == "active":
+			fallthrough
+		default:
 			extraQuery = append(extraQuery,
 				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
 		}
