@@ -36,6 +36,9 @@ func (service *Service) GetPostWithContent(filter interface{}) (
 	); err != nil {
 		return nil, nil, err
 	}
+	if post == nil {
+		return nil, nil, nil
+	}
 	if content, err = repositories.GetPostContent(
 		service.ctx, service.dbConn, bson.M{
 			"_id": bson.M{"$eq": post.UID}},
