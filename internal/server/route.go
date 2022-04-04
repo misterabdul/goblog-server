@@ -12,6 +12,7 @@ import (
 	meHandler "github.com/misterabdul/goblog-server/internal/http/handlers/me"
 	notificationHandler "github.com/misterabdul/goblog-server/internal/http/handlers/notifications"
 	otherHandler "github.com/misterabdul/goblog-server/internal/http/handlers/others"
+	pageHandler "github.com/misterabdul/goblog-server/internal/http/handlers/pages"
 	postHandler "github.com/misterabdul/goblog-server/internal/http/handlers/posts"
 	userHandler "github.com/misterabdul/goblog-server/internal/http/handlers/users"
 	authenticateMiddleware "github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
@@ -43,6 +44,10 @@ func InitRoutes(
 			v1.GET("/post/search", postHandler.SearchPublicPosts(maxCtxDuration, dbConn))
 			v1.GET("/post/:post", postHandler.GetPublicPost(maxCtxDuration, dbConn))
 			v1.GET("/post/:post/comments", commentHandler.GetPublicPostComments(maxCtxDuration, dbConn))
+
+			v1.GET("/pages", pageHandler.GetPublicPages(maxCtxDuration, dbConn))
+			v1.GET("/page/search", pageHandler.SearchPublicPages(maxCtxDuration, dbConn))
+			v1.GET("/page/:page", pageHandler.GetPublicPage(maxCtxDuration, dbConn))
 
 			v1.GET("/comment/:comment", commentHandler.GetPublicComment(maxCtxDuration, dbConn))
 			v1.GET("/comment/:comment/replies", commentHandler.GetPublicCommentReplies(maxCtxDuration, dbConn))
@@ -133,6 +138,20 @@ func InitRoutes(
 					editor.PUT("/comment/:comment/detrash", commentHandler.DetrashComment(maxCtxDuration, dbConn))
 					editor.PATCH("/comment/:comment/detrash", commentHandler.DetrashComment(maxCtxDuration, dbConn))
 					editor.DELETE("/comment/:comment/permanent", commentHandler.DeleteComment(maxCtxDuration, dbConn))
+
+					editor.GET("/pages", pageHandler.GetPages(maxCtxDuration, dbConn))
+					editor.GET("/page/:page", pageHandler.GetPage(maxCtxDuration, dbConn))
+					editor.POST("/page", pageHandler.CreatePage(maxCtxDuration, dbConn))
+					editor.PUT("/page/:page", pageHandler.UpdatePage(maxCtxDuration, dbConn))
+					editor.PATCH("/page/:page", pageHandler.UpdatePage(maxCtxDuration, dbConn))
+					editor.DELETE("/page/:page", pageHandler.TrashPage(maxCtxDuration, dbConn))
+					editor.PUT("/page/:page/publish", pageHandler.PublishPage(maxCtxDuration, dbConn))
+					editor.PATCH("/page/:page/publish", pageHandler.PublishPage(maxCtxDuration, dbConn))
+					editor.PUT("/page/:page/depublish", pageHandler.DepublishPage(maxCtxDuration, dbConn))
+					editor.PATCH("/page/:page/depublish", pageHandler.DepublishPage(maxCtxDuration, dbConn))
+					editor.PUT("/page/:page/detrash", pageHandler.DetrashPage(maxCtxDuration, dbConn))
+					editor.PATCH("/page/:page/detrash", pageHandler.DetrashPage(maxCtxDuration, dbConn))
+					editor.DELETE("/page/:page/permanent", pageHandler.DeletePage(maxCtxDuration, dbConn))
 				}
 
 				admin := auth.Group("/admin")

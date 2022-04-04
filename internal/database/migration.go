@@ -42,7 +42,9 @@ func getMigrations() (migrationInstances []MigrationInterface) {
 		new(migrations.CreateCommentsCollection),
 		new(migrations.CreateCategoryCollection),
 		new(migrations.CreateNotificationCollection),
-		new(migrations.CreateRevokedTokenCollection)}
+		new(migrations.CreateRevokedTokenCollection),
+		new(migrations.CreatePagesCollection),
+	}
 }
 
 // Run the migrations.

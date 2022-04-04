@@ -74,7 +74,7 @@ func extractPublicPostData(
 			"description":        post.Description,
 			"categories":         extractPostCategoryData(post.Categories),
 			"tags":               post.Tags,
-			"author":             extractPostAuthorData(post.Author),
+			"author":             extractCommonAuthorData(post.Author),
 			"commentCount":       post.CommentCount,
 			"publishedAt":        post.PublishedAt}
 	}
@@ -87,7 +87,7 @@ func extractPublicPostData(
 		"categories":         extractPostCategoryData(post.Categories),
 		"tags":               post.Tags,
 		"content":            postContent.Content,
-		"author":             extractPostAuthorData(post.Author),
+		"author":             extractCommonAuthorData(post.Author),
 		"commentCount":       post.CommentCount,
 		"publishedAt":        post.PublishedAt}
 }
@@ -105,7 +105,7 @@ func extractAuthorizedPostData(
 			"description":        post.Description,
 			"categories":         extractPostCategoryData(post.Categories),
 			"tags":               post.Tags,
-			"author":             extractPostAuthorData(post.Author),
+			"author":             extractCommonAuthorData(post.Author),
 			"commentCount":       post.CommentCount,
 			"publishedAt":        post.PublishedAt,
 			"createdAt":          post.CreatedAt,
@@ -121,7 +121,7 @@ func extractAuthorizedPostData(
 		"categories":         extractPostCategoryData(post.Categories),
 		"tags":               post.Tags,
 		"content":            postContent.Content,
-		"author":             extractPostAuthorData(post.Author),
+		"author":             extractCommonAuthorData(post.Author),
 		"commentCount":       post.CommentCount,
 		"publishedAt":        post.PublishedAt,
 		"createdAt":          post.CreatedAt,
