@@ -266,7 +266,7 @@ func UpdatePage(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(pageService); err != nil {
+		if err = form.Validate(pageService, page); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}

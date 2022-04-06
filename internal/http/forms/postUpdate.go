@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -25,8 +26,9 @@ type UpdatePostForm struct {
 
 func (form *UpdatePostForm) Validate(
 	postService *service.Service,
+	target *models.PostModel,
 ) (err error) {
-	if err = checkPostSlug(postService, form.Slug); err != nil {
+	if err = checkUpdatePostSlug(postService, form.Slug, target); err != nil {
 		return err
 	}
 	if form.realCategories, err = findCategories(postService, form.Categories); err != nil {
@@ -82,4 +84,27 @@ func (form *UpdatePostForm) ToPostModel(
 	post.UpdatedAt = now
 
 	return post, postContent, nil
+}
+
+func checkUpdatePostSlug(
+	postService *service.Service,
+	formSlug string,
+	target *models.PostModel,
+) (err error) {
+	var (
+		posts []*models.PostModel
+	)
+
+	if posts, err = postService.GetPosts(bson.M{
+		"$and": []bson.M{
+			{"_id": bson.M{"$ne": target.UID}},
+			{"slug": bson.M{"$eq": formSlug}}},
+	}); err != nil {
+		return err
+	}
+	if len(posts) > 0 {
+		return errors.New("slug exists")
+	}
+
+	return nil
 }

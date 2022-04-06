@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -34,12 +35,12 @@ func (form *UpdateUserForm) Validate(
 		return errors.New("password confirm not same")
 	}
 	if strings.Compare(form.Username, target.Username) != 0 {
-		if err = checkUsername(userService, form.Username); err != nil {
+		if err = checkUpdateUsername(userService, form.Username, target); err != nil {
 			return err
 		}
 	}
 	if strings.Compare(form.Email, target.Email) != 0 {
-		if err = checkEmail(userService, form.Email); err != nil {
+		if err = checkUpdateEmail(userService, form.Email, target); err != nil {
 			return err
 		}
 	}
@@ -78,4 +79,46 @@ func (form *UpdateUserForm) ToUserModel(
 	}
 
 	return user, nil
+}
+
+func checkUpdateUsername(
+	userService *service.Service,
+	formUsername string,
+	target *models.UserModel,
+) (err error) {
+	var users []*models.UserModel
+
+	if users, err = userService.GetUsers(bson.M{
+		"$and": []bson.M{
+			{"_id": bson.M{"$ne": target.UID}},
+			{"username": bson.M{"$eq": formUsername}}},
+	}); err != nil {
+		return err
+	}
+	if len(users) > 0 {
+		return errors.New("username exists")
+	}
+
+	return nil
+}
+
+func checkUpdateEmail(
+	userService *service.Service,
+	formEmail string,
+	target *models.UserModel,
+) (err error) {
+	var users []*models.UserModel
+
+	if users, err = userService.GetUsers(bson.M{
+		"$and": []bson.M{
+			{"_id": bson.M{"$ne": target.UID}},
+			{"email": bson.M{"$eq": formEmail}}},
+	}); err != nil {
+		return err
+	}
+	if len(users) > 0 {
+		return errors.New("email exists")
+	}
+
+	return nil
 }

@@ -160,7 +160,7 @@ func UpdateCategory(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(categoryService); err != nil {
+		if err = form.Validate(categoryService, category); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}

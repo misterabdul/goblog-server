@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -75,6 +76,42 @@ func isProperRoles(createdRoles []int) (err error) {
 	}
 	if createdRoleLevel <= 1 {
 		return errors.New("cannot create admin role, you must adminize them later")
+	}
+
+	return nil
+}
+
+func checkUsername(
+	userService *service.Service,
+	formUsername string,
+) (err error) {
+	var users []*models.UserModel
+
+	if users, err = userService.GetUsers(bson.M{
+		"username": bson.M{"$eq": formUsername},
+	}); err != nil {
+		return err
+	}
+	if len(users) > 0 {
+		return errors.New("username exists")
+	}
+
+	return nil
+}
+
+func checkEmail(
+	userService *service.Service,
+	formEmail string,
+) (err error) {
+	var users []*models.UserModel
+
+	if users, err = userService.GetUsers(bson.M{
+		"email": bson.M{"$eq": formEmail},
+	}); err != nil {
+		return err
+	}
+	if len(users) > 0 {
+		return errors.New("email exists")
 	}
 
 	return nil

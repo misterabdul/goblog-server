@@ -1,10 +1,6 @@
 package forms
 
 import (
-	"errors"
-
-	"go.mongodb.org/mongo-driver/bson"
-
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
@@ -20,10 +16,10 @@ func (form *UpdateMeForm) Validate(
 	userService *service.Service,
 	me *models.UserModel,
 ) (err error) {
-	if err = checkUsername(userService, form.Username); err != nil {
+	if err = checkUpdateUsername(userService, form.Username, me); err != nil {
 		return err
 	}
-	if err = checkEmail(userService, form.Email); err != nil {
+	if err = checkUpdateEmail(userService, form.Email, me); err != nil {
 		return err
 	}
 
@@ -47,40 +43,4 @@ func (form *UpdateMeForm) ToUserModel(
 	}
 
 	return me
-}
-
-func checkUsername(
-	userService *service.Service,
-	formUsername string,
-) (err error) {
-	var users []*models.UserModel
-
-	if users, err = userService.GetUsers(bson.M{
-		"username": bson.M{"$eq": formUsername},
-	}); err != nil {
-		return err
-	}
-	if len(users) > 0 {
-		return errors.New("username exists")
-	}
-
-	return nil
-}
-
-func checkEmail(
-	userService *service.Service,
-	formEmail string,
-) (err error) {
-	var users []*models.UserModel
-
-	if users, err = userService.GetUsers(bson.M{
-		"email": bson.M{"$eq": formEmail},
-	}); err != nil {
-		return err
-	}
-	if len(users) > 0 {
-		return errors.New("email exists")
-	}
-
-	return nil
 }

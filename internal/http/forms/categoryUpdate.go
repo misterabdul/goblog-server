@@ -1,6 +1,10 @@
 package forms
 
 import (
+	"errors"
+
+	"go.mongodb.org/mongo-driver/bson"
+
 	"github.com/misterabdul/goblog-server/internal/models"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
@@ -12,9 +16,10 @@ type UpdateCategoryForm struct {
 
 func (form *UpdateCategoryForm) Validate(
 	categoryService *service.Service,
+	target *models.CategoryModel,
 ) (err error) {
 	if len(form.Slug) > 0 {
-		if err = checkCategorySlug(categoryService, form.Slug); err != nil {
+		if err = checkUpdateCategorySlug(categoryService, form.Slug, target); err != nil {
 			return err
 		}
 	}
@@ -33,4 +38,25 @@ func (form *UpdateCategoryForm) ToCategoryModel(
 	}
 
 	return category
+}
+
+func checkUpdateCategorySlug(
+	categoryService *service.Service,
+	formSlug string,
+	target *models.CategoryModel,
+) (err error) {
+	var categories []*models.CategoryModel
+
+	if categories, err = categoryService.GetCategories(bson.M{
+		"$and": []bson.M{
+			{"_id": bson.M{"$ne": target.UID}},
+			{"slug": bson.M{"$eq": formSlug}}},
+	}); err != nil {
+		return err
+	}
+	if len(categories) > 0 {
+		return errors.New("slug exists")
+	}
+
+	return nil
 }

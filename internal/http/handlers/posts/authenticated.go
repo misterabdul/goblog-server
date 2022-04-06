@@ -297,7 +297,7 @@ func UpdateMyPost(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(postService); err != nil {
+		if err = form.Validate(postService, post); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}

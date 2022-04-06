@@ -1,8 +1,10 @@
 package forms
 
 import (
+	"errors"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 
 	"github.com/misterabdul/goblog-server/internal/models"
@@ -18,8 +20,9 @@ type UpdatePageForm struct {
 
 func (form *UpdatePageForm) Validate(
 	pageService *service.Service,
+	page *models.PageModel,
 ) (err error) {
-	if err = checkPageSlug(pageService, form.Slug); err != nil {
+	if err = checkUpdatePageSlug(page, pageService, form.Slug); err != nil {
 		return err
 	}
 
@@ -53,4 +56,27 @@ func (form *UpdatePageForm) ToPageModel(
 	page.UpdatedAt = now
 
 	return page, pageContent, nil
+}
+
+func checkUpdatePageSlug(
+	page *models.PageModel,
+	pageService *service.Service,
+	formSlug string,
+) (err error) {
+	var (
+		pages []*models.PageModel
+	)
+
+	if pages, err = pageService.GetPages(bson.M{
+		"$and": []bson.M{
+			{"_id": bson.M{"$ne": page.UID}},
+			{"slug": bson.M{"$eq": formSlug}}},
+	}); err != nil {
+		return err
+	}
+	if len(pages) > 0 {
+		return errors.New("slug exists")
+	}
+
+	return nil
 }
