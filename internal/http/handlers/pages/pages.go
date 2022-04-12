@@ -3,6 +3,7 @@ package pages
 import (
 	"context"
 	"errors"
+	"net/url"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -39,8 +40,44 @@ func GetPublicPage(
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
-					{"_id": bson.M{"$eq": pageUid}},
-					{"slug": bson.M{"$eq": pageParam}}}}},
+					{"_id": bson.M{"$eq": pageUid}}}}},
+		}); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		if page == nil {
+			responses.NotFound(c, errors.New("page not found"))
+			return
+		}
+
+		responses.PublicPage(c, page, pageContent)
+	}
+}
+
+func GetPublicPageBySlug(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			pageService = service.New(c, ctx, dbConn)
+			page        *models.PageModel
+			pageContent *models.PageContentModel
+			pageSlug    interface{}
+			pageParam   = c.Query("slug")
+			err         error
+		)
+
+		defer cancel()
+		if pageSlug, err = url.Parse(pageParam); err != nil {
+			pageSlug = nil
+		}
+		if page, pageContent, err = pageService.GetPageWithContent(bson.M{
+			"$and": []bson.M{
+				{"deletedat": bson.M{"$eq": primitive.Null{}}},
+				{"publishedat": bson.M{"$ne": primitive.Null{}}},
+				{"slug": bson.M{"$eq": pageSlug}}},
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return

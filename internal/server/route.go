@@ -48,6 +48,7 @@ func InitRoutes(
 			v1.GET("/pages", pageHandler.GetPublicPages(maxCtxDuration, dbConn))
 			v1.GET("/page/search", pageHandler.SearchPublicPages(maxCtxDuration, dbConn))
 			v1.GET("/page/:page", pageHandler.GetPublicPage(maxCtxDuration, dbConn))
+			v1.GET("/page/slug", pageHandler.GetPublicPageBySlug(maxCtxDuration, dbConn))
 
 			v1.GET("/comment/:comment", commentHandler.GetPublicComment(maxCtxDuration, dbConn))
 			v1.GET("/comment/:comment/replies", commentHandler.GetPublicCommentReplies(maxCtxDuration, dbConn))
