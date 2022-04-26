@@ -1,9 +1,10 @@
-package post
+package fakedata
 
 import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,7 +17,7 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/utils"
 )
 
-func Generate(ctx context.Context) {
+func GeneratePosts(ctx context.Context) {
 	var (
 		dbConn      *mongo.Database
 		post        *models.PostModel
@@ -30,7 +31,7 @@ func Generate(ctx context.Context) {
 		log.Fatal(err)
 	}
 	defer dbConn.Client().Disconnect(ctx)
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 200; i++ {
 		postId = primitive.NewObjectID()
 		post = &models.PostModel{
 			UID:                postId,
@@ -41,7 +42,7 @@ func Generate(ctx context.Context) {
 			Categories:         []models.CategoryCommonModel{},
 			Tags:               []string{"lorem", "ipsum", "dolor", "sit", "amet"},
 			CommentCount:       0,
-			PublishedAt:        now,
+			PublishedAt:        randNilOrValue(now),
 			CreatedAt:          now,
 			UpdatedAt:          now,
 			DeletedAt:          nil,
@@ -55,14 +56,14 @@ func Generate(ctx context.Context) {
 		if err = customMongo.Transaction(ctx, dbConn, false,
 			func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
 				if sErr = repositories.SavePost(
-					ctx,
+					sCtx,
 					dbConn,
 					post,
 				); sErr != nil {
 					return sErr
 				}
 				if sErr = repositories.SavePostContent(
-					ctx,
+					sCtx,
 					dbConn,
 					postContent,
 				); sErr != nil {
@@ -75,7 +76,14 @@ func Generate(ctx context.Context) {
 			log.Fatal(err)
 		}
 	}
-	utils.ConsolePrintlnGreen("Generated 100 dummy posts.")
+	utils.ConsolePrintlnGreen("Generated 200 dummy posts.")
+}
+
+func randNilOrValue(value interface{}) interface{} {
+	if rand.Int()%2 == 0 {
+		return value
+	}
+	return nil
 }
 
 func lipsumParagraph() string {

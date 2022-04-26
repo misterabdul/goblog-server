@@ -4,12 +4,13 @@ import (
 	"bufio"
 	"context"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/joho/godotenv"
 
+	"github.com/misterabdul/goblog-server/cmd/goblog-utils/fakedata"
 	"github.com/misterabdul/goblog-server/cmd/goblog-utils/migration"
-	"github.com/misterabdul/goblog-server/cmd/goblog-utils/post"
 	"github.com/misterabdul/goblog-server/pkg/utils"
 )
 
@@ -29,13 +30,15 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 
 	availableCommands := getAvailableCommands()
+
 	if commands, ok := availableCommands[args]; ok {
 		commands(ctx, reader)
 	} else {
 		utils.ConsolePrintlnWhite("Unknown command: " + args)
 		utils.ConsolePrintlnWhite("Available commands")
-		for key := range availableCommands {
-			utils.ConsolePrintlnWhite("  " + key)
+		availableCommandNames := getAvailableCommandNames(availableCommands)
+		for _, name := range availableCommandNames {
+			utils.ConsolePrintlnWhite("  " + name)
 		}
 	}
 
@@ -64,8 +67,31 @@ func getAvailableCommands() (
 		"migrations:status": func(ctx context.Context, reader *bufio.Reader) {
 			migration.Status(ctx)
 		},
-		"post:generate": func(ctx context.Context, reader *bufio.Reader) {
-			post.Generate(ctx)
+		"fakedata:user": func(ctx context.Context, reader *bufio.Reader) {
+			fakedata.GenerateUsers(ctx)
+		},
+		"fakedata:category": func(ctx context.Context, reader *bufio.Reader) {
+			fakedata.GenerateCategories(ctx)
+		},
+		"fakedata:post": func(ctx context.Context, reader *bufio.Reader) {
+			fakedata.GeneratePosts(ctx)
+		},
+		"fakedata:page": func(ctx context.Context, reader *bufio.Reader) {
+			fakedata.GeneratePages(ctx)
 		},
 	}
+}
+
+func getAvailableCommandNames(
+	availableCommands map[string]func(context.Context, *bufio.Reader),
+) []string {
+	var names []string
+
+	names = make([]string, 0, len(availableCommands))
+	for keys := range availableCommands {
+		names = append(names, keys)
+	}
+	sort.Strings(names)
+
+	return names
 }
