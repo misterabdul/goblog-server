@@ -90,6 +90,7 @@ func InitRoutes(
 				writer.Use(authorizeMiddleware.Authorize(maxCtxDuration, dbConn, "Writer"))
 				{
 					writer.GET("/posts", postHandler.GetMyPosts(maxCtxDuration, dbConn))
+					writer.GET("/posts/stats", postHandler.GetMyPostsStats(maxCtxDuration, dbConn))
 					writer.GET("/post/:post", postHandler.GetMyPost(maxCtxDuration, dbConn))
 					writer.POST("/post", postHandler.CreatePost(maxCtxDuration, dbConn))
 					writer.PUT("/post/:post", postHandler.UpdateMyPost(maxCtxDuration, dbConn))
@@ -103,8 +104,10 @@ func InitRoutes(
 					writer.PUT("/post/:post/depublish", postHandler.DepublishMyPost(maxCtxDuration, dbConn))
 					writer.PATCH("/post/:post/depublish", postHandler.DepublishMyPost(maxCtxDuration, dbConn))
 					writer.GET("/post/:post/comments", commentHandler.GetMyPostComments(maxCtxDuration, dbConn))
+					writer.GET("/post/:post/comments/stats", commentHandler.GetMyPostCommentsStats(maxCtxDuration, dbConn))
 
 					writer.GET("/comments", commentHandler.GetMyComments(maxCtxDuration, dbConn))
+					writer.GET("/comments/stats", commentHandler.GetMyCommentsStats(maxCtxDuration, dbConn))
 					writer.GET("/comment/:comment", commentHandler.GetMyComment(maxCtxDuration, dbConn))
 					writer.DELETE("/comment/:comment", commentHandler.TrashMyComment(maxCtxDuration, dbConn))
 					writer.PUT("/comment/:comment/detrash", commentHandler.DetrashMyComment(maxCtxDuration, dbConn))
@@ -116,6 +119,7 @@ func InitRoutes(
 				editor.Use(authorizeMiddleware.Authorize(maxCtxDuration, dbConn, "Editor"))
 				{
 					editor.GET("/categories", categoryHandler.GetCategories(maxCtxDuration, dbConn))
+					editor.GET("/categories/stats", categoryHandler.GetCategoriesStats(maxCtxDuration, dbConn))
 					editor.GET("/category/:category", categoryHandler.GetCategory(maxCtxDuration, dbConn))
 					editor.POST("/category", categoryHandler.CreateCategory(maxCtxDuration, dbConn))
 					editor.PUT("/category/:category", categoryHandler.UpdateCategory(maxCtxDuration, dbConn))
@@ -126,14 +130,22 @@ func InitRoutes(
 					editor.DELETE("/category/:category/permanent", categoryHandler.DeleteCategory(maxCtxDuration, dbConn))
 
 					editor.GET("/posts", postHandler.GetPosts(maxCtxDuration, dbConn))
+					editor.GET("/posts/stats", postHandler.GetPostsStats(maxCtxDuration, dbConn))
 					editor.GET("/post/:post", postHandler.GetPost(maxCtxDuration, dbConn))
+					editor.POST("/post", postHandler.CreatePost(maxCtxDuration, dbConn))
 					editor.PUT("/post/:post", postHandler.UpdatePost(maxCtxDuration, dbConn))
 					editor.PATCH("/post/:post", postHandler.UpdatePost(maxCtxDuration, dbConn))
 					editor.DELETE("/post/:post", postHandler.TrashPost(maxCtxDuration, dbConn))
 					editor.DELETE("/post/:post/permanent", postHandler.DeletePost(maxCtxDuration, dbConn))
+					editor.PUT("/post/:post/publish", postHandler.PublishPost(maxCtxDuration, dbConn))
+					editor.PATCH("/post/:post/publish", postHandler.PublishPost(maxCtxDuration, dbConn))
+					editor.PUT("/post/:post/depublish", postHandler.DepublishPost(maxCtxDuration, dbConn))
+					editor.PATCH("/post/:post/depublish", postHandler.DepublishPost(maxCtxDuration, dbConn))
 					editor.GET("/post/:post/comments", commentHandler.GetPostComments(maxCtxDuration, dbConn))
+					editor.GET("/post/:post/comments/stats", commentHandler.GetPostCommentsStats(maxCtxDuration, dbConn))
 
 					editor.GET("/comments", commentHandler.GetComments(maxCtxDuration, dbConn))
+					editor.GET("/comments/stats", commentHandler.GetCommentsStats(maxCtxDuration, dbConn))
 					editor.GET("/comment/:comment", commentHandler.GetComment(maxCtxDuration, dbConn))
 					editor.DELETE("/comment/:comment", commentHandler.TrashComment(maxCtxDuration, dbConn))
 					editor.PUT("/comment/:comment/detrash", commentHandler.DetrashComment(maxCtxDuration, dbConn))
@@ -141,6 +153,7 @@ func InitRoutes(
 					editor.DELETE("/comment/:comment/permanent", commentHandler.DeleteComment(maxCtxDuration, dbConn))
 
 					editor.GET("/pages", pageHandler.GetPages(maxCtxDuration, dbConn))
+					editor.GET("/pages/stats", pageHandler.GetPagesStats(maxCtxDuration, dbConn))
 					editor.GET("/page/:page", pageHandler.GetPage(maxCtxDuration, dbConn))
 					editor.POST("/page", pageHandler.CreatePage(maxCtxDuration, dbConn))
 					editor.PUT("/page/:page", pageHandler.UpdatePage(maxCtxDuration, dbConn))
@@ -159,6 +172,7 @@ func InitRoutes(
 				admin.Use(authorizeMiddleware.Authorize(maxCtxDuration, dbConn, "Admin"))
 				{
 					admin.GET("/users", userHandler.GetUsers(maxCtxDuration, dbConn))
+					admin.GET("/users/stats", userHandler.GetUsersStats(maxCtxDuration, dbConn))
 					admin.GET("/user/:user", userHandler.GetUser(maxCtxDuration, dbConn))
 					admin.POST("/user", userHandler.CreateUser(maxCtxDuration, dbConn))
 					admin.PUT("/user/:user", userHandler.UpdateUser(maxCtxDuration, dbConn))

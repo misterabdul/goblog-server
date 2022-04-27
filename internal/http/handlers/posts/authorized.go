@@ -61,29 +61,13 @@ func GetPosts(
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
 			postService = service.New(c, ctx, dbConn)
 			posts       []*models.PostModel
-			typeQuery   = c.DefaultQuery("type", "draft")
-			extraQuery  = []bson.M{}
+			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
 		defer cancel()
-		switch true {
-		case typeQuery == "trash":
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
-		case typeQuery == "published":
-			extraQuery = append(extraQuery,
-				bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		case typeQuery == "draft":
-			fallthrough
-		default:
-			extraQuery = append(extraQuery,
-				bson.M{"publishedat": bson.M{"$eq": primitive.Null{}}},
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		}
 		if posts, err = postService.GetPosts(bson.M{
-			"$and": extraQuery,
+			"$and": queryParams,
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -94,6 +78,31 @@ func GetPosts(
 		}
 
 		responses.AuthorizedPosts(c, posts)
+	}
+}
+
+func GetPostsStats(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
+			count       int64
+			queryParams = readCommonQueryParams(c)
+			err         error
+		)
+
+		defer cancel()
+		if count, err = postService.GetPostCount(bson.M{
+			"$and": queryParams,
+		}); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+
+		responses.ResourceStats(c, count)
 	}
 }
 

@@ -97,6 +97,19 @@ func GetPosts(
 	return posts, nil
 }
 
+// Count total posts
+func CountPosts(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
+
+	return getPostCollection(dbConn).CountDocuments(
+		ctx, filter, opts...,
+	)
+}
+
 // Save new post
 func SavePost(
 	ctx context.Context,

@@ -35,6 +35,18 @@ func (service *Service) GetCategories(filter interface{}) (
 		internalGin.GetFindOptions(service.c))
 }
 
+// Get total categories count
+func (service *Service) GetCategoryCount(filter interface{}) (
+	count int64, err error,
+) {
+
+	return repositories.CountCategories(
+		service.ctx,
+		service.dbConn,
+		filter,
+		internalGin.GetCountOptions(service.c))
+}
+
 // Create new category
 func (service *Service) CreateCategory(
 	category *models.CategoryModel,

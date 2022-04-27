@@ -70,8 +70,7 @@ func GetMyPosts(
 			postService = service.New(c, ctx, dbConn)
 			me          *models.UserModel
 			posts       []*models.PostModel
-			typeQuery   = c.DefaultQuery("type", "draft")
-			extraQuery  = []bson.M{}
+			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
@@ -80,23 +79,8 @@ func GetMyPosts(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		switch true {
-		case typeQuery == "trash":
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
-		case typeQuery == "published":
-			extraQuery = append(extraQuery,
-				bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		case typeQuery == "draft":
-			fallthrough
-		default:
-			extraQuery = append(extraQuery,
-				bson.M{"publishedat": bson.M{"$eq": primitive.Null{}}},
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		}
 		if posts, err = postService.GetPosts(bson.M{
-			"$and": append(extraQuery,
+			"$and": append(queryParams,
 				bson.M{"author._id": bson.M{"$eq": me.UID}}),
 		}); err != nil {
 			responses.InternalServerError(c, err)
@@ -108,6 +92,37 @@ func GetMyPosts(
 		}
 
 		responses.MyPosts(c, posts)
+	}
+}
+
+func GetMyPostsStats(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService = service.New(c, ctx, dbConn)
+			me          *models.UserModel
+			count       int64
+			queryParams = readCommonQueryParams(c)
+			err         error
+		)
+
+		defer cancel()
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
+		if count, err = postService.GetPostCount(bson.M{
+			"$and": append(queryParams,
+				bson.M{"author._id": bson.M{"$eq": me.UID}}),
+		}); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+
+		responses.ResourceStats(c, count)
 	}
 }
 
@@ -455,4 +470,29 @@ func DeleteMyPost(
 
 		responses.NoContent(c)
 	}
+}
+
+func readCommonQueryParams(c *gin.Context) []bson.M {
+	var (
+		typeQuery  = c.DefaultQuery("type", "draft")
+		extraQuery = []bson.M{}
+	)
+
+	switch true {
+	case typeQuery == "trash":
+		extraQuery = append(extraQuery,
+			bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
+	case typeQuery == "published":
+		extraQuery = append(extraQuery,
+			bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
+			bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
+	case typeQuery == "draft":
+		fallthrough
+	default:
+		extraQuery = append(extraQuery,
+			bson.M{"publishedat": bson.M{"$eq": primitive.Null{}}},
+			bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
+	}
+
+	return extraQuery
 }

@@ -68,6 +68,19 @@ func GetCategories(
 	return categories, nil
 }
 
+// Count total categories
+func CountCategories(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
+
+	return getCategoryCollection(dbConn).CountDocuments(
+		ctx, filter, opts...,
+	)
+}
+
 // Save new category
 func SaveCategory(
 	ctx context.Context,

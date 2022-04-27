@@ -67,7 +67,7 @@ func GetMyComments(
 			commentService = service.New(c, ctx, dbConn)
 			me             *models.UserModel
 			comments       []*models.CommentModel
-			extraQuery     = []bson.M{}
+			queryParams    = readCommonQueryParams(c)
 			err            error
 		)
 
@@ -76,15 +76,8 @@ func GetMyComments(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if trashQuery := c.DefaultQuery("trash", "false"); trashQuery == "true" {
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
-		} else {
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		}
 		if comments, err = commentService.GetComments(bson.M{
-			"$and": append(extraQuery,
+			"$and": append(queryParams,
 				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
 		}, false); err != nil {
 			responses.InternalServerError(c, err)
@@ -96,6 +89,37 @@ func GetMyComments(
 		}
 
 		responses.AuthorizedComments(c, comments)
+	}
+}
+
+func GetMyCommentsStats(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
+			me             *models.UserModel
+			count          int64
+			queryParams    = readCommonQueryParams(c)
+			err            error
+		)
+
+		defer cancel()
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
+		if count, err = commentService.GetCommentCount(bson.M{
+			"$and": append(queryParams,
+				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
+		}); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+
+		responses.ResourceStats(c, count)
 	}
 }
 
@@ -111,7 +135,7 @@ func GetMyPostComments(
 			comments       []*models.CommentModel
 			postUid        primitive.ObjectID
 			postUidParam   = c.Param("post")
-			extraQuery     = []bson.M{}
+			queryParams    = readCommonQueryParams(c)
 			err            error
 		)
 
@@ -124,15 +148,8 @@ func GetMyPostComments(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if trashQuery := c.DefaultQuery("trash", "false"); trashQuery == "true" {
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
-		} else {
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		}
 		if comments, err = commentService.GetComments(bson.M{
-			"$and": append(extraQuery,
+			"$and": append(queryParams,
 				bson.M{"postuid": bson.M{"$eq": postUid}},
 				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
 		}, false); err != nil {
@@ -145,6 +162,44 @@ func GetMyPostComments(
 		}
 
 		responses.AuthorizedComments(c, comments)
+	}
+}
+
+func GetMyPostCommentsStats(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
+			me             *models.UserModel
+			count          int64
+			postUid        primitive.ObjectID
+			postUidParam   = c.Param("post")
+			queryParams    = readCommonQueryParams(c)
+			err            error
+		)
+
+		defer cancel()
+		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
+			responses.Unauthenticated(c, err)
+			return
+		}
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
+			responses.IncorrectPostId(c, err)
+			return
+		}
+		if count, err = commentService.GetCommentCount(bson.M{
+			"$and": append(queryParams,
+				bson.M{"postuid": bson.M{"$eq": postUid}},
+				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
+		}); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+
+		responses.ResourceStats(c, count)
 	}
 }
 
@@ -371,4 +426,22 @@ func findReplyParentComment(
 	}
 
 	return comment, nil
+}
+
+func readCommonQueryParams(c *gin.Context) []bson.M {
+	var (
+		typeParam  = c.DefaultQuery("type", "active")
+		extraQuery = []bson.M{}
+	)
+
+	switch true {
+	case typeParam == "trash":
+		extraQuery = append(extraQuery,
+			bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
+	default:
+		extraQuery = append(extraQuery,
+			bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
+	}
+
+	return extraQuery
 }

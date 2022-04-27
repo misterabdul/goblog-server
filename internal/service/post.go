@@ -62,6 +62,18 @@ func (service *Service) GetPosts(filter interface{}) (
 		internalGin.GetFindOptionsPost(service.c))
 }
 
+// Get total posts count
+func (service *Service) GetPostCount(filter interface{}) (
+	count int64, err error,
+) {
+
+	return repositories.CountPosts(
+		service.ctx,
+		service.dbConn,
+		filter,
+		internalGin.GetCountOptions(service.c))
+}
+
 // Create new post with its content
 func (service *Service) CreatePost(
 	post *models.PostModel,

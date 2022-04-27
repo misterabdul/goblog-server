@@ -62,29 +62,13 @@ func GetPages(
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
 			pageService = service.New(c, ctx, dbConn)
 			pages       []*models.PageModel
-			typeQuery   = c.DefaultQuery("type", "draft")
-			extraQuery  = []bson.M{}
+			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
 		defer cancel()
-		switch true {
-		case typeQuery == "trash":
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
-		case typeQuery == "published":
-			extraQuery = append(extraQuery,
-				bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		case typeQuery == "draft":
-			fallthrough
-		default:
-			extraQuery = append(extraQuery,
-				bson.M{"publishedat": bson.M{"$eq": primitive.Null{}}},
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		}
 		if pages, err = pageService.GetPages(bson.M{
-			"$and": extraQuery,
+			"$and": queryParams,
 		}); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -95,6 +79,31 @@ func GetPages(
 		}
 
 		responses.AuthorizedPages(c, pages)
+	}
+}
+
+func GetPagesStats(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		var (
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			pageService = service.New(c, ctx, dbConn)
+			count       int64
+			queryParams = readCommonQueryParams(c)
+			err         error
+		)
+
+		defer cancel()
+		if count, err = pageService.GetPageCount(bson.M{
+			"$and": queryParams,
+		}); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+
+		responses.ResourceStats(c, count)
 	}
 }
 
@@ -408,4 +417,29 @@ func DeletePage(
 
 		responses.NoContent(c)
 	}
+}
+
+func readCommonQueryParams(c *gin.Context) []bson.M {
+	var (
+		typeQuery  = c.DefaultQuery("type", "draft")
+		extraQuery = []bson.M{}
+	)
+
+	switch true {
+	case typeQuery == "trash":
+		extraQuery = append(extraQuery,
+			bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
+	case typeQuery == "published":
+		extraQuery = append(extraQuery,
+			bson.M{"publishedat": bson.M{"$ne": primitive.Null{}}},
+			bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
+	case typeQuery == "draft":
+		fallthrough
+	default:
+		extraQuery = append(extraQuery,
+			bson.M{"publishedat": bson.M{"$eq": primitive.Null{}}},
+			bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
+	}
+
+	return extraQuery
 }

@@ -50,6 +50,18 @@ func (service *Service) GetComments(
 		_options)
 }
 
+// Get total comments count
+func (service *Service) GetCommentCount(filter interface{}) (
+	count int64, err error,
+) {
+
+	return repositories.CountComments(
+		service.ctx,
+		service.dbConn,
+		filter,
+		internalGin.GetCountOptions(service.c))
+}
+
 // Create new comment
 func (service *Service) CreateComment(
 	comment *models.CommentModel,

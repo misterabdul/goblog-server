@@ -35,6 +35,18 @@ func (service *Service) GetUsers(filter interface{}) (
 		internalGin.GetFindOptions(service.c))
 }
 
+// Get total users count
+func (service *Service) GetUserCount(filter interface{}) (
+	count int64, err error,
+) {
+
+	return repositories.CountUsers(
+		service.ctx,
+		service.dbConn,
+		filter,
+		internalGin.GetCountOptions(service.c))
+}
+
 // Create new user
 func (service *Service) CreateUser(
 	user *models.UserModel,

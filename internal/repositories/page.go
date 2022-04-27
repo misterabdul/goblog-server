@@ -97,6 +97,19 @@ func GetPages(
 	return pages, nil
 }
 
+// Count total pages
+func CountPages(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
+
+	return getPageCollection(dbConn).CountDocuments(
+		ctx, filter, opts...,
+	)
+}
+
 // Save new page
 func SavePage(
 	ctx context.Context,

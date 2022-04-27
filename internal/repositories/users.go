@@ -69,6 +69,19 @@ func GetUsers(
 	return users, nil
 }
 
+// Count total users
+func CountUsers(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
+
+	return getUserCollection(dbConn).CountDocuments(
+		ctx, filter, opts...,
+	)
+}
+
 // Save new user
 func SaveUser(
 	ctx context.Context,

@@ -62,6 +62,18 @@ func (service *Service) GetPages(filter interface{}) (
 		internalGin.GetFindOptions(service.c))
 }
 
+// Get total pages count
+func (service *Service) GetPageCount(filter interface{}) (
+	count int64, err error,
+) {
+
+	return repositories.CountPages(
+		service.ctx,
+		service.dbConn,
+		filter,
+		internalGin.GetCountOptions(service.c))
+}
+
 // Create new page with its content
 func (service *Service) CreatePage(
 	page *models.PageModel,

@@ -24,6 +24,10 @@ func GetFindOptions(c *gin.Context) (option *options.FindOptions) {
 		Sort:  bson.M{order: asc}}
 }
 
+func GetCountOptions(c *gin.Context) (option *options.CountOptions) {
+	return &options.CountOptions{}
+}
+
 func GetFindOptionsPost(c *gin.Context) (option *options.FindOptions) {
 	var (
 		show  = GetShowQuery(c)

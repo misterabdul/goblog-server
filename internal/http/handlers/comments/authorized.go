@@ -58,20 +58,13 @@ func GetComments(
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
 			commentService = service.New(c, ctx, dbConn)
 			comments       []*models.CommentModel
-			extraQuery     = []bson.M{}
+			queryParams    = readCommonQueryParams(c)
 			err            error
 		)
 
 		defer cancel()
-		if trashQuery := c.DefaultQuery("trash", "false"); trashQuery == "true" {
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
-		} else {
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		}
 		if comments, err = commentService.GetComments(bson.M{
-			"$and": extraQuery,
+			"$and": queryParams,
 		}, false); err != nil {
 			responses.InternalServerError(c, err)
 			return
@@ -82,6 +75,31 @@ func GetComments(
 		}
 
 		responses.AuthorizedComments(c, comments)
+	}
+}
+
+func GetCommentsStats(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
+			count          int64
+			queryParams    = readCommonQueryParams(c)
+			err            error
+		)
+
+		defer cancel()
+		if count, err = commentService.GetCommentCount(bson.M{
+			"$and": queryParams,
+		}); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+
+		responses.ResourceStats(c, count)
 	}
 }
 
@@ -96,7 +114,7 @@ func GetPostComments(
 			comments       []*models.CommentModel
 			postUid        primitive.ObjectID
 			postUidParam   = c.Param("post")
-			extraQuery     = []bson.M{}
+			queryParams    = readCommonQueryParams(c)
 			err            error
 		)
 
@@ -105,15 +123,8 @@ func GetPostComments(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if trashQuery := c.DefaultQuery("trash", "false"); trashQuery == "true" {
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$ne": primitive.Null{}}})
-		} else {
-			extraQuery = append(extraQuery,
-				bson.M{"deletedat": bson.M{"$eq": primitive.Null{}}})
-		}
 		if comments, err = commentService.GetComments(bson.M{
-			"$and": append(extraQuery,
+			"$and": append(queryParams,
 				bson.M{"postuid": bson.M{"$eq": postUid}}),
 		}, false); err != nil {
 			responses.InternalServerError(c, err)
@@ -125,6 +136,38 @@ func GetPostComments(
 		}
 
 		responses.AuthorizedComments(c, comments)
+	}
+}
+
+func GetPostCommentsStats(
+	maxCtxDuration time.Duration,
+	dbConn *mongo.Database,
+) (handler gin.HandlerFunc) {
+	return func(c *gin.Context) {
+		var (
+			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
+			commentService = service.New(c, ctx, dbConn)
+			count          int64
+			postUid        primitive.ObjectID
+			postUidParam   = c.Param("post")
+			queryParams    = readCommonQueryParams(c)
+			err            error
+		)
+
+		defer cancel()
+		if postUid, err = primitive.ObjectIDFromHex(postUidParam); err != nil {
+			responses.IncorrectPostId(c, err)
+			return
+		}
+		if count, err = commentService.GetCommentCount(bson.M{
+			"$and": append(queryParams,
+				bson.M{"postuid": bson.M{"$eq": postUid}}),
+		}); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+
+		responses.ResourceStats(c, count)
 	}
 }
 

@@ -68,6 +68,19 @@ func GetComments(
 	return comments, nil
 }
 
+// Count total posts
+func CountComments(
+	ctx context.Context,
+	dbConn *mongo.Database,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
+
+	return getCommentCollection(dbConn).CountDocuments(
+		ctx, filter, opts...,
+	)
+}
+
 // Save new comment
 func SaveComment(
 	ctx context.Context,
