@@ -74,7 +74,7 @@ func GetShowQuery(c *gin.Context) (show *int64) {
 	)
 
 	sQuery = c.DefaultQuery("show", "25")
-	if query, err = strconv.ParseInt(sQuery, 10, 64); err != nil {
+	if query, err = strconv.ParseInt(sQuery, 10, 64); err != nil || query <= 0 {
 		query = 25
 	}
 
@@ -89,8 +89,8 @@ func GetPageQuery(c *gin.Context) (page *int64) {
 	)
 
 	sQuery = c.DefaultQuery("page", "1")
-	if query, err = strconv.ParseInt(sQuery, 10, 64); err != nil {
-		query = 25
+	if query, err = strconv.ParseInt(sQuery, 10, 64); err != nil || query <= 0 {
+		query = 1
 	}
 
 	return &query
