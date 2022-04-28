@@ -12,27 +12,39 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getPageCollection(
-	dbConn *mongo.Database,
-) (pageCollection *mongo.Collection) {
-	return dbConn.Collection("pages")
+type PageRepository struct {
+	collection *mongo.Collection
 }
 
-func getPageContentCollection(dbConn *mongo.Database,
-) (pageContentCollection *mongo.Collection) {
-	return dbConn.Collection("pageContents")
+type PageContentRepository struct {
+	collection *mongo.Collection
+}
+
+func NewPageRepository(
+	dbConn *mongo.Database,
+) *PageRepository {
+
+	return &PageRepository{
+		collection: dbConn.Collection("pages")}
+}
+
+func NewPageContentRepository(
+	dbConn *mongo.Database,
+) *PageContentRepository {
+
+	return &PageContentRepository{
+		collection: dbConn.Collection("pageContents")}
 }
 
 // Get single page
-func GetPage(
+func (r PageRepository) ReadOne(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (page *models.PageModel, err error) {
 	var _page models.PageModel
 
-	if err = getPageCollection(dbConn).FindOne(
+	if err = r.collection.FindOne(
 		ctx, filter, opts...,
 	).Decode(&_page); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -45,9 +57,8 @@ func GetPage(
 }
 
 // Get single page content
-func GetPageContent(
+func (r PageContentRepository) ReadOne(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (
@@ -56,7 +67,7 @@ func GetPageContent(
 ) {
 	var _pageContent models.PageContentModel
 
-	if err = getPageContentCollection(dbConn).FindOne(
+	if err = r.collection.FindOne(
 		ctx, filter, opts...,
 	).Decode(&_pageContent); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -69,9 +80,8 @@ func GetPageContent(
 }
 
 // Get multiple pages
-func GetPages(
+func (r PageRepository) ReadMany(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (pages []*models.PageModel, err error) {
@@ -80,7 +90,7 @@ func GetPages(
 		cursor *mongo.Cursor
 	)
 
-	if cursor, err = getPageCollection(dbConn).Find(
+	if cursor, err = r.collection.Find(
 		ctx, filter, opts...,
 	); err != nil {
 		return nil, err
@@ -98,22 +108,20 @@ func GetPages(
 }
 
 // Count total pages
-func CountPages(
+func (r PageRepository) Count(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.CountOptions,
 ) (count int64, err error) {
 
-	return getPageCollection(dbConn).CountDocuments(
+	return r.collection.CountDocuments(
 		ctx, filter, opts...,
 	)
 }
 
 // Save new page
-func SavePage(
+func (r PageRepository) Save(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	page *models.PageModel,
 ) (err error) {
 	var (
@@ -122,7 +130,7 @@ func SavePage(
 		ok         bool
 	)
 
-	if insRes, err = getPageCollection(dbConn).InsertOne(
+	if insRes, err = r.collection.InsertOne(
 		ctx, page,
 	); err != nil {
 		return err
@@ -138,9 +146,8 @@ func SavePage(
 }
 
 // Save new page content
-func SavePageContent(
+func (r PageContentRepository) Save(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	pageContent *models.PageContentModel,
 ) (err error) {
 	var (
@@ -149,7 +156,7 @@ func SavePageContent(
 		ok         bool
 	)
 
-	if insRes, err = getPageContentCollection(dbConn).InsertOne(
+	if insRes, err = r.collection.InsertOne(
 		ctx, pageContent,
 	); err != nil {
 		return err
@@ -165,12 +172,11 @@ func SavePageContent(
 }
 
 // Update page
-func UpdatePage(
+func (r PageRepository) Update(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	page *models.PageModel,
 ) (err error) {
-	if _, err = getPageCollection(dbConn).UpdateByID(
+	if _, err = r.collection.UpdateByID(
 		ctx, page.UID, bson.M{"$set": page},
 	); err != nil {
 		return err
@@ -180,12 +186,11 @@ func UpdatePage(
 }
 
 // Update page content
-func UpdatePageContent(
+func (r PageContentRepository) Update(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	pageContent *models.PageContentModel,
 ) (err error) {
-	if _, err = getPageContentCollection(dbConn).UpdateByID(
+	if _, err = r.collection.UpdateByID(
 		ctx, pageContent.UID, bson.M{"$set": pageContent},
 	); err != nil {
 		return err
@@ -195,12 +200,11 @@ func UpdatePageContent(
 }
 
 // Delete page
-func DeletePage(
+func (r PageRepository) Delete(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	page *models.PageModel,
 ) (err error) {
-	if _, err = getPageCollection(dbConn).DeleteOne(
+	if _, err = r.collection.DeleteOne(
 		ctx, bson.M{"_id": page.UID},
 	); err != nil {
 		return err
@@ -210,12 +214,11 @@ func DeletePage(
 }
 
 // Delete page content
-func DeletePageContent(
+func (r PageContentRepository) Delete(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	pageContent *models.PageContentModel,
 ) (err error) {
-	if _, err = getPageContentCollection(dbConn).DeleteOne(
+	if _, err = r.collection.DeleteOne(
 		ctx, bson.M{"_id": pageContent.UID},
 	); err != nil {
 		return err

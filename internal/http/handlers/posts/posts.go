@@ -22,7 +22,7 @@ func GetPublicPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
+			postService = service.NewPostService(c, ctx, dbConn)
 			post        *models.PostModel
 			postContent *models.PostContentModel
 			postUid     interface{}
@@ -61,7 +61,7 @@ func GetPublicPosts(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
+			postService = service.NewPostService(c, ctx, dbConn)
 			posts       []*models.PostModel
 			err         error
 		)
@@ -92,7 +92,7 @@ func SearchPublicPosts(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
+			postService = service.NewPostService(c, ctx, dbConn)
 			searchQuery = c.Query("q")
 			posts       []*models.PostModel
 			err         error

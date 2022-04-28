@@ -12,27 +12,39 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getPostCollection(
-	dbConn *mongo.Database,
-) (postCollection *mongo.Collection) {
-	return dbConn.Collection("posts")
+type PostRepository struct {
+	collection *mongo.Collection
 }
 
-func getPostContentCollection(dbConn *mongo.Database,
-) (postContentCollection *mongo.Collection) {
-	return dbConn.Collection("postContents")
+type PostContentRepository struct {
+	collection *mongo.Collection
+}
+
+func NewPostRepository(
+	dbConn *mongo.Database,
+) *PostRepository {
+
+	return &PostRepository{
+		collection: dbConn.Collection("posts")}
+}
+
+func NewPostContentRepository(
+	dbConn *mongo.Database,
+) *PostContentRepository {
+
+	return &PostContentRepository{
+		collection: dbConn.Collection("postContents")}
 }
 
 // Get single post
-func GetPost(
+func (r PostRepository) ReadOne(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (post *models.PostModel, err error) {
 	var _post models.PostModel
 
-	if err = getPostCollection(dbConn).FindOne(
+	if err = r.collection.FindOne(
 		ctx, filter, opts...,
 	).Decode(&_post); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -45,9 +57,8 @@ func GetPost(
 }
 
 // Get single post content
-func GetPostContent(
+func (r PostContentRepository) ReadOne(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (
@@ -56,7 +67,7 @@ func GetPostContent(
 ) {
 	var _postContent models.PostContentModel
 
-	if err = getPostContentCollection(dbConn).FindOne(
+	if err = r.collection.FindOne(
 		ctx, filter, opts...,
 	).Decode(&_postContent); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -69,9 +80,8 @@ func GetPostContent(
 }
 
 // Get multiple posts
-func GetPosts(
+func (r PostRepository) ReadMany(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (posts []*models.PostModel, err error) {
@@ -80,7 +90,7 @@ func GetPosts(
 		cursor *mongo.Cursor
 	)
 
-	if cursor, err = getPostCollection(dbConn).Find(
+	if cursor, err = r.collection.Find(
 		ctx, filter, opts...,
 	); err != nil {
 		return nil, err
@@ -98,22 +108,20 @@ func GetPosts(
 }
 
 // Count total posts
-func CountPosts(
+func (r PostRepository) Count(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.CountOptions,
 ) (count int64, err error) {
 
-	return getPostCollection(dbConn).CountDocuments(
+	return r.collection.CountDocuments(
 		ctx, filter, opts...,
 	)
 }
 
 // Save new post
-func SavePost(
+func (r PostRepository) Save(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	post *models.PostModel,
 ) (err error) {
 	var (
@@ -122,7 +130,7 @@ func SavePost(
 		ok         bool
 	)
 
-	if insRes, err = getPostCollection(dbConn).InsertOne(
+	if insRes, err = r.collection.InsertOne(
 		ctx, post,
 	); err != nil {
 		return err
@@ -138,9 +146,8 @@ func SavePost(
 }
 
 // Save new post content
-func SavePostContent(
+func (r PostContentRepository) Save(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	postContent *models.PostContentModel,
 ) (err error) {
 	var (
@@ -149,7 +156,7 @@ func SavePostContent(
 		ok         bool
 	)
 
-	if insRes, err = getPostContentCollection(dbConn).InsertOne(
+	if insRes, err = r.collection.InsertOne(
 		ctx, postContent,
 	); err != nil {
 		return err
@@ -165,12 +172,11 @@ func SavePostContent(
 }
 
 // Update post
-func UpdatePost(
+func (r PostRepository) Update(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	post *models.PostModel,
 ) (err error) {
-	if _, err = getPostCollection(dbConn).UpdateByID(
+	if _, err = r.collection.UpdateByID(
 		ctx, post.UID, bson.M{"$set": post},
 	); err != nil {
 		return err
@@ -180,12 +186,11 @@ func UpdatePost(
 }
 
 // Update post content
-func UpdatePostContent(
+func (r PostContentRepository) Update(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	postContent *models.PostContentModel,
 ) (err error) {
-	if _, err = getPostContentCollection(dbConn).UpdateByID(
+	if _, err = r.collection.UpdateByID(
 		ctx, postContent.UID, bson.M{"$set": postContent},
 	); err != nil {
 		return err
@@ -195,12 +200,11 @@ func UpdatePostContent(
 }
 
 // Delete post
-func DeletePost(
+func (r PostRepository) Delete(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	post *models.PostModel,
 ) (err error) {
-	if _, err = getPostCollection(dbConn).DeleteOne(
+	if _, err = r.collection.DeleteOne(
 		ctx, bson.M{"_id": post.UID},
 	); err != nil {
 		return err
@@ -210,12 +214,11 @@ func DeletePost(
 }
 
 // Delete post content
-func DeletePostContent(
+func (r PostContentRepository) Delete(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	postContent *models.PostContentModel,
 ) (err error) {
-	if _, err = getPostContentCollection(dbConn).DeleteOne(
+	if _, err = r.collection.DeleteOne(
 		ctx, bson.M{"_id": postContent.UID},
 	); err != nil {
 		return err

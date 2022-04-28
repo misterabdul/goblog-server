@@ -20,7 +20,7 @@ type CreatePageForm struct {
 }
 
 func (form *CreatePageForm) Validate(
-	pageService *service.Service,
+	pageService *service.PageService,
 ) (err error) {
 	var (
 		parsedUrl *url.URL
@@ -67,7 +67,7 @@ func (form *CreatePageForm) ToPageModel(author *models.UserModel) (
 }
 
 func checkPageSlug(
-	pageService *service.Service,
+	pageService *service.PageService,
 	formSlug string,
 ) (err error) {
 	var (

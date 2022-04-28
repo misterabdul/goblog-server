@@ -61,6 +61,7 @@ func checkNotifications(
 ) {
 	var (
 		ctx           = context.TODO()
+		repository    = repositories.NewNotificationRepository(dbConn)
 		notifications []*models.NotificationModel
 		latestCheck   = time.Now()
 		messageBuff   string
@@ -69,7 +70,7 @@ func checkNotifications(
 
 	for {
 		time.Sleep(3 * time.Second)
-		if notifications, err = repositories.GetNotifications(ctx, dbConn, bson.M{
+		if notifications, err = repository.ReadMany(ctx, bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username},
 				{"createdat": bson.M{"$gt": primitive.NewDateTimeFromTime(latestCheck)}}},

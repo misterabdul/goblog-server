@@ -16,7 +16,7 @@ type CreateCategoryForm struct {
 }
 
 func (form *CreateCategoryForm) Validate(
-	categoryService *service.Service,
+	categoryService *service.CategoryService,
 ) (err error) {
 	if err = checkCategorySlug(categoryService, form.Slug); err != nil {
 		return err
@@ -32,7 +32,9 @@ func (form *CreateCategoryForm) ToCategoryModel() (model *models.CategoryModel) 
 		Name: form.Name}
 }
 
-func checkCategorySlug(categoryService *service.Service, formSlug string) (err error) {
+func checkCategorySlug(
+	categoryService *service.CategoryService, formSlug string,
+) (err error) {
 	var categories []*models.CategoryModel
 
 	if categories, err = categoryService.GetCategories(bson.M{

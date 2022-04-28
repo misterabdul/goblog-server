@@ -13,7 +13,7 @@ type UpdateMeForm struct {
 }
 
 func (form *UpdateMeForm) Validate(
-	userService *service.Service,
+	userService *service.UserService,
 	me *models.UserModel,
 ) (err error) {
 	if err = checkUpdateUsername(userService, form.Username, me); err != nil {

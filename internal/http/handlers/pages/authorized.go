@@ -25,7 +25,7 @@ func GetPage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.New(c, ctx, dbConn)
+			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageContent  *models.PageContentModel
 			pageUid      primitive.ObjectID
@@ -60,7 +60,7 @@ func GetPages(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.New(c, ctx, dbConn)
+			pageService = service.NewPageService(c, ctx, dbConn)
 			pages       []*models.PageModel
 			queryParams = readCommonQueryParams(c)
 			err         error
@@ -89,7 +89,7 @@ func GetPagesStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.New(c, ctx, dbConn)
+			pageService = service.NewPageService(c, ctx, dbConn)
 			count       int64
 			queryParams = readCommonQueryParams(c)
 			err         error
@@ -114,7 +114,7 @@ func CreatePage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.New(c, ctx, dbConn)
+			pageService = service.NewPageService(c, ctx, dbConn)
 			me          *models.UserModel
 			page        *models.PageModel
 			pageContent *models.PageContentModel
@@ -155,7 +155,7 @@ func PublishPage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.New(c, ctx, dbConn)
+			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageUid      primitive.ObjectID
 			pageUidParam = c.Param("page")
@@ -199,7 +199,7 @@ func DepublishPage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.New(c, ctx, dbConn)
+			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageUid      primitive.ObjectID
 			pageUidParam = c.Param("page")
@@ -243,7 +243,7 @@ func UpdatePage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel        = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService        = service.New(c, ctx, dbConn)
+			pageService        = service.NewPageService(c, ctx, dbConn)
 			page               *models.PageModel
 			updatedPage        *models.PageModel
 			pageContent        *models.PageContentModel
@@ -303,7 +303,7 @@ func TrashPage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.New(c, ctx, dbConn)
+			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageUid      primitive.ObjectID
 			pageUidParam = c.Param("page")
@@ -347,7 +347,7 @@ func DetrashPage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.New(c, ctx, dbConn)
+			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageUid      primitive.ObjectID
 			pageUidParam = c.Param("page")
@@ -387,7 +387,7 @@ func DeletePage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.New(c, ctx, dbConn)
+			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageContent  *models.PageContentModel
 			pageUid      primitive.ObjectID

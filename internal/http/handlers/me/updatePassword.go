@@ -22,7 +22,7 @@ func UpdateMePassword(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.New(c, ctx, dbConn)
+			userService = service.NewUserService(c, ctx, dbConn)
 			me          *models.UserModel
 			updatedMe   *models.UserModel
 			form        *forms.UpdateMePasswordForm

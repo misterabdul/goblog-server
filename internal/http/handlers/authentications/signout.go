@@ -20,11 +20,11 @@ func SignOut(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService   = service.New(c, ctx, dbConn)
-			me            *models.UserModel
-			refreshClaims *jwt.CustomClaims
-			err           error
+			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
+			revokedTokenService = service.NewRevokedTokenService(c, ctx, dbConn)
+			me                  *models.UserModel
+			refreshClaims       *jwt.CustomClaims
+			err                 error
 		)
 
 		defer cancel()
@@ -36,7 +36,7 @@ func SignOut(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if err = noteRevokeToken(userService, refreshClaims, me); err != nil {
+		if err = noteRevokeToken(revokedTokenService, refreshClaims, me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -23,7 +23,8 @@ type CreateCommentReplyForm struct {
 }
 
 func (form *CreateCommentReplyForm) Validate(
-	commentService *service.Service,
+	postService *service.PostService,
+	commentService *service.CommentService,
 ) (parentComment *models.CommentModel, err error) {
 	var parentCommnetUid primitive.ObjectID
 
@@ -33,7 +34,7 @@ func (form *CreateCommentReplyForm) Validate(
 	if parentComment, err = findCommentForReply(commentService, parentCommnetUid); err != nil {
 		return nil, err
 	}
-	if _, err = findPostForComment(commentService, parentComment.UID); err != nil {
+	if _, err = findPostForComment(postService, parentComment.UID); err != nil {
 		return nil, err
 	}
 	form.realParentCommentUid = parentComment.UID
@@ -65,7 +66,7 @@ func (form *CreateCommentReplyForm) ToCommentReplyModel() (model *models.Comment
 }
 
 func findCommentForReply(
-	commentService *service.Service,
+	commentService *service.CommentService,
 	formCommentUid primitive.ObjectID,
 ) (comment *models.CommentModel, err error) {
 	if comment, err = commentService.GetComment(bson.M{

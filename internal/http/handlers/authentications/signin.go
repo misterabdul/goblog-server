@@ -26,7 +26,7 @@ func SignIn(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService   = service.New(c, ctx, dbConn)
+			userService   = service.NewUserService(c, ctx, dbConn)
 			input         *forms.SignInForm
 			user          *models.UserModel
 			accessClaims  *jwt.CustomClaims

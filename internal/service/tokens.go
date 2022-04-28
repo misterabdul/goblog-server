@@ -1,38 +1,57 @@
 package service
 
 import (
+	"context"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/models"
 	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
+type RevokedTokenService struct {
+	c          *gin.Context
+	ctx        context.Context
+	dbConn     *mongo.Database
+	repository *repositories.RevokedTokenRepository
+}
+
+func NewRevokedTokenService(
+	c *gin.Context,
+	ctx context.Context,
+	dbConn *mongo.Database,
+) *RevokedTokenService {
+
+	return &RevokedTokenService{
+		c:          c,
+		ctx:        ctx,
+		dbConn:     dbConn,
+		repository: repositories.NewRevokedTokenRepository(dbConn)}
+}
+
 // Get single revoked tokens
-func (service *Service) GetRevokedToken(
+func (s *RevokedTokenService) GetRevokedToken(
 	filter interface{},
 ) (revokedToken *models.RevokedTokenModel, err error) {
-	return repositories.GetRevokedToken(
-		service.ctx,
-		service.dbConn,
-		filter)
+	return s.repository.ReadOne(
+		s.ctx, filter)
 }
 
 // Get multiple revoked tokens
-func (service *Service) GetRevokedTokens(
+func (s *RevokedTokenService) GetRevokedTokens(
 	filter interface{},
 ) (revokedTokens []*models.RevokedTokenModel, err error) {
-	return repositories.GetRevokedTokens(
-		service.ctx,
-		service.dbConn,
-		filter,
-		internalGin.GetFindOptions(service.c))
+	return s.repository.ReadMany(
+		s.ctx, filter,
+		internalGin.GetFindOptions(s.c))
 }
 
 // Create new revoked token
-func (service *Service) CreateRevokedToken(
+func (s *RevokedTokenService) CreateRevokedToken(
 	revokedToken *models.RevokedTokenModel,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
@@ -41,59 +60,49 @@ func (service *Service) CreateRevokedToken(
 	revokedToken.UpdatedAt = now
 	revokedToken.DeletedAt = nil
 
-	return repositories.SaveRevokedToken(
-		service.ctx,
-		service.dbConn,
-		revokedToken)
+	return s.repository.Save(
+		s.ctx, revokedToken)
 }
 
 // Update revoked token
-func (service *Service) UpdateRevokedToken(
+func (s *RevokedTokenService) UpdateRevokedToken(
 	revokedToken *models.RevokedTokenModel,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	revokedToken.UpdatedAt = now
 
-	return repositories.UpdateRevokedToken(
-		service.ctx,
-		service.dbConn,
-		revokedToken)
+	return s.repository.Update(
+		s.ctx, revokedToken)
 }
 
 // Delete revoked to trash
-func (service *Service) TrashRevokedToken(
+func (s *RevokedTokenService) TrashRevokedToken(
 	revokedToken *models.RevokedTokenModel,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	revokedToken.DeletedAt = now
 
-	return repositories.UpdateRevokedToken(
-		service.ctx,
-		service.dbConn,
-		revokedToken)
+	return s.repository.Update(
+		s.ctx, revokedToken)
 }
 
 // Restore revoked token from trash
-func (service *Service) DetrashRevokedToken(
+func (s *RevokedTokenService) DetrashRevokedToken(
 	revokedToken *models.RevokedTokenModel,
 ) (err error) {
 	revokedToken.DeletedAt = nil
 
-	return repositories.UpdateRevokedToken(
-		service.ctx,
-		service.dbConn,
-		revokedToken)
+	return s.repository.Update(
+		s.ctx, revokedToken)
 }
 
 // Permanently delete revoked token
-func (service *Service) DeleteRevokedToken(
+func (s *RevokedTokenService) DeleteRevokedToken(
 	revokedToken *models.RevokedTokenModel,
 ) (err error) {
 
-	return repositories.DeleteRevokedToken(
-		service.ctx,
-		service.dbConn,
-		revokedToken)
+	return s.repository.Delete(
+		s.ctx, revokedToken)
 }

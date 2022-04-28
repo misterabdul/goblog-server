@@ -23,7 +23,7 @@ func GetPublicUser(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.New(c, ctx, dbConn)
+			userService = service.NewUserService(c, ctx, dbConn)
 			user        *models.UserModel
 			userUid     interface{}
 			userParam   = c.Param("user")
@@ -61,7 +61,7 @@ func GetPublicUsers(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.New(c, ctx, dbConn)
+			userService = service.NewUserService(c, ctx, dbConn)
 			users       []*models.UserModel
 			err         error
 		)

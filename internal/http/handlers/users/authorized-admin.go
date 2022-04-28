@@ -25,7 +25,7 @@ func GetUser(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.New(c, ctx, dbConn)
+			userService  = service.NewUserService(c, ctx, dbConn)
 			user         *models.UserModel
 			userUid      primitive.ObjectID
 			userUidParam = c.Param("user")
@@ -59,7 +59,7 @@ func GetUsers(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.New(c, ctx, dbConn)
+			userService = service.NewUserService(c, ctx, dbConn)
 			users       []*models.UserModel
 			queryParams = readCommonQueryParams(c)
 			err         error
@@ -88,7 +88,7 @@ func GetUsersStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.New(c, ctx, dbConn)
+			userService = service.NewUserService(c, ctx, dbConn)
 			count       int64
 			queryParams = readCommonQueryParams(c)
 			err         error
@@ -113,7 +113,7 @@ func CreateUser(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.New(c, ctx, dbConn)
+			userService = service.NewUserService(c, ctx, dbConn)
 			me          *models.UserModel
 			newUser     *models.UserModel
 			form        *forms.CreateUserForm
@@ -153,7 +153,7 @@ func UpdateUser(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.New(c, ctx, dbConn)
+			userService  = service.NewUserService(c, ctx, dbConn)
 			me           *models.UserModel
 			user         *models.UserModel
 			userUid      primitive.ObjectID
@@ -211,7 +211,7 @@ func TrashUser(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.New(c, ctx, dbConn)
+			userService  = service.NewUserService(c, ctx, dbConn)
 			user         *models.UserModel
 			userUid      primitive.ObjectID
 			userUidParam = c.Param("user")
@@ -251,7 +251,7 @@ func DetrashUser(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.New(c, ctx, dbConn)
+			userService  = service.NewUserService(c, ctx, dbConn)
 			user         *models.UserModel
 			userUid      primitive.ObjectID
 			userUidParam = c.Param("user")
@@ -291,7 +291,7 @@ func DeleteUser(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.New(c, ctx, dbConn)
+			userService  = service.NewUserService(c, ctx, dbConn)
 			user         *models.UserModel
 			userUid      primitive.ObjectID
 			userUidParam = c.Param("user")

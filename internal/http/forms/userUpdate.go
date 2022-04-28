@@ -24,7 +24,7 @@ type UpdateUserForm struct {
 }
 
 func (form *UpdateUserForm) Validate(
-	userService *service.Service,
+	userService *service.UserService,
 	creator *models.UserModel,
 	target *models.UserModel,
 ) (err error) {
@@ -82,7 +82,7 @@ func (form *UpdateUserForm) ToUserModel(
 }
 
 func checkUpdateUsername(
-	userService *service.Service,
+	userService *service.UserService,
 	formUsername string,
 	target *models.UserModel,
 ) (err error) {
@@ -103,7 +103,7 @@ func checkUpdateUsername(
 }
 
 func checkUpdateEmail(
-	userService *service.Service,
+	userService *service.UserService,
 	formEmail string,
 	target *models.UserModel,
 ) (err error) {

@@ -59,6 +59,7 @@ func (m *CreateUsersCollection) Down(ctx context.Context, dbConn *mongo.Database
 
 func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) (err error) {
 	var (
+		repository = repositories.NewUserRepository(dbConn)
 		password   string
 		now        = primitive.NewDateTimeFromTime(time.Now())
 		superAdmin models.UserModel
@@ -94,5 +95,5 @@ func insertSuperAdmin(ctx context.Context, dbConn *mongo.Database) (err error) {
 		UpdatedAt: now,
 	}
 
-	return repositories.SaveUser(ctx, dbConn, &superAdmin)
+	return repository.Save(ctx, &superAdmin)
 }

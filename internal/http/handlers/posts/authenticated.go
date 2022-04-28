@@ -25,7 +25,7 @@ func GetMyPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			me           *models.UserModel
 			post         *models.PostModel
 			postContent  *models.PostContentModel
@@ -67,7 +67,7 @@ func GetMyPosts(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
+			postService = service.NewPostService(c, ctx, dbConn)
 			me          *models.UserModel
 			posts       []*models.PostModel
 			queryParams = readCommonQueryParams(c)
@@ -102,7 +102,7 @@ func GetMyPostsStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
+			postService = service.NewPostService(c, ctx, dbConn)
 			me          *models.UserModel
 			count       int64
 			queryParams = readCommonQueryParams(c)
@@ -132,13 +132,14 @@ func CreatePost(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
-			me          *models.UserModel
-			post        *models.PostModel
-			postContent *models.PostContentModel
-			form        *forms.CreatePostForm
-			err         error
+			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService     = service.NewPostService(c, ctx, dbConn)
+			categoryService = service.NewCategoryService(c, ctx, dbConn)
+			me              *models.UserModel
+			post            *models.PostModel
+			postContent     *models.PostContentModel
+			form            *forms.CreatePostForm
+			err             error
 		)
 
 		defer cancel()
@@ -150,7 +151,7 @@ func CreatePost(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(postService); err != nil {
+		if err = form.Validate(categoryService, postService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -174,7 +175,7 @@ func PublishMyPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			me           *models.UserModel
 			post         *models.PostModel
 			postUid      primitive.ObjectID
@@ -224,7 +225,7 @@ func DepublishMyPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			me           *models.UserModel
 			post         *models.PostModel
 			postUid      primitive.ObjectID
@@ -274,7 +275,8 @@ func UpdateMyPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel        = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService        = service.New(c, ctx, dbConn)
+			postService        = service.NewPostService(c, ctx, dbConn)
+			categoryService    = service.NewCategoryService(c, ctx, dbConn)
 			me                 *models.UserModel
 			post               *models.PostModel
 			updatedPost        *models.PostModel
@@ -312,7 +314,7 @@ func UpdateMyPost(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(postService, post); err != nil {
+		if err = form.Validate(categoryService, postService, post); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -341,7 +343,7 @@ func TrashMyPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			me           *models.UserModel
 			post         *models.PostModel
 			postUid      primitive.ObjectID
@@ -387,7 +389,7 @@ func DetrashMyPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			me           *models.UserModel
 			post         *models.PostModel
 			postUid      primitive.ObjectID
@@ -433,7 +435,7 @@ func DeleteMyPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			me           *models.UserModel
 			post         *models.PostModel
 			postContent  *models.PostContentModel

@@ -12,24 +12,29 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getCommentCollection(
+type CommentRepository struct {
+	collection *mongo.Collection
+}
+
+func NewCommentRepository(
 	dbConn *mongo.Database,
-) (commentCollection *mongo.Collection) {
-	return dbConn.Collection("comments")
+) *CommentRepository {
+
+	return &CommentRepository{
+		collection: dbConn.Collection("comments")}
 }
 
 // Get single comment
-func GetComment(
+func (r CommentRepository) ReadOne(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (comment *models.CommentModel, err error) {
 	var _comment models.CommentModel
-	if err = getCommentCollection(dbConn).FindOne(
+
+	if err = r.collection.FindOne(
 		ctx, filter, opts...,
-	).
-		Decode(&_comment); err != nil {
+	).Decode(&_comment); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -40,9 +45,8 @@ func GetComment(
 }
 
 // Get multiple comments
-func GetComments(
+func (r CommentRepository) ReadMany(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (comments []*models.CommentModel, err error) {
@@ -51,7 +55,7 @@ func GetComments(
 		cursor  *mongo.Cursor
 	)
 
-	if cursor, err = getCommentCollection(dbConn).Find(
+	if cursor, err = r.collection.Find(
 		ctx, filter, opts...,
 	); err != nil {
 		return nil, err
@@ -69,22 +73,20 @@ func GetComments(
 }
 
 // Count total posts
-func CountComments(
+func (r CommentRepository) Count(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.CountOptions,
 ) (count int64, err error) {
 
-	return getCommentCollection(dbConn).CountDocuments(
+	return r.collection.CountDocuments(
 		ctx, filter, opts...,
 	)
 }
 
 // Save new comment
-func SaveComment(
+func (r CommentRepository) Save(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	comment *models.CommentModel,
 ) (err error) {
 	var (
@@ -93,7 +95,7 @@ func SaveComment(
 		ok         bool
 	)
 
-	if insRes, err = getCommentCollection(dbConn).InsertOne(
+	if insRes, err = r.collection.InsertOne(
 		ctx, comment,
 	); err != nil {
 		return err
@@ -109,24 +111,22 @@ func SaveComment(
 }
 
 // Update comment
-func UpdateComment(
+func (r CommentRepository) Update(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	comment *models.CommentModel,
 ) (err error) {
-	_, err = getCommentCollection(dbConn).UpdateByID(
+	_, err = r.collection.UpdateByID(
 		ctx, comment.UID, bson.M{"$set": comment})
 
 	return err
 }
 
 // Delete comment
-func DeleteComment(
+func (r CommentRepository) Delete(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	comment *models.CommentModel,
 ) (err error) {
-	_, err = getCommentCollection(dbConn).DeleteOne(
+	_, err = r.collection.DeleteOne(
 		ctx, bson.M{"_id": comment.UID})
 
 	return err

@@ -23,7 +23,7 @@ func GetMyComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.New(c, ctx, dbConn)
+			commentService  = service.NewCommentService(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
 			commentUid      primitive.ObjectID
@@ -64,7 +64,7 @@ func GetMyComments(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
 			me             *models.UserModel
 			comments       []*models.CommentModel
 			queryParams    = readCommonQueryParams(c)
@@ -99,7 +99,7 @@ func GetMyCommentsStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
 			me             *models.UserModel
 			count          int64
 			queryParams    = readCommonQueryParams(c)
@@ -130,7 +130,7 @@ func GetMyPostComments(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
 			me             *models.UserModel
 			comments       []*models.CommentModel
 			postUid        primitive.ObjectID
@@ -172,7 +172,7 @@ func GetMyPostCommentsStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
 			me             *models.UserModel
 			count          int64
 			postUid        primitive.ObjectID
@@ -210,7 +210,8 @@ func TrashMyComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.New(c, ctx, dbConn)
+			commentService  = service.NewCommentService(c, ctx, dbConn)
+			postService     = service.NewPostService(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
 			parentComment   *models.CommentModel
@@ -243,7 +244,7 @@ func TrashMyComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, commentService, comment); err != nil {
+			if post, err = findCommentPost(c, postService, comment); err != nil {
 				return
 			}
 			if err = commentService.TrashComment(comment, post); err != nil {
@@ -271,7 +272,8 @@ func DetrashMyComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.New(c, ctx, dbConn)
+			commentService  = service.NewCommentService(c, ctx, dbConn)
+			postService     = service.NewPostService(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
 			parentComment   *models.CommentModel
@@ -304,7 +306,7 @@ func DetrashMyComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, commentService, comment); err != nil {
+			if post, err = findCommentPost(c, postService, comment); err != nil {
 				return
 			}
 			if err = commentService.DetrashComment(comment, post); err != nil {
@@ -332,7 +334,8 @@ func DeleteMyComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.New(c, ctx, dbConn)
+			commentService  = service.NewCommentService(c, ctx, dbConn)
+			postService     = service.NewPostService(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
 			parentComment   *models.CommentModel
@@ -364,7 +367,7 @@ func DeleteMyComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, commentService, comment); err != nil {
+			if post, err = findCommentPost(c, postService, comment); err != nil {
 				return
 			}
 			if err = commentService.DeleteComment(comment, post); err != nil {
@@ -387,11 +390,11 @@ func DeleteMyComment(
 
 func findCommentPost(
 	c *gin.Context,
-	commentService *service.Service,
+	postService *service.PostService,
 	comment *models.CommentModel,
 ) (post *models.PostModel, err error) {
 
-	if post, err = commentService.GetPost(bson.M{
+	if post, err = postService.GetPost(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
 			{"_id": bson.M{"$eq": comment.PostUid}}},
@@ -409,7 +412,7 @@ func findCommentPost(
 
 func findReplyParentComment(
 	c *gin.Context,
-	commentService *service.Service,
+	commentService *service.CommentService,
 	reply *models.CommentModel,
 ) (comment *models.CommentModel, err error) {
 	if comment, err = commentService.GetComment(bson.M{

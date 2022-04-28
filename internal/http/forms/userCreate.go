@@ -24,7 +24,7 @@ type CreateUserForm struct {
 }
 
 func (form *CreateUserForm) Validate(
-	postService *service.Service,
+	postService *service.UserService,
 	creator *models.UserModel,
 ) (err error) {
 	if err = isProperRoles(form.Roles); err != nil {
@@ -82,7 +82,7 @@ func isProperRoles(createdRoles []int) (err error) {
 }
 
 func checkUsername(
-	userService *service.Service,
+	userService *service.UserService,
 	formUsername string,
 ) (err error) {
 	var users []*models.UserModel
@@ -100,7 +100,7 @@ func checkUsername(
 }
 
 func checkEmail(
-	userService *service.Service,
+	userService *service.UserService,
 	formEmail string,
 ) (err error) {
 	var users []*models.UserModel

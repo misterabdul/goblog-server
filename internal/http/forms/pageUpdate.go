@@ -19,7 +19,7 @@ type UpdatePageForm struct {
 }
 
 func (form *UpdatePageForm) Validate(
-	pageService *service.Service,
+	pageService *service.PageService,
 	page *models.PageModel,
 ) (err error) {
 	if err = checkUpdatePageSlug(page, pageService, form.Slug); err != nil {
@@ -60,7 +60,7 @@ func (form *UpdatePageForm) ToPageModel(
 
 func checkUpdatePageSlug(
 	page *models.PageModel,
-	pageService *service.Service,
+	pageService *service.PageService,
 	formSlug string,
 ) (err error) {
 	var (

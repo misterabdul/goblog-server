@@ -25,12 +25,13 @@ type CreatePostForm struct {
 }
 
 func (form *CreatePostForm) Validate(
-	postService *service.Service,
+	categoryService *service.CategoryService,
+	postService *service.PostService,
 ) (err error) {
 	if err = checkPostSlug(postService, form.Slug); err != nil {
 		return err
 	}
-	if form.realCategories, err = findCategories(postService, form.Categories); err != nil {
+	if form.realCategories, err = findCategories(categoryService, form.Categories); err != nil {
 		return err
 	}
 	if len(form.realCategories) == 0 {
@@ -81,7 +82,7 @@ func (form *CreatePostForm) ToPostModel(author *models.UserModel) (
 }
 
 func checkPostSlug(
-	postService *service.Service,
+	postService *service.PostService,
 	formSlug string,
 ) (err error) {
 	var (
@@ -101,7 +102,7 @@ func checkPostSlug(
 }
 
 func findCategories(
-	postService *service.Service,
+	categoryService *service.CategoryService,
 	formCategories []string,
 ) (categories []*models.CategoryModel, err error) {
 	var categoryUids []primitive.ObjectID
@@ -109,7 +110,7 @@ func findCategories(
 	if categoryUids, err = toObjectIdArray(formCategories); err != nil {
 		return nil, err
 	}
-	if categories, err = postService.GetCategories(bson.M{
+	if categories, err = categoryService.GetCategories(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
 			{"_id": bson.M{"$in": categoryUids}}},

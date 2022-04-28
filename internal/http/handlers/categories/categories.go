@@ -22,7 +22,7 @@ func GetPublicCategory(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.New(c, ctx, dbConn)
+			categoryService = service.NewCategoryService(c, ctx, dbConn)
 			category        *models.CategoryModel
 			categoryUid     interface{}
 			categoryParam   = c.Param("category")
@@ -59,7 +59,7 @@ func GetPublicCategories(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.New(c, ctx, dbConn)
+			categoryService = service.NewCategoryService(c, ctx, dbConn)
 			categories      []*models.CategoryModel
 			err             error
 		)

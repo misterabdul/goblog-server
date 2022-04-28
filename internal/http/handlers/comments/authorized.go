@@ -22,7 +22,7 @@ func GetComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.New(c, ctx, dbConn)
+			commentService  = service.NewCommentService(c, ctx, dbConn)
 			comment         *models.CommentModel
 			commentUid      primitive.ObjectID
 			commentUidParam = c.Param("comment")
@@ -56,7 +56,7 @@ func GetComments(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
 			comments       []*models.CommentModel
 			queryParams    = readCommonQueryParams(c)
 			err            error
@@ -85,7 +85,7 @@ func GetCommentsStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
 			count          int64
 			queryParams    = readCommonQueryParams(c)
 			err            error
@@ -110,7 +110,7 @@ func GetPostComments(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
 			comments       []*models.CommentModel
 			postUid        primitive.ObjectID
 			postUidParam   = c.Param("post")
@@ -146,7 +146,7 @@ func GetPostCommentsStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
 			count          int64
 			postUid        primitive.ObjectID
 			postUidParam   = c.Param("post")
@@ -178,7 +178,8 @@ func TrashComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService   = service.New(c, ctx, dbConn)
+			commentService   = service.NewCommentService(c, ctx, dbConn)
+			postService      = service.NewPostService(c, ctx, dbConn)
 			comment          *models.CommentModel
 			parentComment    *models.CommentModel
 			post             *models.PostModel
@@ -205,7 +206,7 @@ func TrashComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, commentService, comment); err != nil {
+			if post, err = findCommentPost(c, postService, comment); err != nil {
 				return
 			}
 			if err = commentService.TrashComment(comment, post); err != nil {
@@ -233,7 +234,8 @@ func DetrashComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.New(c, ctx, dbConn)
+			commentService  = service.NewCommentService(c, ctx, dbConn)
+			postService     = service.NewPostService(c, ctx, dbConn)
 			comment         *models.CommentModel
 			parentComment   *models.CommentModel
 			post            *models.PostModel
@@ -260,7 +262,7 @@ func DetrashComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, commentService, comment); err != nil {
+			if post, err = findCommentPost(c, postService, comment); err != nil {
 				return
 			}
 			if err = commentService.DetrashComment(comment, post); err != nil {
@@ -288,7 +290,8 @@ func DeleteComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.New(c, ctx, dbConn)
+			commentService  = service.NewCommentService(c, ctx, dbConn)
+			postService     = service.NewPostService(c, ctx, dbConn)
 			comment         *models.CommentModel
 			parentComment   *models.CommentModel
 			post            *models.PostModel
@@ -314,7 +317,7 @@ func DeleteComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, commentService, comment); err != nil {
+			if post, err = findCommentPost(c, postService, comment); err != nil {
 				return
 			}
 			if err = commentService.DetrashComment(comment, post); err != nil {

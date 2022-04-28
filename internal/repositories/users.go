@@ -12,23 +12,27 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-// Get the user collection
-func getUserCollection(
+type UserRepository struct {
+	collection *mongo.Collection
+}
+
+func NewUserRepository(
 	dbConn *mongo.Database,
-) (userCollection *mongo.Collection) {
-	return dbConn.Collection("users")
+) *UserRepository {
+
+	return &UserRepository{
+		collection: dbConn.Collection("users")}
 }
 
 // Get single user
-func GetUser(
+func (r UserRepository) ReadOne(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (user *models.UserModel, err error) {
 	var _user models.UserModel
 
-	if err = getUserCollection(dbConn).FindOne(
+	if err = r.collection.FindOne(
 		ctx, filter, opts...,
 	).Decode(&_user); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -41,9 +45,8 @@ func GetUser(
 }
 
 // Get multiple users
-func GetUsers(
+func (r UserRepository) ReadMany(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (users []*models.UserModel, err error) {
@@ -52,7 +55,7 @@ func GetUsers(
 		cursor *mongo.Cursor
 	)
 
-	if cursor, err = getUserCollection(dbConn).Find(
+	if cursor, err = r.collection.Find(
 		ctx, filter, opts...,
 	); err != nil {
 		return nil, err
@@ -70,22 +73,20 @@ func GetUsers(
 }
 
 // Count total users
-func CountUsers(
+func (r UserRepository) Count(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.CountOptions,
 ) (count int64, err error) {
 
-	return getUserCollection(dbConn).CountDocuments(
+	return r.collection.CountDocuments(
 		ctx, filter, opts...,
 	)
 }
 
 // Save new user
-func SaveUser(
+func (r UserRepository) Save(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	user *models.UserModel,
 ) (err error) {
 	var (
@@ -94,7 +95,7 @@ func SaveUser(
 		ok         bool
 	)
 
-	if insRes, err = getUserCollection(dbConn).InsertOne(
+	if insRes, err = r.collection.InsertOne(
 		ctx, user,
 	); err != nil {
 		return err
@@ -110,24 +111,22 @@ func SaveUser(
 }
 
 // Update user
-func UpdateUser(
+func (r UserRepository) Update(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	user *models.UserModel,
 ) (err error) {
-	_, err = getUserCollection(dbConn).UpdateByID(
+	_, err = r.collection.UpdateByID(
 		ctx, user.UID, bson.M{"$set": user})
 
 	return err
 }
 
 // Delete user
-func DeleteUser(
+func (r UserRepository) Delete(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	user *models.UserModel,
 ) (err error) {
-	_, err = getUserCollection(dbConn).DeleteOne(
+	_, err = r.collection.DeleteOne(
 		ctx, bson.M{"_id": user.UID})
 
 	return err

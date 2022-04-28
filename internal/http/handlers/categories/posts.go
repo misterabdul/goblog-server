@@ -20,19 +20,19 @@ func GetPublicCategoryPosts(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.New(c, ctx, dbConn)
-			posts           []*models.PostModel
-			categoryUid     interface{}
-			categoryParam   = c.Param("category")
-			err             error
+			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
+			postService   = service.NewPostService(c, ctx, dbConn)
+			posts         []*models.PostModel
+			categoryUid   interface{}
+			categoryParam = c.Param("category")
+			err           error
 		)
 
 		defer cancel()
 		if categoryUid, err = primitive.ObjectIDFromHex(categoryParam); err != nil {
 			categoryUid = nil
 		}
-		if posts, err = categoryService.GetPosts(bson.M{
+		if posts, err = postService.GetPosts(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},

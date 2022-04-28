@@ -24,7 +24,7 @@ func GetPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postContent  *models.PostContentModel
 			postUid      primitive.ObjectID
@@ -59,7 +59,7 @@ func GetPosts(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
+			postService = service.NewPostService(c, ctx, dbConn)
 			posts       []*models.PostModel
 			queryParams = readCommonQueryParams(c)
 			err         error
@@ -88,7 +88,7 @@ func GetPostsStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.New(c, ctx, dbConn)
+			postService = service.NewPostService(c, ctx, dbConn)
 			count       int64
 			queryParams = readCommonQueryParams(c)
 			err         error
@@ -113,7 +113,7 @@ func PublishPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postUid      primitive.ObjectID
 			postUidParam = c.Param("post")
@@ -157,7 +157,7 @@ func DepublishPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postUid      primitive.ObjectID
 			postUidParam = c.Param("post")
@@ -201,7 +201,8 @@ func UpdatePost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel        = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService        = service.New(c, ctx, dbConn)
+			postService        = service.NewPostService(c, ctx, dbConn)
+			categoryService    = service.NewCategoryService(c, ctx, dbConn)
 			post               *models.PostModel
 			updatedPost        *models.PostModel
 			postContent        *models.PostContentModel
@@ -233,7 +234,7 @@ func UpdatePost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if err = form.Validate(postService, post); err != nil {
+		if err = form.Validate(categoryService, postService, post); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -261,7 +262,7 @@ func TrashPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postUid      primitive.ObjectID
 			postUidParam = c.Param("post")
@@ -305,7 +306,7 @@ func DetrashPost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postUid      primitive.ObjectID
 			postUidParam = c.Param("post")
@@ -345,7 +346,7 @@ func DeletePost(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.New(c, ctx, dbConn)
+			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postContent  *models.PostContentModel
 			postUid      primitive.ObjectID

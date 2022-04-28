@@ -22,14 +22,14 @@ type CreateCommentForm struct {
 }
 
 func (form *CreateCommentForm) Validate(
-	commentService *service.Service,
+	postService *service.PostService,
 ) (post *models.PostModel, err error) {
 	var postUid primitive.ObjectID
 
 	if postUid, err = primitive.ObjectIDFromHex(form.PostUid); err != nil {
 		return nil, errors.New("invalid post uid format")
 	}
-	if post, err = findPostForComment(commentService, postUid); err != nil {
+	if post, err = findPostForComment(postService, postUid); err != nil {
 		return nil, err
 	}
 	form.realPostUid = post.UID
@@ -63,10 +63,10 @@ func (form *CreateCommentForm) ToCommentModel() (model *models.CommentModel, err
 }
 
 func findPostForComment(
-	commentService *service.Service,
+	postService *service.PostService,
 	formPostUid primitive.ObjectID,
 ) (post *models.PostModel, err error) {
-	if post, err = commentService.GetPost(bson.M{
+	if post, err = postService.GetPost(bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
 			{"publishedat": bson.M{"$ne": primitive.Null{}}},

@@ -23,7 +23,7 @@ func GetNotification(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			notificationService = service.New(c, ctx, dbConn)
+			notificationService = service.NewNotificationService(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID
@@ -64,7 +64,7 @@ func GetNotifications(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			notificationService = service.New(c, ctx, dbConn)
+			notificationService = service.NewNotificationService(c, ctx, dbConn)
 			me                  *models.UserModel
 			notifications       []*models.NotificationModel
 			err                 error
@@ -99,7 +99,7 @@ func ReadNotification(
 
 		var (
 			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			notificationService = service.New(c, ctx, dbConn)
+			notificationService = service.NewNotificationService(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID
@@ -148,7 +148,7 @@ func DeleteNotification(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			notificationService = service.New(c, ctx, dbConn)
+			notificationService = service.NewNotificationService(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID

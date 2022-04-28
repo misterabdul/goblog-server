@@ -28,14 +28,15 @@ func AuthenticateRefresh(
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService   = service.New(c, ctx, dbConn)
-			refreshToken  string
-			refreshClaims *jwt.CustomClaims
-			revoked       bool
-			userUid       primitive.ObjectID
-			me            *models.UserModel
-			err           error
+			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
+			revokedTokenService = service.NewRevokedTokenService(c, ctx, dbConn)
+			userService         = service.NewUserService(c, ctx, dbConn)
+			refreshToken        string
+			refreshClaims       *jwt.CustomClaims
+			revoked             bool
+			userUid             primitive.ObjectID
+			me                  *models.UserModel
+			err                 error
 		)
 
 		defer cancel()
@@ -49,7 +50,7 @@ func AuthenticateRefresh(
 			c.Abort()
 			return
 		}
-		if revoked, err = checkRevokedToken(userService, refreshClaims); err != nil {
+		if revoked, err = checkRevokedToken(revokedTokenService, refreshClaims); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
@@ -85,7 +86,7 @@ func AuthenticateRefresh(
 }
 
 func checkRevokedToken(
-	userService *service.Service,
+	revokedTokenService *service.RevokedTokenService,
 	refreshClaims *jwt.CustomClaims,
 ) (noted bool, err error) {
 	var (
@@ -96,7 +97,7 @@ func checkRevokedToken(
 	if tokenUid, err = primitive.ObjectIDFromHex(refreshClaims.Id); err != nil {
 		return false, err
 	}
-	if revokedTokenData, err = userService.GetRevokedToken(bson.M{
+	if revokedTokenData, err = revokedTokenService.GetRevokedToken(bson.M{
 		"_id": tokenUid,
 	}); err != nil {
 		return false, err

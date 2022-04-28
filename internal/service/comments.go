@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -15,55 +16,68 @@ import (
 	customMongo "github.com/misterabdul/goblog-server/pkg/mongo"
 )
 
+type CommentService struct {
+	c              *gin.Context
+	ctx            context.Context
+	dbConn         *mongo.Database
+	repository     *repositories.CommentRepository
+	postRepository *repositories.PostRepository
+}
+
+func NewCommentService(
+	c *gin.Context,
+	ctx context.Context,
+	dbConn *mongo.Database,
+) *CommentService {
+
+	return &CommentService{
+		c:              c,
+		ctx:            ctx,
+		dbConn:         dbConn,
+		repository:     repositories.NewCommentRepository(dbConn),
+		postRepository: repositories.NewPostRepository(dbConn)}
+}
+
 // Get single comment
-func (service *Service) GetComment(
+func (s *CommentService) GetComment(
 	filter interface{},
 ) (comment *models.CommentModel, err error) {
 
-	return repositories.GetComment(
-		service.ctx,
-		service.dbConn,
-		filter)
+	return s.repository.ReadOne(
+		s.ctx, filter)
 }
 
 // Get multiple comments
-func (service *Service) GetComments(
+func (s *CommentService) GetComments(
 	filter interface{},
 	dateDesc bool,
 ) (comments []*models.CommentModel, err error) {
-	var (
-		_options *options.FindOptions
-	)
+	var _options *options.FindOptions
 
 	if dateDesc {
 		_options = &options.FindOptions{
 			Sort: bson.M{"createdat": 1},
 		}
 	} else {
-		_options = internalGin.GetFindOptions(service.c)
+		_options = internalGin.GetFindOptions(s.c)
 	}
 
-	return repositories.GetComments(
-		service.ctx,
-		service.dbConn,
-		filter,
-		_options)
+	return s.repository.ReadMany(
+		s.ctx, filter, _options)
 }
 
 // Get total comments count
-func (service *Service) GetCommentCount(filter interface{}) (
+func (s *CommentService) GetCommentCount(filter interface{}) (
 	count int64, err error,
 ) {
 
-	return repositories.CountComments(
-		service.ctx,
-		service.dbConn,
-		filter,
-		internalGin.GetCountOptions(service.c))
+	return s.repository.Count(
+		s.ctx, filter,
+		internalGin.GetCountOptions(s.c))
 }
 
 // Create new comment
-func (service *Service) CreateComment(
+func (s *CommentService) CreateComment(
 	comment *models.CommentModel,
 	post *models.PostModel,
 ) (err error) {
@@ -74,12 +88,12 @@ func (service *Service) CreateComment(
 	comment.DeletedAt = nil
 	post.CommentCount++
 
-	return customMongo.Transaction(service.ctx, service.dbConn, false,
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if err = repositories.SaveComment(sCtx, dbConn, comment); err != nil {
+			if err = s.repository.Save(sCtx, comment); err != nil {
 				return err
 			}
-			if err = repositories.UpdatePost(sCtx, dbConn, post); err != nil {
+			if err = s.postRepository.Update(sCtx, post); err != nil {
 				return err
 			}
 
@@ -88,7 +102,7 @@ func (service *Service) CreateComment(
 }
 
 // Create new comment reply
-func (service *Service) CreateCommentReply(
+func (s *CommentService) CreateCommentReply(
 	reply *models.CommentModel,
 	comment *models.CommentModel,
 ) (err error) {
@@ -99,12 +113,12 @@ func (service *Service) CreateCommentReply(
 	reply.DeletedAt = nil
 	comment.ReplyCount++
 
-	return customMongo.Transaction(service.ctx, service.dbConn, false,
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if err = repositories.SaveComment(sCtx, dbConn, reply); err != nil {
+			if err = s.repository.Save(sCtx, reply); err != nil {
 				return nil
 			}
-			if err = repositories.SaveComment(sCtx, dbConn, comment); err != nil {
+			if err = s.repository.Update(sCtx, comment); err != nil {
 				return nil
 			}
 
@@ -113,7 +127,7 @@ func (service *Service) CreateCommentReply(
 }
 
 // Delete comment to trash
-func (service *Service) TrashComment(
+func (s *CommentService) TrashComment(
 	comment *models.CommentModel,
 	post *models.PostModel,
 ) (err error) {
@@ -122,12 +136,12 @@ func (service *Service) TrashComment(
 	comment.DeletedAt = now
 	post.CommentCount--
 
-	return customMongo.Transaction(service.ctx, service.dbConn, false,
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if err = repositories.UpdateComment(sCtx, dbConn, comment); err != nil {
+			if err = s.repository.Update(sCtx, comment); err != nil {
 				return nil
 			}
-			if err = repositories.UpdatePost(sCtx, dbConn, post); err != nil {
+			if err = s.postRepository.Update(sCtx, post); err != nil {
 				return err
 			}
 
@@ -136,7 +150,7 @@ func (service *Service) TrashComment(
 }
 
 // Delete comment reply to trash
-func (service *Service) TrashCommentReply(
+func (s *CommentService) TrashCommentReply(
 	reply *models.CommentModel,
 	comment *models.CommentModel,
 ) (err error) {
@@ -145,12 +159,12 @@ func (service *Service) TrashCommentReply(
 	reply.DeletedAt = now
 	comment.ReplyCount--
 
-	return customMongo.Transaction(service.ctx, service.dbConn, false,
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if err = repositories.UpdateComment(sCtx, dbConn, reply); err != nil {
+			if err = s.repository.Update(sCtx, reply); err != nil {
 				return nil
 			}
-			if err = repositories.UpdateComment(sCtx, dbConn, comment); err != nil {
+			if err = s.repository.Update(sCtx, comment); err != nil {
 				return err
 			}
 
@@ -159,19 +173,19 @@ func (service *Service) TrashCommentReply(
 }
 
 // Restore comment from trash
-func (service *Service) DetrashComment(
+func (s *CommentService) DetrashComment(
 	comment *models.CommentModel,
 	post *models.PostModel,
 ) (err error) {
 	comment.DeletedAt = nil
 	post.CommentCount++
 
-	return customMongo.Transaction(service.ctx, service.dbConn, false,
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if err = repositories.UpdateComment(sCtx, dbConn, comment); err != nil {
+			if err = s.repository.Update(sCtx, comment); err != nil {
 				return nil
 			}
-			if err = repositories.UpdatePost(sCtx, dbConn, post); err != nil {
+			if err = s.postRepository.Update(sCtx, post); err != nil {
 				return err
 			}
 
@@ -180,19 +194,19 @@ func (service *Service) DetrashComment(
 }
 
 // Restore comment reply from trash
-func (service *Service) DetrashCommentReply(
+func (s *CommentService) DetrashCommentReply(
 	reply *models.CommentModel,
 	comment *models.CommentModel,
 ) (err error) {
 	reply.DeletedAt = nil
 	comment.ReplyCount++
 
-	return customMongo.Transaction(service.ctx, service.dbConn, false,
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if err = repositories.UpdateComment(sCtx, dbConn, reply); err != nil {
+			if err = s.repository.Update(sCtx, reply); err != nil {
 				return nil
 			}
-			if err = repositories.UpdateComment(sCtx, dbConn, comment); err != nil {
+			if err = s.repository.Update(sCtx, comment); err != nil {
 				return err
 			}
 
@@ -201,18 +215,18 @@ func (service *Service) DetrashCommentReply(
 }
 
 // Permanently delete comment
-func (service *Service) DeleteComment(
+func (s *CommentService) DeleteComment(
 	comment *models.CommentModel,
 	post *models.PostModel,
 ) (err error) {
 	post.CommentCount--
 
-	return customMongo.Transaction(service.ctx, service.dbConn, false,
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if err = repositories.DeleteComment(sCtx, dbConn, comment); err != nil {
+			if err = s.repository.Delete(sCtx, comment); err != nil {
 				return nil
 			}
-			if err = repositories.UpdatePost(sCtx, dbConn, post); err != nil {
+			if err = s.postRepository.Update(sCtx, post); err != nil {
 				return err
 			}
 
@@ -221,18 +235,18 @@ func (service *Service) DeleteComment(
 }
 
 // Permanently delete comment
-func (service *Service) DeleteCommentReply(
+func (s *CommentService) DeleteCommentReply(
 	reply *models.CommentModel,
 	comment *models.CommentModel,
 ) (err error) {
 	comment.ReplyCount--
 
-	return customMongo.Transaction(service.ctx, service.dbConn, false,
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if err = repositories.DeleteComment(sCtx, dbConn, reply); err != nil {
+			if err = s.repository.Delete(sCtx, reply); err != nil {
 				return nil
 			}
-			if err = repositories.UpdateComment(sCtx, dbConn, comment); err != nil {
+			if err = s.repository.Update(sCtx, comment); err != nil {
 				return err
 			}
 

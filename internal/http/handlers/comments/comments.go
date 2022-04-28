@@ -24,7 +24,8 @@ func GetPublicComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.New(c, ctx, dbConn)
+			commentService  = service.NewCommentService(c, ctx, dbConn)
+			postService     = service.NewPostService(c, ctx, dbConn)
 			comment         *models.CommentModel
 			post            *models.PostModel
 			commentUid      primitive.ObjectID
@@ -49,7 +50,7 @@ func GetPublicComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = commentService.GetPost(bson.M{
+		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
@@ -73,7 +74,8 @@ func GetPublicPostComments(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
+			postService    = service.NewPostService(c, ctx, dbConn)
 			comments       []*models.CommentModel
 			post           *models.PostModel
 			postUid        interface{}
@@ -85,7 +87,7 @@ func GetPublicPostComments(
 		if postUid, err = primitive.ObjectIDFromHex(postParam); err != nil {
 			postUid = nil
 		}
-		if post, err = commentService.GetPost(bson.M{
+		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
@@ -125,7 +127,8 @@ func GetPublicCommentReplies(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
+			postService    = service.NewPostService(c, ctx, dbConn)
 			replies        []*models.CommentModel
 			comment        *models.CommentModel
 			post           *models.PostModel
@@ -151,7 +154,7 @@ func GetPublicCommentReplies(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = commentService.GetPost(bson.M{
+		if post, err = postService.GetPost(bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
@@ -189,7 +192,8 @@ func CreatePublicPostComment(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
+			postService    = service.NewPostService(c, ctx, dbConn)
 			comment        *models.CommentModel
 			post           *models.PostModel
 			form           *forms.CreateCommentForm
@@ -201,7 +205,7 @@ func CreatePublicPostComment(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if post, err = form.Validate(commentService); err != nil {
+		if post, err = form.Validate(postService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -225,7 +229,8 @@ func CreatePublicCommentReply(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.New(c, ctx, dbConn)
+			commentService = service.NewCommentService(c, ctx, dbConn)
+			postService    = service.NewPostService(c, ctx, dbConn)
 			reply          *models.CommentModel
 			comment        *models.CommentModel
 			form           *forms.CreateCommentReplyForm
@@ -237,7 +242,7 @@ func CreatePublicCommentReply(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if comment, err = form.Validate(commentService); err != nil {
+		if comment, err = form.Validate(postService, commentService); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}

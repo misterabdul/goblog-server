@@ -23,7 +23,7 @@ func GetPublicPage(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.New(c, ctx, dbConn)
+			pageService = service.NewPageService(c, ctx, dbConn)
 			page        *models.PageModel
 			pageContent *models.PageContentModel
 			pageUid     interface{}
@@ -61,7 +61,7 @@ func GetPublicPageBySlug(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.New(c, ctx, dbConn)
+			pageService = service.NewPageService(c, ctx, dbConn)
 			page        *models.PageModel
 			pageContent *models.PageContentModel
 			pageSlug    interface{}
@@ -98,7 +98,7 @@ func GetPublicPages(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.New(c, ctx, dbConn)
+			pageService = service.NewPageService(c, ctx, dbConn)
 			pages       []*models.PageModel
 			err         error
 		)
@@ -129,7 +129,7 @@ func SearchPublicPages(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.New(c, ctx, dbConn)
+			pageService = service.NewPageService(c, ctx, dbConn)
 			searchQuery = c.Query("q")
 			pages       []*models.PageModel
 			err         error

@@ -11,7 +11,7 @@ import (
 )
 
 func noteRevokeToken(
-	service *service.Service,
+	service *service.RevokedTokenService,
 	refreshClaims *jwt.CustomClaims,
 	user *models.UserModel,
 ) (err error) {

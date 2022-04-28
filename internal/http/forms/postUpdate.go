@@ -25,13 +25,14 @@ type UpdatePostForm struct {
 }
 
 func (form *UpdatePostForm) Validate(
-	postService *service.Service,
+	categoryService *service.CategoryService,
+	postService *service.PostService,
 	target *models.PostModel,
 ) (err error) {
 	if err = checkUpdatePostSlug(postService, form.Slug, target); err != nil {
 		return err
 	}
-	if form.realCategories, err = findCategories(postService, form.Categories); err != nil {
+	if form.realCategories, err = findCategories(categoryService, form.Categories); err != nil {
 		return err
 	}
 
@@ -87,7 +88,7 @@ func (form *UpdatePostForm) ToPostModel(
 }
 
 func checkUpdatePostSlug(
-	postService *service.Service,
+	postService *service.PostService,
 	formSlug string,
 	target *models.PostModel,
 ) (err error) {

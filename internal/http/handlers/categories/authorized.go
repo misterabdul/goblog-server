@@ -24,7 +24,7 @@ func GetCategory(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.New(c, ctx, dbConn)
+			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			categoryUid      primitive.ObjectID
 			categoryUidParam = c.Param("category")
@@ -58,7 +58,7 @@ func GetCategories(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.New(c, ctx, dbConn)
+			categoryService = service.NewCategoryService(c, ctx, dbConn)
 			categories      []*models.CategoryModel
 			queryParams     = readCommonQueryParams(c)
 			err             error
@@ -87,7 +87,7 @@ func GetCategoriesStats(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.New(c, ctx, dbConn)
+			categoryService = service.NewCategoryService(c, ctx, dbConn)
 			count           int64
 			queryParams     = readCommonQueryParams(c)
 			err             error
@@ -112,7 +112,7 @@ func CreateCategory(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.New(c, ctx, dbConn)
+			categoryService = service.NewCategoryService(c, ctx, dbConn)
 			category        *models.CategoryModel
 			form            *forms.CreateCategoryForm
 			err             error
@@ -144,7 +144,7 @@ func UpdateCategory(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.New(c, ctx, dbConn)
+			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			updatedCategory  *models.CategoryModel
 			categoryUid      primitive.ObjectID
@@ -195,7 +195,7 @@ func TrashCategory(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.New(c, ctx, dbConn)
+			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			categoryUid      primitive.ObjectID
 			categoryUidParam = c.Param("category")
@@ -239,7 +239,7 @@ func DetrashCategory(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.New(c, ctx, dbConn)
+			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			categoryUid      primitive.ObjectID
 			categoryUidParam = c.Param("category")
@@ -283,7 +283,7 @@ func DeleteCategory(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.New(c, ctx, dbConn)
+			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			categoryUid      primitive.ObjectID
 			categoryUidParam = c.Param("category")

@@ -12,22 +12,27 @@ import (
 	"github.com/misterabdul/goblog-server/internal/models"
 )
 
-func getRevokedTokenCollection(
+type RevokedTokenRepository struct {
+	collection *mongo.Collection
+}
+
+func NewRevokedTokenRepository(
 	dbConn *mongo.Database,
-) (tokenCollection *mongo.Collection) {
-	return dbConn.Collection("revokedTokens")
+) *RevokedTokenRepository {
+
+	return &RevokedTokenRepository{
+		collection: dbConn.Collection("revokedTokens")}
 }
 
 // Get single revoked tokens
-func GetRevokedToken(
+func (r RevokedTokenRepository) ReadOne(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (revokedToken *models.RevokedTokenModel, err error) {
 	var _revokedToken models.RevokedTokenModel
 
-	if err = getRevokedTokenCollection(dbConn).FindOne(
+	if err = r.collection.FindOne(
 		ctx, filter, opts...,
 	).Decode(&_revokedToken); err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -40,9 +45,8 @@ func GetRevokedToken(
 }
 
 // Get multiple revoked tokens
-func GetRevokedTokens(
+func (r RevokedTokenRepository) ReadMany(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (revokedTokens []*models.RevokedTokenModel, err error) {
@@ -51,7 +55,7 @@ func GetRevokedTokens(
 		cursor       *mongo.Cursor
 	)
 
-	if cursor, err = getRevokedTokenCollection(dbConn).Find(
+	if cursor, err = r.collection.Find(
 		ctx, filter, opts...,
 	); err != nil {
 		return nil, err
@@ -69,9 +73,8 @@ func GetRevokedTokens(
 }
 
 // Save new revoked token
-func SaveRevokedToken(
+func (r RevokedTokenRepository) Save(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	revokedToken *models.RevokedTokenModel,
 ) (err error) {
 	var (
@@ -80,7 +83,7 @@ func SaveRevokedToken(
 		ok         bool
 	)
 
-	if insRes, err = getRevokedTokenCollection(dbConn).InsertOne(
+	if insRes, err = r.collection.InsertOne(
 		ctx, revokedToken,
 	); err != nil {
 		return err
@@ -96,24 +99,22 @@ func SaveRevokedToken(
 }
 
 // Update revoked token
-func UpdateRevokedToken(
+func (r RevokedTokenRepository) Update(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	revokedToken *models.RevokedTokenModel,
 ) (err error) {
-	_, err = getRevokedTokenCollection(dbConn).UpdateByID(
+	_, err = r.collection.UpdateByID(
 		ctx, revokedToken.UID, bson.M{"$set": revokedToken})
 
 	return err
 }
 
 // Delete revoked token
-func DeleteRevokedToken(
+func (r RevokedTokenRepository) Delete(
 	ctx context.Context,
-	dbConn *mongo.Database,
 	revokedToken *models.RevokedTokenModel,
 ) (err error) {
-	_, err = getRevokedTokenCollection(dbConn).DeleteOne(
+	_, err = r.collection.DeleteOne(
 		ctx, bson.M{"_id": revokedToken.UID})
 
 	return err

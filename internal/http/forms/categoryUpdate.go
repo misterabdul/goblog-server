@@ -15,7 +15,7 @@ type UpdateCategoryForm struct {
 }
 
 func (form *UpdateCategoryForm) Validate(
-	categoryService *service.Service,
+	categoryService *service.CategoryService,
 	target *models.CategoryModel,
 ) (err error) {
 	if len(form.Slug) > 0 {
@@ -41,7 +41,7 @@ func (form *UpdateCategoryForm) ToCategoryModel(
 }
 
 func checkUpdateCategorySlug(
-	categoryService *service.Service,
+	categoryService *service.CategoryService,
 	formSlug string,
 	target *models.CategoryModel,
 ) (err error) {
