@@ -39,7 +39,7 @@ func main() {
 	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 		log.Fatal(err)
 	}
-	address = server.ReadAddressFromEnv()
+	address = server.ReadContainerAddressFromEnv()
 	ginEngine = server.GetServer()
 	server.InitRoutes(ginEngine, dbConn, maxCtxDuration)
 	server.InitSwagger(ginEngine)

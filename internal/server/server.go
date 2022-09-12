@@ -45,6 +45,33 @@ func GetServer() (serverInstance *gin.Engine) {
 	return serverInstance
 }
 
+func ReadContainerAddressFromEnv() (address string) {
+	var (
+		host    = "localhost"
+		port    = "80"
+		envHost string
+		envPort string
+		ok      bool
+	)
+
+	if envHost, ok = os.LookupEnv("CONTAINER_HOST"); ok {
+		host = envHost
+	} else if envHost, ok = os.LookupEnv("APP_HOST"); ok {
+		host = envHost
+	} else {
+		host = "localhost"
+	}
+	if envPort, ok = os.LookupEnv("CONTAINER_PORT"); ok {
+		port = envPort
+	} else if envPort, ok = os.LookupEnv("APP_PORT"); ok {
+		port = envPort
+	} else {
+		port = "80"
+	}
+
+	return host + ":" + port
+}
+
 func ReadAddressFromEnv() (address string) {
 	var (
 		host    = "localhost"
@@ -56,9 +83,13 @@ func ReadAddressFromEnv() (address string) {
 
 	if envHost, ok = os.LookupEnv("APP_HOST"); ok {
 		host = envHost
+	} else {
+		host = "localhost"
 	}
 	if envPort, ok = os.LookupEnv("APP_PORT"); ok {
 		port = envPort
+	} else {
+		port = "80"
 	}
 
 	return host + ":" + port
@@ -93,6 +124,8 @@ func getServerRelatedEnv() (envs *serverRelatedEnv) {
 		case mode == "debug":
 			_envs.Mode = 2
 		}
+	} else {
+		_envs.Mode = 0
 	}
 
 	if _trustedProxiesEnv, ok = os.LookupEnv("TRUSTED_PROXIES"); ok {
