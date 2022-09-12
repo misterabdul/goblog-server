@@ -17,6 +17,18 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Category (Editor)
+// @Summary     Get Category
+// @Description Get category.
+// @Router      /v1/auth/editor/category/{uid} [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Category's UID or slug"
+// @Success     200 {object} object{data=object{uid=string,slug=string,name=string,updatedAt=time,createdAt=time}}
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetCategory(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -51,6 +63,22 @@ func GetCategory(
 	}
 }
 
+// @Tags        Category (Editor)
+// @Summary     Get Categories
+// @Description Get categories.
+// @Router      /v1/auth/editor/categories [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int     false "Number of data to be shown."
+// @Param       page  query    int     false "Selected page of data."
+// @Param       order query    string  false "Selected field to order data with."
+// @Param       asc   query    boolean false "Ascending or descending."
+// @Param       type  query    string  false "Filter data by type, e.g.: ?type=trash."
+// @Success     200   {object} object{data=[]object{uid=string,slug=string,name=string,updatedAt=time,createdAt=time}}
+// @Success     204
+// @Failure     401   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetCategories(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -80,6 +108,21 @@ func GetCategories(
 	}
 }
 
+// @Tags        Category (Editor)
+// @Summary     Get Categories Stats
+// @Description Get categories's stats.
+// @Router      /v1/auth/editor/categories/stats [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int     false "Number of data to be shown."
+// @Param       page  query    int     false "Selected page of data."
+// @Param       order query    string  false "Selected field to order data with."
+// @Param       asc   query    boolean false "Ascending or descending."
+// @Param       type  query    string  false "Filter data by type, e.g.: ?type=trash."
+// @Success     200   {object} object{data=object{currentPage=int,totalPages=int,itemsPerPage=int,totalItems=int}}
+// @Failure     401   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetCategoriesStats(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -105,6 +148,20 @@ func GetCategoriesStats(
 	}
 }
 
+// @Tags        Category (Editor)
+// @Summary     Create Category
+// @Description Create a new category.
+// @Router      /v1/auth/editor/category [post]
+// @Security    BearerAuth
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       form body     object{slug=string,name=string} true "Create category form"
+// @Success     200  {object} object{data=object{uid=string,slug=string,name=string,updatedAt=time,createdAt=time}}
+// @Failure     401  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func CreateCategory(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -137,6 +194,23 @@ func CreateCategory(
 	}
 }
 
+// @Tags        Category (Editor)
+// @Summary     Update Category
+// @Description Update a category.
+// @Router      /v1/auth/editor/category/{uid} [put]
+// @Router      /v1/auth/editor/category/{uid} [patch]
+// @Security    BearerAuth
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid  path     string                          true "Category's UID or slug"
+// @Param       form body     object{slug=string,name=string} true "Create category form"
+// @Success     204
+// @Failure     401  {object} object{message=string}
+// @Failure     404  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func UpdateCategory(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -188,6 +262,18 @@ func UpdateCategory(
 	}
 }
 
+// @Tags        Category (Editor)
+// @Summary     Delete Category (Soft)
+// @Description Delete a category (soft-deleted).
+// @Router      /v1/auth/editor/category/{uid} [delete]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Category's UID or slug"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func TrashCategory(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -232,6 +318,19 @@ func TrashCategory(
 	}
 }
 
+// @Tags        Category (Editor)
+// @Summary     Detrash Category
+// @Description Restore a deleted category (soft-deleted).
+// @Router      /v1/auth/editor/category/{uid}/detrash [put]
+// @Router      /v1/auth/editor/category/{uid}/detrash [patch]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Category's UID or slug"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DetrashCategory(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -276,6 +375,18 @@ func DetrashCategory(
 	}
 }
 
+// @Tags        Category (Editor)
+// @Summary     Delete Category (Permanent)
+// @Description Delete a category (permanent).
+// @Router      /v1/auth/editor/category/{uid}/permanent [delete]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Category's UID or slug"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DeleteCategory(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

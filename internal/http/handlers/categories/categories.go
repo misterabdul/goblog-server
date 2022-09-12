@@ -15,6 +15,16 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Category (Public)
+// @Summary     Get Category
+// @Description Get category.
+// @Router      /v1/category/{uid} [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Category's UID or slug"
+// @Success     200 {object} object{data=object{uid=string,slug=string,name=string}}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPublicCategory(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -52,6 +62,19 @@ func GetPublicCategory(
 	}
 }
 
+// @Tags        Category (Public)
+// @Summary     Get Categories
+// @Description Get categories.
+// @Router      /v1/categories [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Success     200   {object} object{data=[]object{uid=string,slug=string,name=string}}
+// @Param       show  query    int     false "Number of data to be shown."
+// @Param       page  query    int     false "Selected page of data."
+// @Param       order query    string  false "Selected field to order data with."
+// @Param       asc   query    boolean false "Ascending or descending."
+// @Failure     204
+// @Failure     500   {object} object{message=string}
 func GetPublicCategories(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

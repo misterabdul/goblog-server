@@ -18,6 +18,18 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Page (Editor)
+// @Summary     Get Page
+// @Description Get a page.
+// @Router      /v1/auth/editor/page/{uid} [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Page's UID or slug"
+// @Success     200 {object} object{data=object{uid=string,slug=string,title=string,content=string,author=object{uid=string,username=string,email=string,firstName=string,lastName=string},publishedAt=time,updatedAt=time,createdAt=time,deletedAt=time}}
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -53,6 +65,22 @@ func GetPage(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Get Pages
+// @Description Get pages.
+// @Router      /v1/auth/editor/pages [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Param       type  query    string false "Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft."
+// @Success     200   {object} object{data=[]object{uid=string,slug=string,title=string,content=string,author=object{uid=string,username=string,email=string,firstName=string,lastName=string},publishedAt=time,updatedAt=time,createdAt=time,deletedAt=time}}
+// @Success     204
+// @Failure     401   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetPages(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -82,6 +110,21 @@ func GetPages(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Get Pages Stats
+// @Description Get pages's stats.
+// @Router      /v1/auth/editor/pages/stats [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Param       type  query    string false "Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft."
+// @Success     200   {object} object{data=object{currentPage=int,totalPages=int,itemsPerPage=int,totalItems=int}}
+// @Failure     401   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetPagesStats(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -107,6 +150,20 @@ func GetPagesStats(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Create Page
+// @Description Create a new page.
+// @Router      /v1/auth/editor/page [post]
+// @Security    BearerAuth
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       form body     object{slug=string,title=string,content=string,publishNow=boolean} true "Create page form"
+// @Success     200  {object} object{data=object{uid=string,slug=string,title=string,content=string,author=object{uid=string,username=string,email=string,firstName=string,lastName=string},publishedAt=time,updatedAt=time,createdAt=time,deletedAt=time}}
+// @Failure     401  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func CreatePage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -148,6 +205,17 @@ func CreatePage(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Publish Page
+// @Description Publish a page if not published yet.
+// @Router      /v1/auth/editor/page/{uid}/publish [put]
+// @Router      /v1/auth/editor/page/{uid}/publish [patch]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func PublishPage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -192,6 +260,17 @@ func PublishPage(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Unpublish Page
+// @Description Remove publish status from a page if page already published.
+// @Router      /v1/auth/writer/page/{uid}/depublish [put]
+// @Router      /v1/auth/writer/page/{uid}/depublish [patch]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DepublishPage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -236,6 +315,23 @@ func DepublishPage(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Update Page
+// @Description Update a page.
+// @Router      /v1/auth/editor/page/{uid} [put]
+// @Router      /v1/auth/editor/page/{uid} [patch]
+// @Security    BearerAuth
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid  path     string                                                             true "Page's UID or slug"
+// @Param       form body     object{slug=string,title=string,content=string,publishNow=boolean} true "Update page form"
+// @Success     204
+// @Failure     401  {object} object{message=string}
+// @Failure     404  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func UpdatePage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -296,6 +392,18 @@ func UpdatePage(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Delete Page (Soft)
+// @Description Delete a page (soft-deleted).
+// @Router      /v1/auth/editor/page/{uid} [delete]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Page's UID or slug"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func TrashPage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -340,6 +448,19 @@ func TrashPage(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Restore Page (Soft)
+// @Description Restore a deleted page (soft-deleted).
+// @Router      /v1/auth/editor/page/{uid}/detrash [put]
+// @Router      /v1/auth/editor/page/{uid}/detrash [patch]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Page's UID or slug"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DetrashPage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -380,6 +501,18 @@ func DetrashPage(
 	}
 }
 
+// @Tags        Page (Editor)
+// @Summary     Delete Page (Permanent)
+// @Description Delete a page (permanent).
+// @Router      /v1/auth/editor/page/{uid}/permanent [delete]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Page's UID or slug"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DeletePage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

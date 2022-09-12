@@ -15,6 +15,21 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Me
+// @Summary     Update Me Password
+// @Description Update my password.
+// @Router      /v1/auth/me/password [put]
+// @Router      /v1/auth/me/password [patch]
+// @Security    BearerAuth
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       form body object{newpassword=string,newpasswordconfirm=string} true "Update me password form"
+// @Success     201
+// @Failure     401 {object} object{message=string}
+// @Failure     422 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func UpdateMePassword(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

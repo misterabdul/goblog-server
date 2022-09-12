@@ -19,6 +19,20 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
+// @Tags        Authentication
+// @Summary     Sign In
+// @Description Do the signing in request.
+// @Router      /v1/signin [post]
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       form body     object{username=string,password=string} true "Login form"
+// @Header      200  {string} Set-Cookie
+// @Success     200  {object} object{data=object{tokenType=string,accessToken=string}}
+// @Failure     401  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func SignIn(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

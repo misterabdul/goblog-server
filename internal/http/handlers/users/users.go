@@ -15,7 +15,16 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
-// Get single user record publicly
+// @Tags        User (Public)
+// @Summary     Get Public User
+// @Description Get a user that available publicly.
+// @Router      /v1/user/{uid} [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "User's UID or slug"
+// @Success     200 {object} object{data=object{uid=string,username=string,email=string,firstName=string,lastName=string}}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPublicUser(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -53,7 +62,19 @@ func GetPublicUser(
 	}
 }
 
-// Get multiple user records publicly
+// @Tags        Users (Public)
+// @Summary     Get Public Users
+// @Description Get users that available publicly.
+// @Router      /v1/users [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Success     200   {object} object{data=[]object{uid=string,username=string,email=string,firstName=string,lastName=string}}
+// @Success     204
+// @Failure     500   {object} object{message=string}
 func GetPublicUsers(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

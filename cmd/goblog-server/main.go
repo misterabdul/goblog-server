@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -14,10 +13,20 @@ import (
 	"github.com/misterabdul/goblog-server/internal/server"
 )
 
-// Run the main server.
+// @title                      GoBlog Server
+// @version                    1.0
+// @description                Simple blog server built with go.
+// @BasePath                   /api
+// @contact.name               Maintainer
+// @contact.email              abdoelrachmad@gmail.com
+// @securitydefinitions.apikey BearerAuth
+// @in                         header
+// @name                       Authorization
+// @description                `Bearer <token>`
 func main() {
 	var (
 		ctx            = context.TODO()
+		address        string
 		dbConn         *mongo.Database
 		ginEngine      *gin.Engine
 		maxCtxDuration = 10 * time.Second
@@ -30,28 +39,11 @@ func main() {
 	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 		log.Fatal(err)
 	}
+	address = server.ReadAddressFromEnv()
 	ginEngine = server.GetServer()
 	server.InitRoutes(ginEngine, dbConn, maxCtxDuration)
-	if err = ginEngine.Run(getAddress()); err != nil {
+	server.InitSwagger(ginEngine)
+	if err = ginEngine.Run(address); err != nil {
 		log.Panic(err)
 	}
-}
-
-func getAddress() (address string) {
-	var (
-		host    = "localhost"
-		port    = "80"
-		envHost string
-		envPort string
-		ok      bool
-	)
-
-	if envHost, ok = os.LookupEnv("APP_HOST"); ok {
-		host = envHost
-	}
-	if envPort, ok = os.LookupEnv("APP_PORT"); ok {
-		port = envPort
-	}
-
-	return host + ":" + port
 }

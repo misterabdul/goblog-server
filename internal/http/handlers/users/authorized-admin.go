@@ -18,6 +18,18 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        User (Admin)
+// @Summary     Get User
+// @Description Get a user.
+// @Router      /v1/auth/admin/user/{uid} [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "User's UID"
+// @Success     200 {object} object{data=object{uid=string,username=string,email=string,firstName=string,lastName=string,roles=[]object{level=int,name=string,since=string},createdAt=time,updatedAt=time}}
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetUser(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -52,6 +64,21 @@ func GetUser(
 	}
 }
 
+// @Tags        User (Admin)
+// @Summary     Get Users
+// @Description Get users.
+// @Router      /v1/auth/admin/users [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Success     200   {object} object{data=[]object{uid=string,username=string,email=string,firstName=string,lastName=string,roles=[]object{level=int,name=string,since=string},createdAt=time,updatedAt=time}}
+// @Success     204
+// @Failure     401   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetUsers(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -81,6 +108,20 @@ func GetUsers(
 	}
 }
 
+// @Tags        User (Admin)
+// @Summary     Get Users Stats
+// @Description Get users's stats.
+// @Router      /v1/auth/admin/users/stats [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Success     200   {object} object{data=object{currentPage=int,totalPages=int,itemsPerPage=int,totalItems=int}}
+// @Failure     401   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetUsersStats(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -106,6 +147,20 @@ func GetUsersStats(
 	}
 }
 
+// @Tags        User (Admin)
+// @Summary     Create User
+// @Description Create a new user.
+// @Router      /v1/auth/admin/user [post]
+// @Security    BearerAuth
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       form body     object{firstName=string,lastName=string,username=string,email=string,password=string,passwordConfirm=string,roles=[]int} true "Create user form"
+// @Success     200  {object} object{data=object{uid=string,username=string,email=string,firstName=string,lastName=string,roles=[]object{level=int,name=string,since=string},createdAt=time,updatedAt=time}}
+// @Failure     401  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func CreateUser(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -146,6 +201,23 @@ func CreateUser(
 	}
 }
 
+// @Tags        User (Admin)
+// @Summary     Update User
+// @Description Update User
+// @Router      /v1/auth/admin/user/{uid} [put]
+// @Router      /v1/auth/admin/user/{uid} [patch]
+// @Security    BearerAuth
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid  path     string                                                                                                                   true "User's UID"
+// @Param       form body     object{firstName=string,lastName=string,username=string,email=string,password=string,passwordConfirm=string,roles=[]int} true "Update user form"
+// @Success     204
+// @Failure     401  {object} object{message=string}
+// @Failure     404  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func UpdateUser(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -204,6 +276,19 @@ func UpdateUser(
 	}
 }
 
+// @Tags        User (Admin)
+// @Summary     Delete User (Soft)
+// @Description Delete a user (soft-deleted).
+// @Router      /v1/auth/admin/user/{uid} [delete]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "User's UID"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     422 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func TrashUser(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -244,6 +329,20 @@ func TrashUser(
 	}
 }
 
+// @Tags        User (Admin)
+// @Summary     Restore user (Soft)
+// @Description Restore a deleted user (soft-deleted).
+// @Router      /v1/auth/admin/user/{uid}/detrash [put]
+// @Router      /v1/auth/admin/user/{uid}/detrash [patch]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "User's UID"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     422 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DetrashUser(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -284,6 +383,19 @@ func DetrashUser(
 	}
 }
 
+// @Tags        User (Admin)
+// @Summary     Delete User (Permanent)
+// @Description Delete a user (permanent).
+// @Router      /v1/auth/admin/user/{uid}/permanent [delete]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "User's UID"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     422 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DeleteUser(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

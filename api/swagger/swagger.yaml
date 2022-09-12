@@ -1,0 +1,6786 @@
+basePath: /api
+info:
+  contact:
+    email: abdoelrachmad@gmail.com
+    name: Maintainer
+  description: Simple blog server built with go.
+  title: GoBlog Server
+  version: "1.0"
+paths:
+  /v1/auth/admin/user:
+    post:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Create a new user.
+      parameters:
+      - description: Create user form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              email:
+                type: string
+              firstName:
+                type: string
+              lastName:
+                type: string
+              password:
+                type: string
+              passwordConfirm:
+                type: string
+              roles:
+                items:
+                  type: integer
+                type: array
+              username:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      createdAt:
+                        type: string
+                      email:
+                        type: string
+                      firstName:
+                        type: string
+                      lastName:
+                        type: string
+                      roles:
+                        items:
+                          allOf:
+                          - type: object
+                          - properties:
+                              level:
+                                type: integer
+                              name:
+                                type: string
+                              since:
+                                type: string
+                            type: object
+                        type: array
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                      username:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create User
+      tags:
+      - User (Admin)
+  /v1/auth/admin/user/{uid}:
+    delete:
+      description: Delete a user (soft-deleted).
+      parameters:
+      - description: User's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete User (Soft)
+      tags:
+      - User (Admin)
+    get:
+      description: Get a user.
+      parameters:
+      - description: User's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      createdAt:
+                        type: string
+                      email:
+                        type: string
+                      firstName:
+                        type: string
+                      lastName:
+                        type: string
+                      roles:
+                        items:
+                          allOf:
+                          - type: object
+                          - properties:
+                              level:
+                                type: integer
+                              name:
+                                type: string
+                              since:
+                                type: string
+                            type: object
+                        type: array
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                      username:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get User
+      tags:
+      - User (Admin)
+    patch:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update User
+      parameters:
+      - description: User's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Update user form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              email:
+                type: string
+              firstName:
+                type: string
+              lastName:
+                type: string
+              password:
+                type: string
+              passwordConfirm:
+                type: string
+              roles:
+                items:
+                  type: integer
+                type: array
+              username:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update User
+      tags:
+      - User (Admin)
+    put:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update User
+      parameters:
+      - description: User's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Update user form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              email:
+                type: string
+              firstName:
+                type: string
+              lastName:
+                type: string
+              password:
+                type: string
+              passwordConfirm:
+                type: string
+              roles:
+                items:
+                  type: integer
+                type: array
+              username:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update User
+      tags:
+      - User (Admin)
+  /v1/auth/admin/user/{uid}/detrash:
+    patch:
+      description: Restore a deleted user (soft-deleted).
+      parameters:
+      - description: User's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore user (Soft)
+      tags:
+      - User (Admin)
+    put:
+      description: Restore a deleted user (soft-deleted).
+      parameters:
+      - description: User's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore user (Soft)
+      tags:
+      - User (Admin)
+  /v1/auth/admin/user/{uid}/permanent:
+    delete:
+      description: Delete a user (permanent).
+      parameters:
+      - description: User's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete User (Permanent)
+      tags:
+      - User (Admin)
+  /v1/auth/admin/users:
+    get:
+      description: Get users.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        createdAt:
+                          type: string
+                        email:
+                          type: string
+                        firstName:
+                          type: string
+                        lastName:
+                          type: string
+                        roles:
+                          items:
+                            allOf:
+                            - type: object
+                            - properties:
+                                level:
+                                  type: integer
+                                name:
+                                  type: string
+                                since:
+                                  type: string
+                              type: object
+                          type: array
+                        uid:
+                          type: string
+                        updatedAt:
+                          type: string
+                        username:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Users
+      tags:
+      - User (Admin)
+  /v1/auth/admin/users/stats:
+    get:
+      description: Get users's stats.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Users Stats
+      tags:
+      - User (Admin)
+  /v1/auth/editor/categories:
+    get:
+      description: Get categories.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: Ascending or descending.
+        in: query
+        name: asc
+        type: boolean
+      - description: 'Filter data by type, e.g.: ?type=trash.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        createdAt:
+                          type: string
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        uid:
+                          type: string
+                        updatedAt:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Categories
+      tags:
+      - Category (Editor)
+  /v1/auth/editor/categories/stats:
+    get:
+      description: Get categories's stats.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: Ascending or descending.
+        in: query
+        name: asc
+        type: boolean
+      - description: 'Filter data by type, e.g.: ?type=trash.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Categories Stats
+      tags:
+      - Category (Editor)
+  /v1/auth/editor/category:
+    post:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Create a new category.
+      parameters:
+      - description: Create category form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              name:
+                type: string
+              slug:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      createdAt:
+                        type: string
+                      name:
+                        type: string
+                      slug:
+                        type: string
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create Category
+      tags:
+      - Category (Editor)
+  /v1/auth/editor/category/{uid}:
+    delete:
+      description: Delete a category (soft-deleted).
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Category (Soft)
+      tags:
+      - Category (Editor)
+    get:
+      description: Get category.
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      createdAt:
+                        type: string
+                      name:
+                        type: string
+                      slug:
+                        type: string
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Category
+      tags:
+      - Category (Editor)
+    patch:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update a category.
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Create category form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              name:
+                type: string
+              slug:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Category
+      tags:
+      - Category (Editor)
+    put:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update a category.
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Create category form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              name:
+                type: string
+              slug:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Category
+      tags:
+      - Category (Editor)
+  /v1/auth/editor/category/{uid}/detrash:
+    patch:
+      description: Restore a deleted category (soft-deleted).
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Detrash Category
+      tags:
+      - Category (Editor)
+    put:
+      description: Restore a deleted category (soft-deleted).
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Detrash Category
+      tags:
+      - Category (Editor)
+  /v1/auth/editor/category/{uid}/permanent:
+    delete:
+      description: Delete a category (permanent).
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Category (Permanent)
+      tags:
+      - Category (Editor)
+  /v1/auth/editor/comment/{uid}:
+    delete:
+      description: Delete a comment (soft-deleted).
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Comment (Soft)
+      tags:
+      - Comment (Editor)
+    get:
+      description: Get a comment.
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                      deletedAt:
+                        type: string
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      parentCommentUid:
+                        type: string
+                      postUid:
+                        type: string
+                      replyCount:
+                        type: integer
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Comment
+      tags:
+      - Comment (Editor)
+  /v1/auth/editor/comment/{uid}/detrash:
+    patch:
+      description: Restore deleted comment (soft-deleted).
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore Comment (Soft)
+      tags:
+      - Comment (Editor)
+    put:
+      description: Restore deleted comment (soft-deleted).
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore Comment (Soft)
+      tags:
+      - Comment (Editor)
+  /v1/auth/editor/comment/{uid}/permanent:
+    delete:
+      description: Delete comment (permanent).
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Comment (Permanent)
+      tags:
+      - Comment (Editor)
+  /v1/auth/editor/comments:
+    get:
+      description: Get comments.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        content:
+                          type: string
+                        createdAt:
+                          type: string
+                        deletedAt:
+                          type: string
+                        email:
+                          type: string
+                        name:
+                          type: string
+                        parentCommentUid:
+                          type: string
+                        postUid:
+                          type: string
+                        replyCount:
+                          type: integer
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Comments
+      tags:
+      - Comment (Editor)
+  /v1/auth/editor/comments/stats:
+    get:
+      description: Get comments's stats.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Comments Stats
+      tags:
+      - Comment (Editor)
+  /v1/auth/editor/page:
+    post:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Create a new page.
+      parameters:
+      - description: Create page form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              content:
+                type: string
+              publishNow:
+                type: boolean
+              slug:
+                type: string
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      author:
+                        allOf:
+                        - type: object
+                        - properties:
+                            email:
+                              type: string
+                            firstName:
+                              type: string
+                            lastName:
+                              type: string
+                            uid:
+                              type: string
+                            username:
+                              type: string
+                          type: object
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                      deletedAt:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create Page
+      tags:
+      - Page (Editor)
+  /v1/auth/editor/page/{uid}:
+    delete:
+      description: Delete a page (soft-deleted).
+      parameters:
+      - description: Page's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Page (Soft)
+      tags:
+      - Page (Editor)
+    get:
+      description: Get a page.
+      parameters:
+      - description: Page's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      author:
+                        allOf:
+                        - type: object
+                        - properties:
+                            email:
+                              type: string
+                            firstName:
+                              type: string
+                            lastName:
+                              type: string
+                            uid:
+                              type: string
+                            username:
+                              type: string
+                          type: object
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                      deletedAt:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Page
+      tags:
+      - Page (Editor)
+    patch:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update a page.
+      parameters:
+      - description: Page's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Update page form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              content:
+                type: string
+              publishNow:
+                type: boolean
+              slug:
+                type: string
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Page
+      tags:
+      - Page (Editor)
+    put:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update a page.
+      parameters:
+      - description: Page's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Update page form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              content:
+                type: string
+              publishNow:
+                type: boolean
+              slug:
+                type: string
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Page
+      tags:
+      - Page (Editor)
+  /v1/auth/editor/page/{uid}/detrash:
+    patch:
+      description: Restore a deleted page (soft-deleted).
+      parameters:
+      - description: Page's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore Page (Soft)
+      tags:
+      - Page (Editor)
+    put:
+      description: Restore a deleted page (soft-deleted).
+      parameters:
+      - description: Page's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore Page (Soft)
+      tags:
+      - Page (Editor)
+  /v1/auth/editor/page/{uid}/permanent:
+    delete:
+      description: Delete a page (permanent).
+      parameters:
+      - description: Page's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Page (Permanent)
+      tags:
+      - Page (Editor)
+  /v1/auth/editor/page/{uid}/publish:
+    patch:
+      description: Publish a page if not published yet.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Publish Page
+      tags:
+      - Page (Editor)
+    put:
+      description: Publish a page if not published yet.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Publish Page
+      tags:
+      - Page (Editor)
+  /v1/auth/editor/pages:
+    get:
+      description: Get pages.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        author:
+                          allOf:
+                          - type: object
+                          - properties:
+                              email:
+                                type: string
+                              firstName:
+                                type: string
+                              lastName:
+                                type: string
+                              uid:
+                                type: string
+                              username:
+                                type: string
+                            type: object
+                        content:
+                          type: string
+                        createdAt:
+                          type: string
+                        deletedAt:
+                          type: string
+                        publishedAt:
+                          type: string
+                        slug:
+                          type: string
+                        title:
+                          type: string
+                        uid:
+                          type: string
+                        updatedAt:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Pages
+      tags:
+      - Page (Editor)
+  /v1/auth/editor/pages/stats:
+    get:
+      description: Get pages's stats.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Pages Stats
+      tags:
+      - Page (Editor)
+  /v1/auth/editor/post/{uid}:
+    delete:
+      description: Delete a post (soft-deleted).
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Post (Soft)
+      tags:
+      - Post (Editor)
+    get:
+      description: Get a post.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      author:
+                        allOf:
+                        - type: object
+                        - properties:
+                            email:
+                              type: string
+                            firstName:
+                              type: string
+                            lastName:
+                              type: string
+                            uid:
+                              type: string
+                            username:
+                              type: string
+                          type: object
+                      categories:
+                        items:
+                          allOf:
+                          - type: object
+                          - properties:
+                              name:
+                                type: string
+                              slug:
+                                type: string
+                              uid:
+                                type: string
+                            type: object
+                        type: array
+                      commentCount:
+                        type: integer
+                      createdAt:
+                        type: string
+                      deletedAt:
+                        type: string
+                      description:
+                        type: string
+                      featuringImagePath:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      tags:
+                        items:
+                          type: string
+                        type: array
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Post
+      tags:
+      - Post (Editor)
+    patch:
+      description: Update a post.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Update post form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              categories:
+                items:
+                  type: string
+                type: array
+              content:
+                type: string
+              description:
+                type: string
+              featuringImagePath:
+                type: string
+              publishNow:
+                type: boolean
+              slug:
+                type: string
+              tags:
+                items:
+                  type: string
+                type: array
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Post
+      tags:
+      - Post (Editor)
+    put:
+      description: Update a post.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Update post form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              categories:
+                items:
+                  type: string
+                type: array
+              content:
+                type: string
+              description:
+                type: string
+              featuringImagePath:
+                type: string
+              publishNow:
+                type: boolean
+              slug:
+                type: string
+              tags:
+                items:
+                  type: string
+                type: array
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Post
+      tags:
+      - Post (Editor)
+  /v1/auth/editor/post/{uid}/comments:
+    get:
+      description: Get post's comments.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=active.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        content:
+                          type: string
+                        createdAt:
+                          type: string
+                        deletedAt:
+                          type: string
+                        email:
+                          type: string
+                        name:
+                          type: string
+                        parentCommentUid:
+                          type: string
+                        postUid:
+                          type: string
+                        replyCount:
+                          type: integer
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Post Comments
+      tags:
+      - Comment (Editor)
+  /v1/auth/editor/post/{uid}/comments/stats:
+    get:
+      description: Get post's comments stats.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=active.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Post Comments Stats
+      tags:
+      - Comment (Editor)
+  /v1/auth/editor/post/{uid}/depublish:
+    get:
+      description: Remove a post from publish status if post already published.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Unpublish Post
+      tags:
+      - Post (Editor)
+  /v1/auth/editor/post/{uid}/detrash:
+    patch:
+      description: Restore a deleted post (soft-deleted).
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore Post (Soft)
+      tags:
+      - Post (Editor)
+    put:
+      description: Restore a deleted post (soft-deleted).
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore Post (Soft)
+      tags:
+      - Post (Editor)
+  /v1/auth/editor/post/{uid}/permanent:
+    delete:
+      description: Delete a post (permanent).
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete Post (Permanent)
+      tags:
+      - Post (Writer)
+  /v1/auth/editor/post/{uid}/publish:
+    get:
+      description: Publish a post if not published yet.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Publish Post
+      tags:
+      - Post (Editor)
+  /v1/auth/editor/posts:
+    get:
+      description: Get posts.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        author:
+                          allOf:
+                          - type: object
+                          - properties:
+                              email:
+                                type: string
+                              firstName:
+                                type: string
+                              lastName:
+                                type: string
+                              uid:
+                                type: string
+                              username:
+                                type: string
+                            type: object
+                        categories:
+                          items:
+                            allOf:
+                            - type: object
+                            - properties:
+                                name:
+                                  type: string
+                                slug:
+                                  type: string
+                                uid:
+                                  type: string
+                              type: object
+                          type: array
+                        commentCount:
+                          type: integer
+                        createdAt:
+                          type: string
+                        deletedAt:
+                          type: string
+                        description:
+                          type: string
+                        featuringImagePath:
+                          type: string
+                        publishedAt:
+                          type: string
+                        slug:
+                          type: string
+                        tags:
+                          items:
+                            type: string
+                          type: array
+                        title:
+                          type: string
+                        uid:
+                          type: string
+                        updatedAt:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Posts
+      tags:
+      - Post (Editor)
+  /v1/auth/editor/posts/stats:
+    get:
+      description: Get posts's stats.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Posts Stats
+      tags:
+      - Post (Editor)
+  /v1/auth/me:
+    get:
+      description: Get my user data.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      createdAt:
+                        type: string
+                      email:
+                        type: string
+                      firstName:
+                        type: string
+                      lastName:
+                        type: string
+                      roles:
+                        items:
+                          allOf:
+                          - type: object
+                          - properties:
+                              level:
+                                type: integer
+                              name:
+                                type: string
+                              since:
+                                type: string
+                            type: object
+                        type: array
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                      username:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get Me
+      tags:
+      - Me
+    patch:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update my user data.
+      parameters:
+      - description: Update me form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              email:
+                type: string
+              firstname:
+                type: string
+              lastname:
+                type: string
+              username:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Me
+      tags:
+      - Me
+    put:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update my user data.
+      parameters:
+      - description: Update me form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              email:
+                type: string
+              firstname:
+                type: string
+              lastname:
+                type: string
+              username:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Me
+      tags:
+      - Me
+  /v1/auth/me/password:
+    patch:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update my password.
+      parameters:
+      - description: Update me password form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              newpassword:
+                type: string
+              newpasswordconfirm:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Me Password
+      tags:
+      - Me
+    put:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update my password.
+      parameters:
+      - description: Update me password form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              newpassword:
+                type: string
+              newpasswordconfirm:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update Me Password
+      tags:
+      - Me
+  /v1/auth/writer/comment/{uid}:
+    delete:
+      description: Delete a comment of my post (soft-deleted).
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete My Comment (Soft)
+      tags:
+      - Comment (Writer)
+    get:
+      description: Get a comment of mine.
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                      deletedAt:
+                        type: string
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      parentCommentUid:
+                        type: string
+                      postUid:
+                        type: string
+                      replyCount:
+                        type: integer
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get My Comment
+      tags:
+      - Comment (Writer)
+  /v1/auth/writer/comment/{uid}/detrash:
+    patch:
+      description: Restore a deleted comment of my post (soft-deleted).
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore My Comment (Soft)
+      tags:
+      - Comment (Writer)
+    put:
+      description: Restore a deleted comment of my post (soft-deleted).
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore My Comment (Soft)
+      tags:
+      - Comment (Writer)
+  /v1/auth/writer/comment/{uid}/permanent:
+    delete:
+      description: Delete a comment of my post (permanent).
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete My Comment (Permanent)
+      tags:
+      - Comment (Writer)
+  /v1/auth/writer/comments:
+    get:
+      description: Get comments of mine.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=active.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        content:
+                          type: string
+                        createdAt:
+                          type: string
+                        deletedAt:
+                          type: string
+                        email:
+                          type: string
+                        name:
+                          type: string
+                        parentCommentUid:
+                          type: string
+                        postUid:
+                          type: string
+                        replyCount:
+                          type: integer
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get My Comments
+      tags:
+      - Comment (Writer)
+  /v1/auth/writer/comments/stats:
+    get:
+      description: Get my comments's stats.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=active.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get My Comments Stats
+      tags:
+      - Comment (Writer)
+  /v1/auth/writer/page/{uid}/depublish:
+    patch:
+      description: Remove publish status from a page if page already published.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Unpublish Page
+      tags:
+      - Page (Editor)
+    put:
+      description: Remove publish status from a page if page already published.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Unpublish Page
+      tags:
+      - Page (Editor)
+  /v1/auth/writer/post:
+    post:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Create a new post.
+      parameters:
+      - description: Create post form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              categories:
+                items:
+                  type: string
+                type: array
+              content:
+                type: string
+              description:
+                type: string
+              featuringImagePath:
+                type: string
+              publishNow:
+                type: boolean
+              slug:
+                type: string
+              tags:
+                items:
+                  type: string
+                type: array
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      author:
+                        allOf:
+                        - type: object
+                        - properties:
+                            email:
+                              type: string
+                            firstName:
+                              type: string
+                            lastName:
+                              type: string
+                            uid:
+                              type: string
+                            username:
+                              type: string
+                          type: object
+                      categories:
+                        items:
+                          allOf:
+                          - type: object
+                          - properties:
+                              name:
+                                type: string
+                              slug:
+                                type: string
+                              uid:
+                                type: string
+                            type: object
+                        type: array
+                      commentCount:
+                        type: integer
+                      createdAt:
+                        type: string
+                      deletedAt:
+                        type: string
+                      description:
+                        type: string
+                      featuringImagePath:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      tags:
+                        items:
+                          type: string
+                        type: array
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Create Post
+      tags:
+      - Post (Writer)
+  /v1/auth/writer/post/{uid}:
+    delete:
+      description: Delete my post (soft-deleted).
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete My Post (Soft)
+      tags:
+      - Post (Writer)
+    get:
+      description: Get my post.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      author:
+                        allOf:
+                        - type: object
+                        - properties:
+                            email:
+                              type: string
+                            firstName:
+                              type: string
+                            lastName:
+                              type: string
+                            uid:
+                              type: string
+                            username:
+                              type: string
+                          type: object
+                      categories:
+                        items:
+                          allOf:
+                          - type: object
+                          - properties:
+                              name:
+                                type: string
+                              slug:
+                                type: string
+                              uid:
+                                type: string
+                            type: object
+                        type: array
+                      commentCount:
+                        type: integer
+                      createdAt:
+                        type: string
+                      deletedAt:
+                        type: string
+                      description:
+                        type: string
+                      featuringImagePath:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      tags:
+                        items:
+                          type: string
+                        type: array
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                      updatedAt:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get My Post
+      tags:
+      - Post (Writer)
+    patch:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update my post.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Update post form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              categories:
+                items:
+                  type: string
+                type: array
+              content:
+                type: string
+              description:
+                type: string
+              featuringImagePath:
+                type: string
+              publishNow:
+                type: boolean
+              slug:
+                type: string
+              tags:
+                items:
+                  type: string
+                type: array
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update My Post
+      tags:
+      - Post (Writer)
+    put:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Update my post.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Update post form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              categories:
+                items:
+                  type: string
+                type: array
+              content:
+                type: string
+              description:
+                type: string
+              featuringImagePath:
+                type: string
+              publishNow:
+                type: boolean
+              slug:
+                type: string
+              tags:
+                items:
+                  type: string
+                type: array
+              title:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Update My Post
+      tags:
+      - Post (Writer)
+  /v1/auth/writer/post/{uid}/comments:
+    get:
+      description: Get my post's comments.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=active.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        content:
+                          type: string
+                        createdAt:
+                          type: string
+                        deletedAt:
+                          type: string
+                        email:
+                          type: string
+                        name:
+                          type: string
+                        parentCommentUid:
+                          type: string
+                        postUid:
+                          type: string
+                        replyCount:
+                          type: integer
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get My Post Comments
+      tags:
+      - Comment (Writer)
+  /v1/auth/writer/post/{uid}/comments/stats:
+    get:
+      description: Get my post's comments stats.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=active.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get My Post Comments Stats
+      tags:
+      - Comment (Writer)
+  /v1/auth/writer/post/{uid}/depublish:
+    patch:
+      description: Remove publish status from my post if post already published.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Unpublish My Post
+      tags:
+      - Post (Writer)
+    put:
+      description: Remove publish status from my post if post already published.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Unpublish My Post
+      tags:
+      - Post (Writer)
+  /v1/auth/writer/post/{uid}/detrash:
+    patch:
+      description: Restore my deleted post (soft-deleted).
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore My Post (Soft)
+      tags:
+      - Post (Writer)
+    put:
+      description: Restore my deleted post (soft-deleted).
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Restore My Post (Soft)
+      tags:
+      - Post (Writer)
+  /v1/auth/writer/post/{uid}/permanent:
+    delete:
+      description: Delete my post (permanent).
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Delete My Post (Permanent)
+      tags:
+      - Post (Writer)
+  /v1/auth/writer/post/{uid}/publish:
+    patch:
+      description: Publish my post if not published yet.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Publish My Post
+      tags:
+      - Post (Writer)
+    put:
+      description: Publish my post if not published yet.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Publish My Post
+      tags:
+      - Post (Writer)
+  /v1/auth/writer/posts:
+    get:
+      description: Get my posts.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        author:
+                          allOf:
+                          - type: object
+                          - properties:
+                              email:
+                                type: string
+                              firstName:
+                                type: string
+                              lastName:
+                                type: string
+                              uid:
+                                type: string
+                              username:
+                                type: string
+                            type: object
+                        categories:
+                          items:
+                            allOf:
+                            - type: object
+                            - properties:
+                                name:
+                                  type: string
+                                slug:
+                                  type: string
+                                uid:
+                                  type: string
+                              type: object
+                          type: array
+                        commentCount:
+                          type: integer
+                        createdAt:
+                          type: string
+                        deletedAt:
+                          type: string
+                        description:
+                          type: string
+                        featuringImagePath:
+                          type: string
+                        publishedAt:
+                          type: string
+                        slug:
+                          type: string
+                        tags:
+                          items:
+                            type: string
+                          type: array
+                        title:
+                          type: string
+                        uid:
+                          type: string
+                        updatedAt:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get My Posts
+      tags:
+      - Post (Writer)
+  /v1/auth/writer/posts/stats:
+    get:
+      description: Get my posts's stats.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      - description: 'Filter data by type, e.g.: ?type=trash, ?type=published, ?type=draft.'
+        in: query
+        name: type
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      currentPage:
+                        type: integer
+                      itemsPerPage:
+                        type: integer
+                      totalItems:
+                        type: integer
+                      totalPages:
+                        type: integer
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Get My Posts Stats
+      tags:
+      - Post (Writer)
+  /v1/categories:
+    get:
+      description: Get categories.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: Ascending or descending.
+        in: query
+        name: asc
+        type: boolean
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        name:
+                          type: string
+                        slug:
+                          type: string
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Categories
+      tags:
+      - Category (Public)
+  /v1/category/{uid}:
+    get:
+      description: Get category.
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      name:
+                        type: string
+                      slug:
+                        type: string
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Category
+      tags:
+      - Category (Public)
+  /v1/category/{uid}/posts:
+    get:
+      description: Get public category's posts that available publicly.
+      parameters:
+      - description: Category's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      author:
+                        allOf:
+                        - type: object
+                        - properties:
+                            email:
+                              type: string
+                            firstName:
+                              type: string
+                            lastName:
+                              type: string
+                            uid:
+                              type: string
+                            username:
+                              type: string
+                          type: object
+                      categories:
+                        items:
+                          allOf:
+                          - type: object
+                          - properties:
+                              name:
+                                type: string
+                              slug:
+                                type: string
+                              uid:
+                                type: string
+                            type: object
+                        type: array
+                      commentCount:
+                        type: integer
+                      content:
+                        type: string
+                      description:
+                        type: string
+                      featuringImagePath:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      tags:
+                        items:
+                          type: string
+                        type: array
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Category Posts
+      tags:
+      - Category (Public)
+  /v1/comment:
+    post:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Create a comment for a post that available publicly.
+      parameters:
+      - description: Create comment form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              content:
+                type: string
+              email:
+                type: string
+              name:
+                type: string
+              postUid:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      parentCommentUid:
+                        type: string
+                      postUid:
+                        type: string
+                      replyCount:
+                        type: integer
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Create Public Post's Comment
+      tags:
+      - Comment (Public)
+  /v1/comment/{uid}:
+    get:
+      description: Get a comment that available publicly.
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      parentCommentUid:
+                        type: string
+                      postUid:
+                        type: string
+                      replyCount:
+                        type: integer
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Comment
+      tags:
+      - Comment (Public)
+  /v1/comment/{uid}/replies:
+    get:
+      description: Get public comment's replies that available publicly.
+      parameters:
+      - description: Comment's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        content:
+                          type: string
+                        createdAt:
+                          type: string
+                        email:
+                          type: string
+                        name:
+                          type: string
+                        parentCommentUid:
+                          type: string
+                        postUid:
+                          type: string
+                        replyCount:
+                          type: integer
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Comment's Replies
+      tags:
+      - Comment (Public)
+  /v1/comment/reply:
+    post:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Create a reply for a comment that available publicly.
+      parameters:
+      - description: Create comment form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              content:
+                type: string
+              email:
+                type: string
+              name:
+                type: string
+              parentCommentUid:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      content:
+                        type: string
+                      createdAt:
+                        type: string
+                      email:
+                        type: string
+                      name:
+                        type: string
+                      parentCommentUid:
+                        type: string
+                      postUid:
+                        type: string
+                      replyCount:
+                        type: integer
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Create Public Comment's Reply
+      tags:
+      - Comment (Public)
+  /v1/page/{slug}:
+    get:
+      description: Get a page that available publicly by its slug.
+      parameters:
+      - description: The slug query.
+        in: query
+        name: slug
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      content:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Page By Slug
+      tags:
+      - Page (Public)
+  /v1/page/{uid}:
+    get:
+      description: Get a page that available publicly.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      content:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Page
+      tags:
+      - Page (Public)
+  /v1/page/search:
+    get:
+      description: Search posts that available publicly.
+      parameters:
+      - description: The search query.
+        in: query
+        name: q
+        type: string
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        content:
+                          type: string
+                        publishedAt:
+                          type: string
+                        slug:
+                          type: string
+                        title:
+                          type: string
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Search Public Pages
+      tags:
+      - Page (Public)
+  /v1/pages:
+    get:
+      description: Get pages that available publicly.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        content:
+                          type: string
+                        publishedAt:
+                          type: string
+                        slug:
+                          type: string
+                        title:
+                          type: string
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Pages
+      tags:
+      - Page (Public)
+  /v1/post/{uid}:
+    get:
+      description: Get a post that available publicly.
+      parameters:
+      - description: Post's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      author:
+                        allOf:
+                        - type: object
+                        - properties:
+                            email:
+                              type: string
+                            firstName:
+                              type: string
+                            lastName:
+                              type: string
+                            uid:
+                              type: string
+                            username:
+                              type: string
+                          type: object
+                      categories:
+                        items:
+                          allOf:
+                          - type: object
+                          - properties:
+                              name:
+                                type: string
+                              slug:
+                                type: string
+                              uid:
+                                type: string
+                            type: object
+                        type: array
+                      commentCount:
+                        type: integer
+                      content:
+                        type: string
+                      description:
+                        type: string
+                      featuringImagePath:
+                        type: string
+                      publishedAt:
+                        type: string
+                      slug:
+                        type: string
+                      tags:
+                        items:
+                          type: string
+                        type: array
+                      title:
+                        type: string
+                      uid:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Post
+      tags:
+      - Post (Public)
+  /v1/post/{uid}/comments:
+    get:
+      description: Get public post's comments that available publicly.
+      parameters:
+      - description: Post's UID
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        content:
+                          type: string
+                        createdAt:
+                          type: string
+                        email:
+                          type: string
+                        name:
+                          type: string
+                        parentCommentUid:
+                          type: string
+                        postUid:
+                          type: string
+                        replyCount:
+                          type: integer
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Post's Comments
+      tags:
+      - Comment (Public)
+  /v1/post/search:
+    get:
+      description: Search posts that available publicly.
+      parameters:
+      - description: The search query.
+        in: query
+        name: q
+        type: string
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        author:
+                          allOf:
+                          - type: object
+                          - properties:
+                              email:
+                                type: string
+                              firstName:
+                                type: string
+                              lastName:
+                                type: string
+                              uid:
+                                type: string
+                              username:
+                                type: string
+                            type: object
+                        categories:
+                          items:
+                            allOf:
+                            - type: object
+                            - properties:
+                                name:
+                                  type: string
+                                slug:
+                                  type: string
+                                uid:
+                                  type: string
+                              type: object
+                          type: array
+                        commentCount:
+                          type: integer
+                        content:
+                          type: string
+                        description:
+                          type: string
+                        featuringImagePath:
+                          type: string
+                        publishedAt:
+                          type: string
+                        slug:
+                          type: string
+                        tags:
+                          items:
+                            type: string
+                          type: array
+                        title:
+                          type: string
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Search Public Posts
+      tags:
+      - Post (Public)
+  /v1/posts:
+    get:
+      description: Get posts that available publicly.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        author:
+                          allOf:
+                          - type: object
+                          - properties:
+                              email:
+                                type: string
+                              firstName:
+                                type: string
+                              lastName:
+                                type: string
+                              uid:
+                                type: string
+                              username:
+                                type: string
+                            type: object
+                        categories:
+                          items:
+                            allOf:
+                            - type: object
+                            - properties:
+                                name:
+                                  type: string
+                                slug:
+                                  type: string
+                                uid:
+                                  type: string
+                              type: object
+                          type: array
+                        commentCount:
+                          type: integer
+                        content:
+                          type: string
+                        description:
+                          type: string
+                        featuringImagePath:
+                          type: string
+                        publishedAt:
+                          type: string
+                        slug:
+                          type: string
+                        tags:
+                          items:
+                            type: string
+                          type: array
+                        title:
+                          type: string
+                        uid:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Posts
+      tags:
+      - Post (Public)
+  /v1/refresh:
+    post:
+      description: Request new access token using refresh token.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      accessToken:
+                        type: string
+                      tokenType:
+                        type: string
+                    type: object
+              type: object
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Refresh
+      tags:
+      - Authentication
+  /v1/signin:
+    post:
+      consumes:
+      - application/json
+      - application/msgpack
+      description: Do the signing in request.
+      parameters:
+      - description: Login form
+        in: body
+        name: form
+        required: true
+        schema:
+          allOf:
+          - type: object
+          - properties:
+              password:
+                type: string
+              username:
+                type: string
+            type: object
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      accessToken:
+                        type: string
+                      tokenType:
+                        type: string
+                    type: object
+              type: object
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Sign In
+      tags:
+      - Authentication
+  /v1/signout:
+    post:
+      description: Do the signing out request to revoke access token & refresh token.
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      security:
+      - BearerAuth: []
+      summary: Sign Out
+      tags:
+      - Authentication
+  /v1/user/{uid}:
+    get:
+      description: Get a user that available publicly.
+      parameters:
+      - description: User's UID or slug
+        in: path
+        name: uid
+        required: true
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  allOf:
+                  - type: object
+                  - properties:
+                      email:
+                        type: string
+                      firstName:
+                        type: string
+                      lastName:
+                        type: string
+                      uid:
+                        type: string
+                      username:
+                        type: string
+                    type: object
+              type: object
+        "404":
+          description: Not Found
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public User
+      tags:
+      - User (Public)
+  /v1/users:
+    get:
+      description: Get users that available publicly.
+      parameters:
+      - description: Number of data to be shown.
+        in: query
+        name: show
+        type: integer
+      - description: Selected page of data.
+        in: query
+        name: page
+        type: integer
+      - description: Selected field to order data with.
+        in: query
+        name: order
+        type: string
+      - description: 'Ascending or descending, e.g.: ?asc=false.'
+        in: query
+        name: asc
+        type: string
+      produces:
+      - application/json
+      - application/msgpack
+      responses:
+        "200":
+          description: OK
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                data:
+                  items:
+                    allOf:
+                    - type: object
+                    - properties:
+                        email:
+                          type: string
+                        firstName:
+                          type: string
+                        lastName:
+                          type: string
+                        uid:
+                          type: string
+                        username:
+                          type: string
+                      type: object
+                  type: array
+              type: object
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            allOf:
+            - type: object
+            - properties:
+                message:
+                  type: string
+              type: object
+      summary: Get Public Users
+      tags:
+      - Users (Public)
+securityDefinitions:
+  BearerAuth:
+    description: '`Bearer <token>`'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

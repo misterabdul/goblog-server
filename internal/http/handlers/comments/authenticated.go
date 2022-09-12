@@ -16,6 +16,18 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Comment (Writer)
+// @Summary     Get My Comment
+// @Description Get a comment of mine.
+// @Router      /v1/auth/writer/comment/{uid} [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Comment's UID"
+// @Success     200 {object} object{data=object{uid=string,postUid=string,parentCommentUid=string,email=string,name=string,content=string,replyCount=int,createdAt=string,deletedAt=string}}
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetMyComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -57,6 +69,23 @@ func GetMyComment(
 	}
 }
 
+// @Tags        Comment (Writer)
+// @Summary     Get My Comments
+// @Description Get comments of mine.
+// @Router      /v1/auth/writer/comments [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Param       type  query    string false "Filter data by type, e.g.: ?type=trash, ?type=active."
+// @Success     200   {object} object{data=[]object{uid=string,postUid=string,parentCommentUid=string,email=string,name=string,content=string,replyCount=int,createdAt=string,deletedAt=string}}
+// @Success     204
+// @Failure     401   {object} object{message=string}
+// @Failure     404   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetMyComments(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -92,6 +121,21 @@ func GetMyComments(
 	}
 }
 
+// @Tags        Comment (Writer)
+// @Summary     Get My Comments Stats
+// @Description Get my comments's stats.
+// @Router      /v1/auth/writer/comments/stats [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Param       type  query    string false "Filter data by type, e.g.: ?type=trash, ?type=active."
+// @Success     200   {object} object{data=object{currentPage=int,totalPages=int,itemsPerPage=int,totalItems=int}}
+// @Failure     401   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetMyCommentsStats(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -123,6 +167,24 @@ func GetMyCommentsStats(
 	}
 }
 
+// @Tags        Comment (Writer)
+// @Summary     Get My Post Comments
+// @Description Get my post's comments.
+// @Router      /v1/auth/writer/post/{uid}/comments [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid   path     string true "Post's UID or slug"
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Param       type  query    string false "Filter data by type, e.g.: ?type=trash, ?type=active."
+// @Success     200   {object} object{data=[]object{uid=string,postUid=string,parentCommentUid=string,email=string,name=string,content=string,replyCount=int,createdAt=string,deletedAt=string}}
+// @Success     204
+// @Failure     401   {object} object{message=string}
+// @Failure     404   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetMyPostComments(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -165,6 +227,22 @@ func GetMyPostComments(
 	}
 }
 
+// @Tags        Comment (Writer)
+// @Summary     Get My Post Comments Stats
+// @Description Get my post's comments stats.
+// @Router      /v1/auth/writer/post/{uid}/comments/stats [get]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid   path     string true  "Post's UID or slug"
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Param       type  query    string false "Filter data by type, e.g.: ?type=trash, ?type=active."
+// @Success     200   {object} object{data=object{currentPage=int,totalPages=int,itemsPerPage=int,totalItems=int}}
+// @Failure     401   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetMyPostCommentsStats(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -203,6 +281,18 @@ func GetMyPostCommentsStats(
 	}
 }
 
+// @Tags        Comment (Writer)
+// @Summary     Delete My Comment (Soft)
+// @Description Delete a comment of my post (soft-deleted).
+// @Router      /v1/auth/writer/comment/{uid} [delete]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Comment's UID"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func TrashMyComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -265,6 +355,19 @@ func TrashMyComment(
 	}
 }
 
+// @Tags        Comment (Writer)
+// @Summary     Restore My Comment (Soft)
+// @Description Restore a deleted comment of my post (soft-deleted).
+// @Router      /v1/auth/writer/comment/{uid}/detrash [put]
+// @Router      /v1/auth/writer/comment/{uid}/detrash [patch]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Comment's UID"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DetrashMyComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -327,6 +430,18 @@ func DetrashMyComment(
 	}
 }
 
+// @Tags        Comment (Writer)
+// @Summary     Delete My Comment (Permanent)
+// @Description Delete a comment of my post (permanent).
+// @Router      /v1/auth/writer/comment/{uid}/permanent [delete]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Comment's UID"
+// @Success     204
+// @Failure     401 {object} object{message=string}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func DeleteMyComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

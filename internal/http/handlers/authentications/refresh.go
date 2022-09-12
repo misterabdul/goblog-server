@@ -15,6 +15,17 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
+// @Tags        Authentication
+// @Summary     Refresh
+// @Description Request new access token using refresh token.
+// @Router      /v1/refresh [post]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Header      200 {string} Set-Cookie
+// @Success     200 {object} object{data=object{tokenType=string,accessToken=string}}
+// @Success     201
+// @Failure     401 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func Refresh(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

@@ -45,6 +45,25 @@ func GetServer() (serverInstance *gin.Engine) {
 	return serverInstance
 }
 
+func ReadAddressFromEnv() (address string) {
+	var (
+		host    = "localhost"
+		port    = "80"
+		envHost string
+		envPort string
+		ok      bool
+	)
+
+	if envHost, ok = os.LookupEnv("APP_HOST"); ok {
+		host = envHost
+	}
+	if envPort, ok = os.LookupEnv("APP_PORT"); ok {
+		port = envPort
+	}
+
+	return host + ":" + port
+}
+
 func getServerRelatedEnv() (envs *serverRelatedEnv) {
 	var (
 		_envs              serverRelatedEnv

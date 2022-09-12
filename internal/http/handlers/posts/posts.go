@@ -15,6 +15,16 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Post (Public)
+// @Summary     Get Public Post
+// @Description Get a post that available publicly.
+// @Router      /v1/post/{uid} [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Post's UID or slug"
+// @Success     200 {object} object{data=object{uid=string,slug=string,title=string,featuringImagePath=string,description=string,categories=[]object{uid=string,slug=string,name=string},tags=[]string,content=string,author=object{uid=string,username=string,email=string,firstName=string,lastName=string},commentCount=int,publishedAt=time}}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPublicPost(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -54,6 +64,20 @@ func GetPublicPost(
 	}
 }
 
+// @Tags        Post (Public)
+// @Summary     Get Public Posts
+// @Description Get posts that available publicly.
+// @Router      /v1/posts [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Success     200   {object} object{data=[]object{uid=string,slug=string,title=string,featuringImagePath=string,description=string,categories=[]object{uid=string,slug=string,name=string},tags=[]string,content=string,author=object{uid=string,username=string,email=string,firstName=string,lastName=string},commentCount=int,publishedAt=time}}
+// @Success     204
+// @Failure     404   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetPublicPosts(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -84,6 +108,21 @@ func GetPublicPosts(
 	}
 }
 
+// @Tags        Post (Public)
+// @Summary     Search Public Posts
+// @Description Search posts that available publicly.
+// @Router      /v1/post/search [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       q     query    string false "The search query."
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Success     200   {object} object{data=[]object{uid=string,slug=string,title=string,featuringImagePath=string,description=string,categories=[]object{uid=string,slug=string,name=string},tags=[]string,content=string,author=object{uid=string,username=string,email=string,firstName=string,lastName=string},commentCount=int,publishedAt=time}}
+// @Success     204
+// @Failure     404   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func SearchPublicPosts(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

@@ -14,6 +14,17 @@ import (
 	"github.com/misterabdul/goblog-server/pkg/jwt"
 )
 
+// @Tags        Authentication
+// @Summary     Sign Out
+// @Description Do the signing out request to revoke access token & refresh token.
+// @Router      /v1/signout [post]
+// @Security    BearerAuth
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Header      200 {string} Set-Cookie
+// @Success     201
+// @Failure     401 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func SignOut(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

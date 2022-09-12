@@ -17,6 +17,16 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Comment (Public)
+// @Summary     Get Public Comment
+// @Description Get a comment that available publicly.
+// @Router      /v1/comment/{uid} [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Comment's UID"
+// @Success     200 {object} object{data=object{uid=string,postUid=string,parentCommentUid=string,email=string,name=string,content=string,replyCount=int,createdAt=time}}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPublicComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -67,6 +77,17 @@ func GetPublicComment(
 	}
 }
 
+// @Tags        Comment (Public)
+// @Summary     Get Public Post's Comments
+// @Description Get public post's comments that available publicly.
+// @Router      /v1/post/{uid}/comments [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Post's UID"
+// @Success     200 {object} object{data=[]object{uid=string,postUid=string,parentCommentUid=string,email=string,name=string,content=string,replyCount=int,createdAt=time}}
+// @Failure     204
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPublicPostComments(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -120,6 +141,17 @@ func GetPublicPostComments(
 	}
 }
 
+// @Tags        Comment (Public)
+// @Summary     Get Public Comment's Replies
+// @Description Get public comment's replies that available publicly.
+// @Router      /v1/comment/{uid}/replies [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Comment's UID"
+// @Success     200 {object} object{data=[]object{uid=string,postUid=string,parentCommentUid=string,email=string,name=string,content=string,replyCount=int,createdAt=time}}
+// @Failure     204
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPublicCommentReplies(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -185,6 +217,19 @@ func GetPublicCommentReplies(
 	}
 }
 
+// @Tags        Comment (Public)
+// @Summary     Create Public Post's Comment
+// @Description Create a comment for a post that available publicly.
+// @Router      /v1/comment [post]
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       form body     object{postUid=string,email=string,name=string,content=string} true "Create comment form"
+// @Success     200  {object} object{data=object{uid=string,postUid=string,parentCommentUid=string,email=string,name=string,content=string,replyCount=int,createdAt=time}}
+// @Failure     404  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func CreatePublicPostComment(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -222,6 +267,19 @@ func CreatePublicPostComment(
 	}
 }
 
+// @Tags        Comment (Public)
+// @Summary     Create Public Comment's Reply
+// @Description Create a reply for a comment that available publicly.
+// @Router      /v1/comment/reply [post]
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       form body     object{parentCommentUid=string,email=string,name=string,content=string} true "Create comment form"
+// @Success     200  {object} object{data=object{uid=string,postUid=string,parentCommentUid=string,email=string,name=string,content=string,replyCount=int,createdAt=time}}
+// @Failure     404  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func CreatePublicCommentReply(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

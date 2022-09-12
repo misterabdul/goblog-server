@@ -16,6 +16,16 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Page (Public)
+// @Summary     Get Public Page
+// @Description Get a page that available publicly.
+// @Router      /v1/page/{uid} [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Post's UID or slug"
+// @Success     200 {object} object{data=object{uid=string,slug=string,title=string,content=string,publishedAt=time}}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPublicPage(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -54,6 +64,16 @@ func GetPublicPage(
 	}
 }
 
+// @Tags        Page (Public)
+// @Summary     Get Public Page By Slug
+// @Description Get a page that available publicly by its slug.
+// @Router      /v1/page/{slug} [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       slug query    string false "The slug query."
+// @Success     200  {object} object{data=object{uid=string,slug=string,title=string,content=string,publishedAt=time}}
+// @Failure     404  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func GetPublicPageBySlug(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -91,6 +111,20 @@ func GetPublicPageBySlug(
 	}
 }
 
+// @Tags        Page (Public)
+// @Summary     Get Public Pages
+// @Description Get pages that available publicly.
+// @Router      /v1/pages [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Success     200   {object} object{data=[]object{uid=string,slug=string,title=string,content=string,publishedAt=time}}
+// @Success     204
+// @Failure     404   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func GetPublicPages(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
@@ -121,6 +155,21 @@ func GetPublicPages(
 	}
 }
 
+// @Tags        Page (Public)
+// @Summary     Search Public Pages
+// @Description Search posts that available publicly.
+// @Router      /v1/page/search [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       q     query    string false "The search query."
+// @Param       show  query    int    false "Number of data to be shown."
+// @Param       page  query    int    false "Selected page of data."
+// @Param       order query    string false "Selected field to order data with."
+// @Param       asc   query    string false "Ascending or descending, e.g.: ?asc=false."
+// @Success     200   {object} object{data=[]object{uid=string,slug=string,title=string,content=string,publishedAt=time}}
+// @Success     204
+// @Failure     404   {object} object{message=string}
+// @Failure     500   {object} object{message=string}
 func SearchPublicPages(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

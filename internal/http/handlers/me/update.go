@@ -15,6 +15,21 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Me
+// @Summary     Update Me
+// @Description Update my user data.
+// @Router      /v1/auth/me [put]
+// @Router      /v1/auth/me [patch]
+// @Security    BearerAuth
+// @Accept      application/json
+// @Accept      application/msgpack
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       form body     object{firstname=string,lastname=string,username=string,email=string} true "Update me form"
+// @Success     201
+// @Failure     401  {object} object{message=string}
+// @Failure     422  {object} object{message=string}
+// @Failure     500  {object} object{message=string}
 func UpdateMe(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,

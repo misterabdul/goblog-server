@@ -14,6 +14,16 @@ import (
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
+// @Tags        Category (Public)
+// @Summary     Get Public Category Posts
+// @Description Get public category's posts that available publicly.
+// @Router      /v1/category/{uid}/posts [get]
+// @Produce     application/json
+// @Produce     application/msgpack
+// @Param       uid path     string true "Category's UID or slug"
+// @Success     200 {object} object{data=object{uid=string,slug=string,title=string,featuringImagePath=string,description=string,categories=[]object{uid=string,slug=string,name=string},tags=[]string,content=string,author=object{uid=string,username=string,email=string,firstName=string,lastName=string},commentCount=int,publishedAt=time}}
+// @Failure     404 {object} object{message=string}
+// @Failure     500 {object} object{message=string}
 func GetPublicCategoryPosts(
 	maxCtxDuration time.Duration,
 	dbConn *mongo.Database,
