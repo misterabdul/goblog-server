@@ -1,7 +1,7 @@
 package forms
 
 import (
-	"github.com/misterabdul/goblog-server/internal/models"
+	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 

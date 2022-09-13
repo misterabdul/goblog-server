@@ -12,11 +12,11 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 
+	"github.com/misterabdul/goblog-server/internal/database/models"
+	"github.com/misterabdul/goblog-server/internal/database/repositories"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
-	"github.com/misterabdul/goblog-server/internal/models"
 	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
-	"github.com/misterabdul/goblog-server/internal/repositories"
 )
 
 func ServeListenedNotifications(

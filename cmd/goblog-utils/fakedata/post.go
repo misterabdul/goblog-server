@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database"
-	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/database/models"
+	"github.com/misterabdul/goblog-server/internal/database/repositories"
 	customMongo "github.com/misterabdul/goblog-server/pkg/mongo"
 	"github.com/misterabdul/goblog-server/pkg/utils"
 )

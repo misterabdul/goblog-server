@@ -1,6 +1,6 @@
 package authorize
 
-import "github.com/misterabdul/goblog-server/internal/models"
+import "github.com/misterabdul/goblog-server/internal/database/models"
 
 type UserRole struct {
 	Level int

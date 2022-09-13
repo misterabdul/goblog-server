@@ -9,8 +9,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/misterabdul/goblog-server/internal/models"
-	"github.com/misterabdul/goblog-server/internal/repositories"
+	"github.com/misterabdul/goblog-server/internal/database/models"
+	"github.com/misterabdul/goblog-server/internal/database/repositories"
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 

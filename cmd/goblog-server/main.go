@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database"
-	"github.com/misterabdul/goblog-server/internal/server"
+	"github.com/misterabdul/goblog-server/internal/http/server"
 )
 
 // @title                      GoBlog Server

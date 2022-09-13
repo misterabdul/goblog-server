@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/misterabdul/goblog-server/internal/models"
+	"github.com/misterabdul/goblog-server/internal/database/models"
 )
 
 func PublicComment(c *gin.Context, comment *models.CommentModel) {

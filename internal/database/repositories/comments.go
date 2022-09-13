@@ -9,50 +9,50 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
-	"github.com/misterabdul/goblog-server/internal/models"
+	"github.com/misterabdul/goblog-server/internal/database/models"
 )
 
-type NotificationRepository struct {
+type CommentRepository struct {
 	collection *mongo.Collection
 }
 
-func NewNotificationRepository(
+func NewCommentRepository(
 	dbConn *mongo.Database,
-) *NotificationRepository {
+) *CommentRepository {
 
-	return &NotificationRepository{
-		collection: dbConn.Collection("notifications")}
+	return &CommentRepository{
+		collection: dbConn.Collection("comments")}
 }
 
-// Get single notification
-func (r NotificationRepository) ReadOne(
+// Get single comment
+func (r CommentRepository) ReadOne(
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
-) (notification *models.NotificationModel, err error) {
-	var _notification models.NotificationModel
+) (comment *models.CommentModel, err error) {
+	var _comment models.CommentModel
 
 	if err = r.collection.FindOne(
 		ctx, filter, opts...,
-	).Decode(&_notification); err != nil {
+	).Decode(&_comment); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
 		return nil, err
 	}
 
-	return &_notification, nil
+	return &_comment, nil
 }
 
-// Get multiple notifications
-func (r NotificationRepository) ReadMany(
+// Get multiple comments
+func (r CommentRepository) ReadMany(
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOptions,
-) (notifications []*models.NotificationModel, err error) {
+) (comments []*models.CommentModel, err error) {
 	var (
-		notification *models.NotificationModel
-		cursor       *mongo.Cursor
+		comment *models.CommentModel
+		cursor  *mongo.Cursor
 	)
 
 	if cursor, err = r.collection.Find(
@@ -62,20 +62,32 @@ func (r NotificationRepository) ReadMany(
 	}
 	defer cursor.Close(ctx)
 	for cursor.Next(ctx) {
-		notification = &models.NotificationModel{}
-		if err = cursor.Decode(notification); err != nil {
+		comment = &models.CommentModel{}
+		if err = cursor.Decode(comment); err != nil {
 			return nil, err
 		}
-		notifications = append(notifications, notification)
+		comments = append(comments, comment)
 	}
 
-	return notifications, nil
+	return comments, nil
 }
 
-// Save new notification
-func (r NotificationRepository) Save(
+// Count total posts
+func (r CommentRepository) Count(
 	ctx context.Context,
-	notification *models.NotificationModel,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
+
+	return r.collection.CountDocuments(
+		ctx, filter, opts...,
+	)
+}
+
+// Save new comment
+func (r CommentRepository) Save(
+	ctx context.Context,
+	comment *models.CommentModel,
 ) (err error) {
 	var (
 		insRes     *mongo.InsertOneResult
@@ -84,38 +96,38 @@ func (r NotificationRepository) Save(
 	)
 
 	if insRes, err = r.collection.InsertOne(
-		ctx, notification,
+		ctx, comment,
 	); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
 		return errors.New("unable to assert inserted uid")
 	}
-	if notification.UID != insertedID {
+	if comment.UID != insertedID {
 		return errors.New("inserted uid is not same with database")
 	}
 
 	return nil
 }
 
-// Update notification
-func (r NotificationRepository) Update(
+// Update comment
+func (r CommentRepository) Update(
 	ctx context.Context,
-	notification *models.NotificationModel,
+	comment *models.CommentModel,
 ) (err error) {
 	_, err = r.collection.UpdateByID(
-		ctx, notification.UID, bson.M{"$set": notification})
+		ctx, comment.UID, bson.M{"$set": comment})
 
 	return err
 }
 
-// Delete notification
-func (r NotificationRepository) Delete(
+// Delete comment
+func (r CommentRepository) Delete(
 	ctx context.Context,
-	notification *models.NotificationModel,
+	comment *models.CommentModel,
 ) (err error) {
 	_, err = r.collection.DeleteOne(
-		ctx, bson.M{"_id": notification.UID})
+		ctx, bson.M{"_id": comment.UID})
 
 	return err
 }
