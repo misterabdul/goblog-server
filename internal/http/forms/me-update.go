@@ -9,7 +9,7 @@ type UpdateMeForm struct {
 	FirstName string `json:"firstname" binding:"omitempty,max=50"`
 	LastName  string `json:"lastname" binding:"omitempty,max=50"`
 	Username  string `json:"username" binding:"omitempty,min=5,max=16"`
-	Email     string `json:"email" binding:"email"`
+	Email     string `json:"email" binding:"omitempty,email"`
 }
 
 func (form *UpdateMeForm) Validate(

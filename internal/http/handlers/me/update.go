@@ -12,6 +12,8 @@ import (
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	"github.com/misterabdul/goblog-server/internal/queue"
+	"github.com/misterabdul/goblog-server/internal/queue/client"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -37,6 +39,7 @@ func UpdateMe(
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			queueClient = client.GetClient()
 			userService = service.NewUserService(c, ctx, dbConn)
 			me          *models.UserModel
 			updatedMe   *models.UserModel
@@ -45,6 +48,8 @@ func UpdateMe(
 		)
 
 		defer cancel()
+		queueClient.Connect()
+		defer queueClient.Disconnect()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.Unauthenticated(c, err)
 			return
@@ -59,6 +64,10 @@ func UpdateMe(
 		}
 		updatedMe = form.ToUserModel(me)
 		if err = userService.UpdateUser(updatedMe); err != nil {
+			responses.InternalServerError(c, err)
+			return
+		}
+		if err = queueClient.NewTask(queue.UpdateMe, updatedMe); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
