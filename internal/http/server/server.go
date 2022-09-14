@@ -18,7 +18,7 @@ type serverRelatedEnv struct {
 
 // Get the server engine.
 func GetServer() (serverInstance *gin.Engine) {
-	var serverEnv *serverRelatedEnv = getServerRelatedEnv()
+	var serverEnv *serverRelatedEnv = getHttpServerRelatedEnv()
 
 	switch serverEnv.Mode {
 	default:
@@ -45,7 +45,7 @@ func GetServer() (serverInstance *gin.Engine) {
 	return serverInstance
 }
 
-func ReadContainerAddressFromEnv() (address string) {
+func ReadContainerHttpAddressFromEnv() (address string) {
 	var (
 		host    = "localhost"
 		port    = "80"
@@ -72,7 +72,7 @@ func ReadContainerAddressFromEnv() (address string) {
 	return host + ":" + port
 }
 
-func ReadAddressFromEnv() (address string) {
+func ReadHttpAddressFromEnv() (address string) {
 	var (
 		host    = "localhost"
 		port    = "80"
@@ -95,7 +95,7 @@ func ReadAddressFromEnv() (address string) {
 	return host + ":" + port
 }
 
-func getServerRelatedEnv() (envs *serverRelatedEnv) {
+func getHttpServerRelatedEnv() (envs *serverRelatedEnv) {
 	var (
 		_envs              serverRelatedEnv
 		_trustedProxiesEnv string

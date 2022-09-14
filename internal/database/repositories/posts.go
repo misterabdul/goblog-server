@@ -185,6 +185,21 @@ func (r PostRepository) Update(
 	return nil
 }
 
+// Bulk update post
+func (r PostRepository) UpdatePostAuthor(
+	ctx context.Context,
+	user *models.UserModel,
+) (err error) {
+	if _, err = r.collection.UpdateMany(
+		ctx, bson.M{"author._id": bson.M{"$eq": user.UID}},
+		bson.M{"$set": bson.M{"author": user.ToCommonModel()}},
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Update post content
 func (r PostContentRepository) Update(
 	ctx context.Context,

@@ -11,13 +11,13 @@ import (
 func InitSwagger(
 	server *gin.Engine,
 ) {
-	var serverEnv *serverRelatedEnv = getServerRelatedEnv()
+	var serverEnv *serverRelatedEnv = getHttpServerRelatedEnv()
 
 	switch serverEnv.Mode {
 	case 1:
 		fallthrough
 	case 2:
-		swaggerDocs.SwaggerInfo.Host = ReadAddressFromEnv()
+		swaggerDocs.SwaggerInfo.Host = ReadHttpAddressFromEnv()
 		server.GET("/swagger/*any", swaggerGin.WrapHandler(swaggerFiles.Handler))
 	}
 }

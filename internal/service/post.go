@@ -170,6 +170,22 @@ func (s *PostService) UpdatePost(
 		})
 }
 
+// Update post's author
+func (s *PostService) UpdatePostAuthor(
+	author *models.UserModel,
+) (err error) {
+	return customMongo.Transaction(s.ctx, s.dbConn, false,
+		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
+			if sErr = s.repository.UpdatePostAuthor(
+				sCtx, author,
+			); sErr != nil {
+				return sErr
+			}
+
+			return nil
+		})
+}
+
 // Delete post to trash
 func (s *PostService) TrashPost(
 	post *models.PostModel,
