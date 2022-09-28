@@ -8,11 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -30,12 +30,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetMyComment(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.NewCommentService(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
 			commentUid      primitive.ObjectID
@@ -52,11 +52,11 @@ func GetMyComment(
 			responses.IncorrectCommentId(c, err)
 			return
 		}
-		if comment, err = commentService.GetComment(bson.M{
+		if comment, err = svc.Comment.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"postauthoruid": bson.M{"$eq": me.UID}},
-				{"_id": bson.M{"$eq": commentUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": commentUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -88,16 +88,16 @@ func GetMyComment(
 // @Failure     500   {object} object{message=string}
 func GetMyComments(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.NewCommentService(c, ctx, dbConn)
-			me             *models.UserModel
-			comments       []*models.CommentModel
-			queryParams    = readCommonQueryParams(c)
-			err            error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			me          *models.UserModel
+			comments    []*models.CommentModel
+			queryParams = readCommonQueryParams(c)
+			err         error
 		)
 
 		defer cancel()
@@ -105,10 +105,11 @@ func GetMyComments(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if comments, err = commentService.GetComments(bson.M{
+		if comments, err = svc.Comment.GetMany(ctx, bson.M{
 			"$and": append(queryParams,
-				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
-		}, false); err != nil {
+				bson.M{"postauthoruid": bson.M{"$eq": me.UID}})},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -138,16 +139,16 @@ func GetMyComments(
 // @Failure     500   {object} object{message=string}
 func GetMyCommentsStats(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.NewCommentService(c, ctx, dbConn)
-			me             *models.UserModel
-			count          int64
-			queryParams    = readCommonQueryParams(c)
-			err            error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			me          *models.UserModel
+			count       int64
+			queryParams = readCommonQueryParams(c)
+			err         error
 		)
 
 		defer cancel()
@@ -155,10 +156,11 @@ func GetMyCommentsStats(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if count, err = commentService.GetCommentCount(bson.M{
+		if count, err = svc.Comment.Count(ctx, bson.M{
 			"$and": append(queryParams,
-				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
-		}); err != nil {
+				bson.M{"postauthoruid": bson.M{"$eq": me.UID}})},
+			internalGin.GetCountOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -187,18 +189,18 @@ func GetMyCommentsStats(
 // @Failure     500   {object} object{message=string}
 func GetMyPostComments(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.NewCommentService(c, ctx, dbConn)
-			me             *models.UserModel
-			comments       []*models.CommentModel
-			postUid        primitive.ObjectID
-			postUidParam   = c.Param("post")
-			queryParams    = readCommonQueryParams(c)
-			err            error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			me           *models.UserModel
+			comments     []*models.CommentModel
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			queryParams  = readCommonQueryParams(c)
+			err          error
 		)
 
 		defer cancel()
@@ -210,11 +212,12 @@ func GetMyPostComments(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if comments, err = commentService.GetComments(bson.M{
+		if comments, err = svc.Comment.GetMany(ctx, bson.M{
 			"$and": append(queryParams,
 				bson.M{"postuid": bson.M{"$eq": postUid}},
-				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
-		}, false); err != nil {
+				bson.M{"postauthoruid": bson.M{"$eq": me.UID}})},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -245,18 +248,18 @@ func GetMyPostComments(
 // @Failure     500   {object} object{message=string}
 func GetMyPostCommentsStats(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.NewCommentService(c, ctx, dbConn)
-			me             *models.UserModel
-			count          int64
-			postUid        primitive.ObjectID
-			postUidParam   = c.Param("post")
-			queryParams    = readCommonQueryParams(c)
-			err            error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			me           *models.UserModel
+			count        int64
+			postUid      primitive.ObjectID
+			postUidParam = c.Param("post")
+			queryParams  = readCommonQueryParams(c)
+			err          error
 		)
 
 		defer cancel()
@@ -268,11 +271,12 @@ func GetMyPostCommentsStats(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if count, err = commentService.GetCommentCount(bson.M{
+		if count, err = svc.Comment.Count(ctx, bson.M{
 			"$and": append(queryParams,
 				bson.M{"postuid": bson.M{"$eq": postUid}},
-				bson.M{"postauthoruid": bson.M{"$eq": me.UID}}),
-		}); err != nil {
+				bson.M{"postauthoruid": bson.M{"$eq": me.UID}})},
+			internalGin.GetCountOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -295,13 +299,12 @@ func GetMyPostCommentsStats(
 // @Failure     500 {object} object{message=string}
 func TrashMyComment(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.NewCommentService(c, ctx, dbConn)
-			postService     = service.NewPostService(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
 			parentComment   *models.CommentModel
@@ -320,12 +323,12 @@ func TrashMyComment(
 			responses.IncorrectCommentId(c, err)
 			return
 		}
-		if comment, err = commentService.GetComment(bson.M{
+		if comment, err = svc.Comment.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"postauthoruid": bson.M{"$eq": me.UID}},
-				{"_id": bson.M{"$eq": commentUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": commentUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -334,18 +337,18 @@ func TrashMyComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, postService, comment); err != nil {
+			if post, err = findCommentPost(c, svc, ctx, comment); err != nil {
 				return
 			}
-			if err = commentService.TrashComment(comment, post); err != nil {
+			if err = svc.Comment.TrashOne(ctx, comment, post); err != nil {
 				responses.InternalServerError(c, err)
 				return
 			}
 		} else {
-			if parentComment, err = findReplyParentComment(c, commentService, comment); err != nil {
+			if parentComment, err = findReplyParentComment(c, svc, ctx, comment); err != nil {
 				return
 			}
-			if err = commentService.TrashCommentReply(comment, parentComment); err != nil {
+			if err = svc.Comment.TrashOneReply(ctx, comment, parentComment); err != nil {
 				responses.InternalServerError(c, err)
 				return
 			}
@@ -370,13 +373,12 @@ func TrashMyComment(
 // @Failure     500 {object} object{message=string}
 func DetrashMyComment(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.NewCommentService(c, ctx, dbConn)
-			postService     = service.NewPostService(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
 			parentComment   *models.CommentModel
@@ -395,12 +397,12 @@ func DetrashMyComment(
 			responses.IncorrectCommentId(c, err)
 			return
 		}
-		if comment, err = commentService.GetComment(bson.M{
+		if comment, err = svc.Comment.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
 				{"postauthoruid": bson.M{"$eq": me.UID}},
-				{"_id": bson.M{"$eq": commentUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": commentUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -409,18 +411,18 @@ func DetrashMyComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, postService, comment); err != nil {
+			if post, err = findCommentPost(c, svc, ctx, comment); err != nil {
 				return
 			}
-			if err = commentService.DetrashComment(comment, post); err != nil {
+			if err = svc.Comment.RestoreOne(ctx, comment, post); err != nil {
 				responses.InternalServerError(c, err)
 				return
 			}
 		} else {
-			if parentComment, err = findReplyParentComment(c, commentService, comment); err != nil {
+			if parentComment, err = findReplyParentComment(c, svc, ctx, comment); err != nil {
 				return
 			}
-			if err = commentService.DetrashCommentReply(comment, parentComment); err != nil {
+			if err = svc.Comment.RestoreOneReply(ctx, comment, parentComment); err != nil {
 				responses.InternalServerError(c, err)
 				return
 			}
@@ -444,13 +446,12 @@ func DetrashMyComment(
 // @Failure     500 {object} object{message=string}
 func DeleteMyComment(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.NewCommentService(c, ctx, dbConn)
-			postService     = service.NewPostService(c, ctx, dbConn)
 			me              *models.UserModel
 			comment         *models.CommentModel
 			parentComment   *models.CommentModel
@@ -469,11 +470,11 @@ func DeleteMyComment(
 			responses.IncorrectCommentId(c, err)
 			return
 		}
-		if comment, err = commentService.GetComment(bson.M{
+		if comment, err = svc.Comment.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"postauthoruid": bson.M{"$eq": me.UID}},
-				{"_id": bson.M{"$eq": commentUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": commentUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -482,18 +483,18 @@ func DeleteMyComment(
 			return
 		}
 		if comment.ParentCommentUid == nil {
-			if post, err = findCommentPost(c, postService, comment); err != nil {
+			if post, err = findCommentPost(c, svc, ctx, comment); err != nil {
 				return
 			}
-			if err = commentService.DeleteComment(comment, post); err != nil {
+			if err = svc.Comment.DeleteOne(ctx, comment, post); err != nil {
 				responses.InternalServerError(c, err)
 				return
 			}
 		} else {
-			if parentComment, err = findReplyParentComment(c, commentService, comment); err != nil {
+			if parentComment, err = findReplyParentComment(c, svc, ctx, comment); err != nil {
 				return
 			}
-			if err = commentService.DeleteCommentReply(comment, parentComment); err != nil {
+			if err = svc.Comment.DeleteOneReply(ctx, comment, parentComment); err != nil {
 				responses.InternalServerError(c, err)
 				return
 			}
@@ -505,15 +506,16 @@ func DeleteMyComment(
 
 func findCommentPost(
 	c *gin.Context,
-	postService *service.PostService,
+	svc *service.Service,
+	ctx context.Context,
 	comment *models.CommentModel,
 ) (post *models.PostModel, err error) {
 
-	if post, err = postService.GetPost(bson.M{
+	if post, err = svc.Post.GetOne(ctx, bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
-			{"_id": bson.M{"$eq": comment.PostUid}}},
-	}); err != nil {
+			{"_id": bson.M{"$eq": comment.PostUid}}}},
+	); err != nil {
 		responses.InternalServerError(c, err)
 		return nil, err
 	}
@@ -527,14 +529,15 @@ func findCommentPost(
 
 func findReplyParentComment(
 	c *gin.Context,
-	commentService *service.CommentService,
+	svc *service.Service,
+	ctx context.Context,
 	reply *models.CommentModel,
 ) (comment *models.CommentModel, err error) {
-	if comment, err = commentService.GetComment(bson.M{
+	if comment, err = svc.Comment.GetOne(ctx, bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
-			{"_id": bson.M{"$eq": reply.ParentCommentUid}}},
-	}); err != nil {
+			{"_id": bson.M{"$eq": reply.ParentCommentUid}}}},
+	); err != nil {
 		responses.InternalServerError(c, err)
 		return nil, err
 	}

@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -27,12 +27,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetPublicPost(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.NewPostService(c, ctx, dbConn)
 			post        *models.PostModel
 			postContent *models.PostContentModel
 			postUid     interface{}
@@ -44,14 +44,14 @@ func GetPublicPost(
 		if postUid, err = primitive.ObjectIDFromHex(postParam); err != nil {
 			postUid = nil
 		}
-		if post, postContent, err = postService.GetPostWithContent(bson.M{
+		if post, postContent, err = svc.Post.GetOneWithContent(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
 					{"_id": bson.M{"$eq": postUid}},
-					{"slug": bson.M{"$eq": postParam}}}}},
-		}); err != nil {
+					{"slug": bson.M{"$eq": postParam}}}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -80,22 +80,23 @@ func GetPublicPost(
 // @Failure     500   {object} object{message=string}
 func GetPublicPosts(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.NewPostService(c, ctx, dbConn)
 			posts       []*models.PostModel
 			err         error
 		)
 
 		defer cancel()
-		if posts, err = postService.GetPosts(bson.M{
+		if posts, err = svc.Post.GetMany(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
-		}); err != nil {
+				{"publishedat": bson.M{"$ne": primitive.Null{}}}}},
+			internalGin.GetFindOptionsPost(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -125,25 +126,25 @@ func GetPublicPosts(
 // @Failure     500   {object} object{message=string}
 func SearchPublicPosts(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
 
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.NewPostService(c, ctx, dbConn)
 			searchQuery = c.Query("q")
 			posts       []*models.PostModel
 			err         error
 		)
 
 		defer cancel()
-		if posts, err = postService.GetPosts(bson.M{
+		if posts, err = svc.Post.GetMany(ctx, bson.M{
 			"$text": bson.M{"$search": searchQuery},
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
-		}); err != nil {
+				{"publishedat": bson.M{"$ne": primitive.Null{}}}}},
+			internalGin.GetFindOptionsPost(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -8,22 +8,22 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func GetNotification(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			notificationService = service.NewNotificationService(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID
@@ -40,11 +40,11 @@ func GetNotification(
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = notificationService.GetNotification(bson.M{
+		if notification, err = svc.Notification.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username},
-				{"_id": notificationId}},
-		}); err != nil {
+				{"_id": notificationId}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -59,15 +59,15 @@ func GetNotification(
 
 func GetNotifications(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			notificationService = service.NewNotificationService(c, ctx, dbConn)
-			me                  *models.UserModel
-			notifications       []*models.NotificationModel
-			err                 error
+			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
+			me            *models.UserModel
+			notifications []*models.NotificationModel
+			err           error
 		)
 
 		defer cancel()
@@ -75,10 +75,11 @@ func GetNotifications(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if notifications, err = notificationService.GetNotifications(bson.M{
+		if notifications, err = svc.Notification.GetMany(ctx, bson.M{
 			"$and": []bson.M{
-				{"owner.username": me.Username}},
-		}); err != nil {
+				{"owner.username": me.Username}}},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -93,13 +94,12 @@ func GetNotifications(
 
 func ReadNotification(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
-	return func(c *gin.Context) {
 
+	return func(c *gin.Context) {
 		var (
 			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			notificationService = service.NewNotificationService(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID
@@ -116,11 +116,11 @@ func ReadNotification(
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = notificationService.GetNotification(bson.M{
+		if notification, err = svc.Notification.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username},
-				{"_id": notificationId}},
-		}); err != nil {
+				{"_id": notificationId}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -132,7 +132,7 @@ func ReadNotification(
 			responses.NoContent(c)
 			return
 		}
-		if err = notificationService.ReadNotification(notification); err != nil {
+		if err = svc.Notification.MarkOneRead(ctx, notification); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -143,12 +143,12 @@ func ReadNotification(
 
 func DeleteNotification(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			notificationService = service.NewNotificationService(c, ctx, dbConn)
 			me                  *models.UserModel
 			notification        *models.NotificationModel
 			notificationId      primitive.ObjectID
@@ -165,11 +165,11 @@ func DeleteNotification(
 			responses.IncorrectNotificationId(c, err)
 			return
 		}
-		if notification, err = notificationService.GetNotification(bson.M{
+		if notification, err = svc.Notification.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username},
-				{"_id": notificationId}},
-		}); err != nil {
+				{"_id": notificationId}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -177,7 +177,7 @@ func DeleteNotification(
 			responses.NotFound(c, errors.New("notification not found"))
 			return
 		}
-		if err = notificationService.DeleteNotification(notification); err != nil {
+		if err = svc.Notification.DeleteOne(ctx, notification); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

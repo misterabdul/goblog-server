@@ -1,6 +1,8 @@
 package forms
 
 import (
+	"context"
+
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
@@ -13,13 +15,14 @@ type UpdateMeForm struct {
 }
 
 func (form *UpdateMeForm) Validate(
-	userService *service.UserService,
+	svc *service.Service,
+	ctx context.Context,
 	me *models.UserModel,
 ) (err error) {
-	if err = checkUpdateUsername(userService, form.Username, me); err != nil {
+	if err = checkUpdateUsername(svc, ctx, form.Username, me); err != nil {
 		return err
 	}
-	if err = checkUpdateEmail(userService, form.Email, me); err != nil {
+	if err = checkUpdateEmail(svc, ctx, form.Email, me); err != nil {
 		return err
 	}
 

@@ -7,10 +7,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -26,12 +26,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetPublicCategoryPosts(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService   = service.NewPostService(c, ctx, dbConn)
 			posts         []*models.PostModel
 			categoryUid   interface{}
 			categoryParam = c.Param("category")
@@ -42,14 +42,15 @@ func GetPublicCategoryPosts(
 		if categoryUid, err = primitive.ObjectIDFromHex(categoryParam); err != nil {
 			categoryUid = nil
 		}
-		if posts, err = postService.GetPosts(bson.M{
+		if posts, err = svc.Post.GetMany(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
 					{"_id": bson.M{"$eq": categoryUid}},
-					{"slug": bson.M{"$eq": categoryParam}}}}},
-		}); err != nil {
+					{"slug": bson.M{"$eq": categoryParam}}}}}},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

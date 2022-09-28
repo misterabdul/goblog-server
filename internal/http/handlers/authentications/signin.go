@@ -7,7 +7,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
@@ -35,12 +34,12 @@ import (
 // @Failure     500  {object} object{message=string}
 func SignIn(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService   = service.NewUserService(c, ctx, dbConn)
 			input         *forms.SignInForm
 			user          *models.UserModel
 			accessClaims  *jwt.CustomClaims
@@ -55,7 +54,7 @@ func SignIn(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if user, err = userService.GetUser(bson.M{
+		if user, err = svc.User.GetOne(ctx, bson.M{
 			"$or": []bson.M{
 				{"username": bson.M{"$eq": input.Username}},
 				{"email": bson.M{"$eq": input.Username}}},

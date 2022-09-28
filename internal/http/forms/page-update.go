@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -19,10 +20,11 @@ type UpdatePageForm struct {
 }
 
 func (form *UpdatePageForm) Validate(
-	pageService *service.PageService,
+	svc *service.Service,
+	ctx context.Context,
 	page *models.PageModel,
 ) (err error) {
-	if err = checkUpdatePageSlug(page, pageService, form.Slug); err != nil {
+	if err = checkUpdatePageSlug(svc, ctx, page, form.Slug); err != nil {
 		return err
 	}
 
@@ -59,19 +61,20 @@ func (form *UpdatePageForm) ToPageModel(
 }
 
 func checkUpdatePageSlug(
+	svc *service.Service,
+	ctx context.Context,
 	page *models.PageModel,
-	pageService *service.PageService,
 	formSlug string,
 ) (err error) {
 	var (
 		pages []*models.PageModel
 	)
 
-	if pages, err = pageService.GetPages(bson.M{
+	if pages, err = svc.Page.GetMany(ctx, bson.M{
 		"$and": []bson.M{
 			{"_id": bson.M{"$ne": page.UID}},
-			{"slug": bson.M{"$eq": formSlug}}},
-	}); err != nil {
+			{"slug": bson.M{"$eq": formSlug}}}},
+	); err != nil {
 		return err
 	}
 	if len(pages) > 0 {

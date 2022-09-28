@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
@@ -32,12 +31,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func UpdateMePassword(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.NewUserService(c, ctx, dbConn)
 			me          *models.UserModel
 			updatedMe   *models.UserModel
 			form        *forms.UpdateMePasswordForm
@@ -61,7 +60,7 @@ func UpdateMePassword(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = userService.UpdateUser(updatedMe); err != nil {
+		if err = svc.User.UpdateOne(ctx, updatedMe); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

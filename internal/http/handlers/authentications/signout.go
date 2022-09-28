@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
@@ -27,15 +26,15 @@ import (
 // @Failure     500 {object} object{message=string}
 func SignOut(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			revokedTokenService = service.NewRevokedTokenService(c, ctx, dbConn)
-			me                  *models.UserModel
-			refreshClaims       *jwt.CustomClaims
-			err                 error
+			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
+			me            *models.UserModel
+			refreshClaims *jwt.CustomClaims
+			err           error
 		)
 
 		defer cancel()
@@ -47,7 +46,7 @@ func SignOut(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if err = noteRevokeToken(revokedTokenService, refreshClaims, me); err != nil {
+		if err = noteRevokeToken(ctx, svc, refreshClaims, me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -9,13 +9,19 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/queue"
+	"github.com/misterabdul/goblog-server/internal/queue/client"
 	meHandler "github.com/misterabdul/goblog-server/internal/queue/handlers/me"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
-func InitServeMux(dbConn *mongo.Database) *asynq.ServeMux {
+func InitServeMux(
+	dbConn *mongo.Database,
+	queueClient *client.QueueClient,
+) *asynq.ServeMux {
 	var (
 		mux              *asynq.ServeMux
 		serverRelatedEnv = getRedisServerRelatedEnv()
+		svc              = service.NewService(dbConn, queueClient)
 	)
 
 	mux = asynq.NewServeMux()
@@ -30,7 +36,7 @@ func InitServeMux(dbConn *mongo.Database) *asynq.ServeMux {
 		mux.Use(loggingMiddleware)
 	}
 
-	mux.HandleFunc(queue.UpdateMe, meHandler.UpdateMe(dbConn))
+	mux.HandleFunc(queue.UpdateMe, meHandler.UpdateMe(svc))
 
 	return mux
 }

@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -24,7 +25,8 @@ type UpdateUserForm struct {
 }
 
 func (form *UpdateUserForm) Validate(
-	userService *service.UserService,
+	svc *service.Service,
+	ctx context.Context,
 	creator *models.UserModel,
 	target *models.UserModel,
 ) (err error) {
@@ -35,12 +37,12 @@ func (form *UpdateUserForm) Validate(
 		return errors.New("password confirm not same")
 	}
 	if strings.Compare(form.Username, target.Username) != 0 {
-		if err = checkUpdateUsername(userService, form.Username, target); err != nil {
+		if err = checkUpdateUsername(svc, ctx, form.Username, target); err != nil {
 			return err
 		}
 	}
 	if strings.Compare(form.Email, target.Email) != 0 {
-		if err = checkUpdateEmail(userService, form.Email, target); err != nil {
+		if err = checkUpdateEmail(svc, ctx, form.Email, target); err != nil {
 			return err
 		}
 	}
@@ -82,13 +84,14 @@ func (form *UpdateUserForm) ToUserModel(
 }
 
 func checkUpdateUsername(
-	userService *service.UserService,
+	svc *service.Service,
+	ctx context.Context,
 	formUsername string,
 	target *models.UserModel,
 ) (err error) {
 	var users []*models.UserModel
 
-	if users, err = userService.GetUsers(bson.M{
+	if users, err = svc.User.GetMany(ctx, bson.M{
 		"$and": []bson.M{
 			{"_id": bson.M{"$ne": target.UID}},
 			{"username": bson.M{"$eq": formUsername}}},
@@ -103,13 +106,14 @@ func checkUpdateUsername(
 }
 
 func checkUpdateEmail(
-	userService *service.UserService,
+	svc *service.Service,
+	ctx context.Context,
 	formEmail string,
 	target *models.UserModel,
 ) (err error) {
 	var users []*models.UserModel
 
-	if users, err = userService.GetUsers(bson.M{
+	if users, err = svc.User.GetMany(ctx, bson.M{
 		"$and": []bson.M{
 			{"_id": bson.M{"$ne": target.UID}},
 			{"email": bson.M{"$eq": formEmail}}},

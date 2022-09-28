@@ -2,10 +2,9 @@ package client
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/hibiken/asynq"
-
-	"github.com/misterabdul/goblog-server/internal/queue/server"
 )
 
 type QueueClient struct {
@@ -43,6 +42,51 @@ func (c *QueueClient) NewTask(
 }
 
 func GetClient() (client *QueueClient) {
-	return &QueueClient{
-		opts: server.ReadRedisOptsFromEnv()}
+	client = &QueueClient{
+		opts: readRedisOptsFromEnv()}
+
+	client.Connect()
+
+	return client
+}
+
+func readRedisOptsFromEnv() asynq.RedisClientOpt {
+	var (
+		host    = "localhost"
+		port    = "6379"
+		user    = ""
+		pass    = ""
+		envHost string
+		envPort string
+		envUser string
+		envPass string
+		ok      bool
+	)
+
+	if envHost, ok = os.LookupEnv("REDIS_HOST"); ok {
+		host = envHost
+	} else {
+		host = "localhost"
+	}
+	if envPort, ok = os.LookupEnv("REDIS_PORT"); ok {
+		port = envPort
+	} else {
+		port = "80"
+	}
+	if envUser, ok = os.LookupEnv("REDIS_USER"); ok {
+		user = envUser
+	} else {
+		user = ""
+	}
+	if envPass, ok = os.LookupEnv("REDIS_PASS"); ok {
+		pass = envPass
+	} else {
+		pass = "80"
+	}
+
+	return asynq.RedisClientOpt{
+		Addr:     host + ":" + port,
+		Username: user,
+		Password: pass,
+	}
 }

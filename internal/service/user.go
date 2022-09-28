@@ -4,69 +4,63 @@ import (
 	"context"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/database/repositories"
-	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 )
 
-type UserService struct {
-	c          *gin.Context
-	ctx        context.Context
-	dbConn     *mongo.Database
-	repository *repositories.UserRepository
+type user struct {
+	dbConn *mongo.Database
 }
 
-func NewUserService(
-	c *gin.Context,
-	ctx context.Context,
+func newUserService(
 	dbConn *mongo.Database,
-) *UserService {
+) (service *user) {
 
-	return &UserService{
-		c:          c,
-		ctx:        ctx,
-		dbConn:     dbConn,
-		repository: repositories.NewUserRepository(dbConn)}
+	return &user{dbConn: dbConn}
 }
 
 // Get single user
-func (s *UserService) GetUser(filter interface{}) (
-	user *models.UserModel,
-	err error,
-) {
+func (s *user) GetOne(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.FindOneOptions,
+) (user *models.UserModel, err error) {
 
-	return s.repository.ReadOne(
-		s.ctx, filter)
+	return repositories.ReadOneUser(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Get multiple users
-func (s *UserService) GetUsers(filter interface{}) (
-	categories []*models.UserModel,
-	err error,
-) {
+func (s *user) GetMany(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.FindOptions,
+) (categories []*models.UserModel, err error) {
 
-	return s.repository.ReadMany(
-		s.ctx, filter,
-		internalGin.GetFindOptions(s.c))
+	return repositories.ReadManyUsers(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Get total users count
-func (s *UserService) GetUserCount(filter interface{}) (
-	count int64, err error,
-) {
+func (s *user) Count(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
 
-	return s.repository.Count(
-		s.ctx, filter,
-		internalGin.GetCountOptions(s.c))
+	return repositories.CountUsers(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Create new user
-func (s *UserService) CreateUser(
+func (s *user) SaveOne(
+	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
@@ -75,49 +69,57 @@ func (s *UserService) CreateUser(
 	user.UpdatedAt = now
 	user.DeletedAt = nil
 
-	return s.repository.Save(
-		s.ctx, user)
+	return repositories.SaveOneUser(
+		s.dbConn, ctx, user, opts...)
 }
 
 // Update user
-func (s *UserService) UpdateUser(
+func (s *user) UpdateOne(
+	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	user.UpdatedAt = now
 
-	return s.repository.Update(
-		s.ctx, user)
+	return repositories.UpdateOneUser(
+		s.dbConn, ctx, user, opts...)
 }
 
 // Delete user to trash
-func (s *UserService) TrashUser(
+func (s *user) TrashOne(
+	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	user.DeletedAt = now
 
-	return s.repository.Update(
-		s.ctx, user)
+	return repositories.UpdateOneUser(
+		s.dbConn, ctx, user, opts...)
 }
 
 // Restore user from trash
-func (s *UserService) DetrashUser(
+func (s *user) RestoreOne(
+	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	user.DeletedAt = nil
 
-	return s.repository.Update(
-		s.ctx, user)
+	return repositories.UpdateOneUser(
+		s.dbConn, ctx, user, opts...)
 }
 
 // Permanently delete user
-func (s *UserService) DeleteUser(
+func (s *user) DeleteOne(
+	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
 
-	return s.repository.Delete(
-		s.ctx, user)
+	return repositories.DeleteOneUser(
+		s.dbConn, ctx, user, opts...)
 }

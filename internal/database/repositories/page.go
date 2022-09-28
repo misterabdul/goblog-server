@@ -12,41 +12,24 @@ import (
 	"github.com/misterabdul/goblog-server/internal/database/models"
 )
 
-type PageRepository struct {
-	collection *mongo.Collection
-}
-
-type PageContentRepository struct {
-	collection *mongo.Collection
-}
-
-func NewPageRepository(
-	dbConn *mongo.Database,
-) *PageRepository {
-
-	return &PageRepository{
-		collection: dbConn.Collection("pages")}
-}
-
-func NewPageContentRepository(
-	dbConn *mongo.Database,
-) *PageContentRepository {
-
-	return &PageContentRepository{
-		collection: dbConn.Collection("pageContents")}
-}
+const (
+	pageCollection        = "pages"
+	pageContentCollection = "pageContents"
+)
 
 // Get single page
-func (r PageRepository) ReadOne(
+func ReadOnePage(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (page *models.PageModel, err error) {
-	var _page models.PageModel
+	var (
+		collection = dbConn.Collection(pageCollection)
+		_page      models.PageModel
+	)
 
-	if err = r.collection.FindOne(
-		ctx, filter, opts...,
-	).Decode(&_page); err != nil {
+	if err = collection.FindOne(ctx, filter, opts...).Decode(&_page); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -57,19 +40,18 @@ func (r PageRepository) ReadOne(
 }
 
 // Get single page content
-func (r PageContentRepository) ReadOne(
+func ReadOnePageContent(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
-) (
-	pageContent *models.PageContentModel,
-	err error,
-) {
-	var _pageContent models.PageContentModel
+) (pageContent *models.PageContentModel, err error) {
+	var (
+		collection   = dbConn.Collection(pageContentCollection)
+		_pageContent models.PageContentModel
+	)
 
-	if err = r.collection.FindOne(
-		ctx, filter, opts...,
-	).Decode(&_pageContent); err != nil {
+	if err = collection.FindOne(ctx, filter, opts...).Decode(&_pageContent); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -80,19 +62,19 @@ func (r PageContentRepository) ReadOne(
 }
 
 // Get multiple pages
-func (r PageRepository) ReadMany(
+func ReadManyPages(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (pages []*models.PageModel, err error) {
 	var (
-		page   *models.PageModel
-		cursor *mongo.Cursor
+		collection = dbConn.Collection(pageCollection)
+		page       *models.PageModel
+		cursor     *mongo.Cursor
 	)
 
-	if cursor, err = r.collection.Find(
-		ctx, filter, opts...,
-	); err != nil {
+	if cursor, err = collection.Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -108,31 +90,33 @@ func (r PageRepository) ReadMany(
 }
 
 // Count total pages
-func (r PageRepository) Count(
+func CountPages(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.CountOptions,
 ) (count int64, err error) {
+	var collection = dbConn.Collection(pageCollection)
 
-	return r.collection.CountDocuments(
-		ctx, filter, opts...,
-	)
+	return collection.CountDocuments(
+		ctx, filter, opts...)
 }
 
 // Save new page
-func (r PageRepository) Save(
+func SaveOnePage(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	page *models.PageModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var (
+		collection = dbConn.Collection(pageCollection)
 		insRes     *mongo.InsertOneResult
 		insertedID interface{}
 		ok         bool
 	)
 
-	if insRes, err = r.collection.InsertOne(
-		ctx, page,
-	); err != nil {
+	if insRes, err = collection.InsertOne(ctx, page, opts...); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -146,19 +130,20 @@ func (r PageRepository) Save(
 }
 
 // Save new page content
-func (r PageContentRepository) Save(
+func SaveOnePageContent(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	pageContent *models.PageContentModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var (
+		collection = dbConn.Collection(pageContentCollection)
 		insRes     *mongo.InsertOneResult
 		insertedID interface{}
 		ok         bool
 	)
 
-	if insRes, err = r.collection.InsertOne(
-		ctx, pageContent,
-	); err != nil {
+	if insRes, err = collection.InsertOne(ctx, pageContent, opts...); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -172,57 +157,61 @@ func (r PageContentRepository) Save(
 }
 
 // Update page
-func (r PageRepository) Update(
+func UpdateOnePage(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	page *models.PageModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
-	if _, err = r.collection.UpdateByID(
-		ctx, page.UID, bson.M{"$set": page},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(pageCollection)
 
-	return nil
+	_, err = collection.UpdateOne(
+		ctx, bson.M{"_id": page.UID}, bson.M{"$set": page}, opts...)
+
+	return err
 }
 
 // Update page content
-func (r PageContentRepository) Update(
+func UpdateOnePageContent(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	pageContent *models.PageContentModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
-	if _, err = r.collection.UpdateByID(
-		ctx, pageContent.UID, bson.M{"$set": pageContent},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(pageContentCollection)
 
-	return nil
+	_, err = collection.UpdateOne(
+		ctx, bson.M{"_id": pageContent.UID}, bson.M{"$set": pageContent}, opts...)
+
+	return err
 }
 
 // Delete page
-func (r PageRepository) Delete(
+func DeleteOnePage(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	page *models.PageModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
-	if _, err = r.collection.DeleteOne(
-		ctx, bson.M{"_id": page.UID},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(pageContentCollection)
 
-	return nil
+	_, err = collection.DeleteOne(
+		ctx, bson.M{"_id": page.UID}, opts...)
+
+	return err
 }
 
 // Delete page content
-func (r PageContentRepository) Delete(
+func DeleteOnePageContent(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	pageContent *models.PageContentModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
-	if _, err = r.collection.DeleteOne(
-		ctx, bson.M{"_id": pageContent.UID},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(pageContentCollection)
+
+	_, err = collection.DeleteOne(
+		ctx, bson.M{"_id": pageContent.UID}, opts...)
 
 	return err
 }

@@ -4,69 +4,63 @@ import (
 	"context"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/database/repositories"
-	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 )
 
-type CategoryService struct {
-	c          *gin.Context
-	ctx        context.Context
-	dbConn     *mongo.Database
-	repository *repositories.CategoryRepository
+type category struct {
+	dbConn *mongo.Database
 }
 
-func NewCategoryService(
-	c *gin.Context,
-	ctx context.Context,
+func newCategoryService(
 	dbConn *mongo.Database,
-) *CategoryService {
+) (service *category) {
 
-	return &CategoryService{
-		c:          c,
-		ctx:        ctx,
-		dbConn:     dbConn,
-		repository: repositories.NewCategoryRepository(dbConn)}
+	return &category{dbConn: dbConn}
 }
 
 // Get single category
-func (s *CategoryService) GetCategory(filter interface{}) (
-	category *models.CategoryModel,
-	err error,
-) {
+func (s *category) GetOne(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.FindOneOptions,
+) (category *models.CategoryModel, err error) {
 
-	return s.repository.ReadOne(
-		s.ctx, filter)
+	return repositories.ReadOneCategory(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Get multiple categories
-func (s *CategoryService) GetCategories(filter interface{}) (
-	categories []*models.CategoryModel,
-	err error,
-) {
+func (s *category) GetMany(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.FindOptions,
+) (categories []*models.CategoryModel, err error) {
 
-	return s.repository.ReadMany(
-		s.ctx, filter,
-		internalGin.GetFindOptions(s.c))
+	return repositories.ReadManyCategories(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Get total categories count
-func (s *CategoryService) GetCategoryCount(filter interface{}) (
-	count int64, err error,
-) {
+func (s *category) Count(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
 
-	return s.repository.Count(
-		s.ctx, filter,
-		internalGin.GetCountOptions(s.c))
+	return repositories.CountCategories(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Create new category
-func (s *CategoryService) CreateCategory(
+func (s *category) SaveOne(
+	ctx context.Context,
 	category *models.CategoryModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
@@ -75,49 +69,57 @@ func (s *CategoryService) CreateCategory(
 	category.UpdatedAt = now
 	category.DeletedAt = nil
 
-	return s.repository.Save(
-		s.ctx, category)
+	return repositories.SaveOneCategory(
+		s.dbConn, ctx, category, opts...)
 }
 
 // Update category
-func (s *CategoryService) UpdateCategory(
+func (s *category) UpdateOne(
+	ctx context.Context,
 	category *models.CategoryModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	category.UpdatedAt = now
 
-	return s.repository.Update(
-		s.ctx, category)
+	return repositories.UpdateOneCategory(
+		s.dbConn, ctx, category, opts...)
 }
 
 // Delete category to trash
-func (s *CategoryService) TrashCategory(
+func (s *category) TrashOne(
+	ctx context.Context,
 	category *models.CategoryModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	category.DeletedAt = now
 
-	return s.repository.Update(
-		s.ctx, category)
+	return repositories.UpdateOneCategory(
+		s.dbConn, ctx, category, opts...)
 }
 
 // Restore category from trash
-func (s *CategoryService) DetrashCategory(
+func (s *category) RestoreOne(
+	ctx context.Context,
 	category *models.CategoryModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	category.DeletedAt = nil
 
-	return s.repository.Update(
-		s.ctx, category)
+	return repositories.UpdateOneCategory(
+		s.dbConn, ctx, category, opts...)
 }
 
 // Permanently delete category
-func (s *CategoryService) DeleteCategory(
+func (s *category) DeleteOne(
+	ctx context.Context,
 	category *models.CategoryModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
 
-	return s.repository.Delete(
-		s.ctx, category)
+	return repositories.DeleteOneCategory(
+		s.dbConn, ctx, category, opts...)
 }

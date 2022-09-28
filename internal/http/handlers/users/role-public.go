@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -27,12 +27,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetPublicUser(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.NewUserService(c, ctx, dbConn)
 			user        *models.UserModel
 			userUid     interface{}
 			userParam   = c.Param("user")
@@ -43,13 +43,13 @@ func GetPublicUser(
 		if userUid, err = primitive.ObjectIDFromHex(userParam); err != nil {
 			userUid = nil
 		}
-		if user, err = userService.GetUser(bson.M{
+		if user, err = svc.User.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"$or": []bson.M{
 					{"_id": bson.M{"$eq": userUid}},
-					{"username": bson.M{"$eq": userParam}}}}},
-		}); err != nil {
+					{"username": bson.M{"$eq": userParam}}}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -77,21 +77,22 @@ func GetPublicUser(
 // @Failure     500   {object} object{message=string}
 func GetPublicUsers(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.NewUserService(c, ctx, dbConn)
 			users       []*models.UserModel
 			err         error
 		)
 
 		defer cancel()
-		if users, err = userService.GetUsers(bson.M{
+		if users, err = svc.User.GetMany(ctx, bson.M{
 			"$and": []bson.M{
-				{"deletedat": bson.M{"$eq": primitive.Null{}}}},
-		}); err != nil {
+				{"deletedat": bson.M{"$eq": primitive.Null{}}}}},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

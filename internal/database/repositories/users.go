@@ -12,29 +12,21 @@ import (
 	"github.com/misterabdul/goblog-server/internal/database/models"
 )
 
-type UserRepository struct {
-	collection *mongo.Collection
-}
-
-func NewUserRepository(
-	dbConn *mongo.Database,
-) *UserRepository {
-
-	return &UserRepository{
-		collection: dbConn.Collection("users")}
-}
+const userCollection = "users"
 
 // Get single user
-func (r UserRepository) ReadOne(
+func ReadOneUser(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (user *models.UserModel, err error) {
-	var _user models.UserModel
+	var (
+		collection = dbConn.Collection(userCollection)
+		_user      models.UserModel
+	)
 
-	if err = r.collection.FindOne(
-		ctx, filter, opts...,
-	).Decode(&_user); err != nil {
+	if err = collection.FindOne(ctx, filter, opts...).Decode(&_user); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -45,19 +37,19 @@ func (r UserRepository) ReadOne(
 }
 
 // Get multiple users
-func (r UserRepository) ReadMany(
+func ReadManyUsers(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (users []*models.UserModel, err error) {
 	var (
-		user   *models.UserModel
-		cursor *mongo.Cursor
+		collection = dbConn.Collection(userCollection)
+		user       *models.UserModel
+		cursor     *mongo.Cursor
 	)
 
-	if cursor, err = r.collection.Find(
-		ctx, filter, opts...,
-	); err != nil {
+	if cursor, err = collection.Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -73,31 +65,33 @@ func (r UserRepository) ReadMany(
 }
 
 // Count total users
-func (r UserRepository) Count(
+func CountUsers(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.CountOptions,
 ) (count int64, err error) {
+	var collection = dbConn.Collection(userCollection)
 
-	return r.collection.CountDocuments(
-		ctx, filter, opts...,
-	)
+	return collection.CountDocuments(
+		ctx, filter, opts...)
 }
 
 // Save new user
-func (r UserRepository) Save(
+func SaveOneUser(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var (
+		collection = dbConn.Collection(userCollection)
 		insRes     *mongo.InsertOneResult
 		insertedID primitive.ObjectID
 		ok         bool
 	)
 
-	if insRes, err = r.collection.InsertOne(
-		ctx, user,
-	); err != nil {
+	if insRes, err = collection.InsertOne(ctx, user, opts...); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -111,23 +105,31 @@ func (r UserRepository) Save(
 }
 
 // Update user
-func (r UserRepository) Update(
+func UpdateOneUser(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
-	_, err = r.collection.UpdateByID(
-		ctx, user.UID, bson.M{"$set": user})
+	var collection = dbConn.Collection(userCollection)
+
+	_, err = collection.UpdateOne(
+		ctx, bson.M{"_id": user.UID}, bson.M{"$set": user}, opts...)
 
 	return err
 }
 
 // Delete user
-func (r UserRepository) Delete(
+func DeleteOneUser(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
-	_, err = r.collection.DeleteOne(
-		ctx, bson.M{"_id": user.UID})
+	var collection = dbConn.Collection(userCollection)
+
+	_, err = collection.DeleteOne(
+		ctx, bson.M{"_id": user.UID}, opts...)
 
 	return err
 }

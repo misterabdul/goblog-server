@@ -8,13 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -32,12 +32,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetPage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageContent  *models.PageContentModel
 			pageUid      primitive.ObjectID
@@ -50,9 +50,9 @@ func GetPage(
 			responses.IncorrectPageId(c, err)
 			return
 		}
-		if page, pageContent, err = pageService.GetPageWithContent(bson.M{
-			"_id": bson.M{"$eq": pageUid},
-		}); err != nil {
+		if page, pageContent, err = svc.Page.GetOneWithContent(ctx, bson.M{
+			"_id": bson.M{"$eq": pageUid}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -83,21 +83,22 @@ func GetPage(
 // @Failure     500   {object} object{message=string}
 func GetPages(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.NewPageService(c, ctx, dbConn)
 			pages       []*models.PageModel
 			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
 		defer cancel()
-		if pages, err = pageService.GetPages(bson.M{
-			"$and": queryParams,
-		}); err != nil {
+		if pages, err = svc.Page.GetMany(ctx, bson.M{
+			"$and": queryParams},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -127,21 +128,22 @@ func GetPages(
 // @Failure     500   {object} object{message=string}
 func GetPagesStats(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.NewPageService(c, ctx, dbConn)
 			count       int64
 			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
 		defer cancel()
-		if count, err = pageService.GetPageCount(bson.M{
-			"$and": queryParams,
-		}); err != nil {
+		if count, err = svc.Page.Count(ctx, bson.M{
+			"$and": queryParams},
+			internalGin.GetCountOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -166,12 +168,12 @@ func GetPagesStats(
 // @Failure     500  {object} object{message=string}
 func CreatePage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.NewPageService(c, ctx, dbConn)
 			me          *models.UserModel
 			page        *models.PageModel
 			pageContent *models.PageContentModel
@@ -188,7 +190,7 @@ func CreatePage(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(pageService); err != nil {
+		if err = form.Validate(svc, ctx); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -196,7 +198,7 @@ func CreatePage(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = pageService.CreatePage(page, pageContent); err != nil {
+		if err = svc.Page.SaveOneWithContent(ctx, page, pageContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -218,12 +220,12 @@ func CreatePage(
 // @Failure     500 {object} object{message=string}
 func PublishPage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageUid      primitive.ObjectID
 			pageUidParam = c.Param("page")
@@ -235,11 +237,11 @@ func PublishPage(
 			responses.IncorrectPageId(c, err)
 			return
 		}
-		if page, err = pageService.GetPage(bson.M{
+		if page, err = svc.Page.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": pageUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": pageUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -251,7 +253,7 @@ func PublishPage(
 			responses.NoContent(c)
 			return
 		}
-		if err = pageService.PublishPage(page); err != nil {
+		if err = svc.Page.PublishOne(ctx, page); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -273,12 +275,12 @@ func PublishPage(
 // @Failure     500 {object} object{message=string}
 func DepublishPage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageUid      primitive.ObjectID
 			pageUidParam = c.Param("page")
@@ -290,11 +292,11 @@ func DepublishPage(
 			responses.IncorrectPageId(c, err)
 			return
 		}
-		if page, err = pageService.GetPage(bson.M{
+		if page, err = svc.Page.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": pageUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": pageUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -306,7 +308,7 @@ func DepublishPage(
 			responses.NoContent(c)
 			return
 		}
-		if err = pageService.DepublishPage(page); err != nil {
+		if err = svc.Page.PublishOne(ctx, page); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -334,12 +336,12 @@ func DepublishPage(
 // @Failure     500  {object} object{message=string}
 func UpdatePage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel        = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService        = service.NewPageService(c, ctx, dbConn)
 			page               *models.PageModel
 			updatedPage        *models.PageModel
 			pageContent        *models.PageContentModel
@@ -355,11 +357,11 @@ func UpdatePage(
 			responses.IncorrectPageId(c, err)
 			return
 		}
-		if page, pageContent, err = pageService.GetPageWithContent(bson.M{
+		if page, pageContent, err = svc.Page.GetOneWithContent(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": pageUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": pageUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -371,7 +373,7 @@ func UpdatePage(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(pageService, page); err != nil {
+		if err = form.Validate(svc, ctx, page); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -381,9 +383,7 @@ func UpdatePage(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = pageService.UpdatePage(
-			updatedPage, updatedPageContent,
-		); err != nil {
+		if err = svc.Page.UpdateOneWithContent(ctx, updatedPage, updatedPageContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -406,12 +406,12 @@ func UpdatePage(
 // @Failure     500 {object} object{message=string}
 func TrashPage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageUid      primitive.ObjectID
 			pageUidParam = c.Param("page")
@@ -423,11 +423,11 @@ func TrashPage(
 			responses.IncorrectPageId(c, err)
 			return
 		}
-		if page, err = pageService.GetPage(bson.M{
+		if page, err = svc.Page.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": pageUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": pageUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -439,7 +439,7 @@ func TrashPage(
 			responses.NoContent(c)
 			return
 		}
-		if err = pageService.TrashPage(page); err != nil {
+		if err = svc.Page.TrashOne(ctx, page); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -463,12 +463,12 @@ func TrashPage(
 // @Failure     500 {object} object{message=string}
 func DetrashPage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageUid      primitive.ObjectID
 			pageUidParam = c.Param("page")
@@ -480,11 +480,11 @@ func DetrashPage(
 			responses.IncorrectPageId(c, err)
 			return
 		}
-		if page, err = pageService.GetPage(bson.M{
+		if page, err = svc.Page.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": bson.M{"$eq": pageUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": pageUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -492,7 +492,7 @@ func DetrashPage(
 			responses.NotFound(c, errors.New("page not found"))
 			return
 		}
-		if err = pageService.DetrashPage(page); err != nil {
+		if err = svc.Page.RestoreOne(ctx, page); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -515,12 +515,12 @@ func DetrashPage(
 // @Failure     500 {object} object{message=string}
 func DeletePage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService  = service.NewPageService(c, ctx, dbConn)
 			page         *models.PageModel
 			pageContent  *models.PageContentModel
 			pageUid      primitive.ObjectID
@@ -533,7 +533,7 @@ func DeletePage(
 			responses.IncorrectPageId(c, err)
 			return
 		}
-		if page, pageContent, err = pageService.GetPageWithContent(bson.M{
+		if page, pageContent, err = svc.Page.GetOneWithContent(ctx, bson.M{
 			"_id": bson.M{"$eq": pageUid},
 		}); err != nil {
 			responses.InternalServerError(c, err)
@@ -543,7 +543,7 @@ func DeletePage(
 			responses.NotFound(c, errors.New("page not found"))
 			return
 		}
-		if err = pageService.DeletePage(page, pageContent); err != nil {
+		if err = svc.Page.DeleteOneWithContent(ctx, page, pageContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

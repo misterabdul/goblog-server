@@ -10,19 +10,19 @@ import (
 	"github.com/gorilla/websocket"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
-	"github.com/misterabdul/goblog-server/internal/database/repositories"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
 	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func ServeListenedNotifications(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			me          *models.UserModel
@@ -47,7 +47,7 @@ func ServeListenedNotifications(
 		}
 		defer wsConn.Close()
 
-		go checkNotifications(dbConn, me, &messageChan)
+		go checkNotifications(svc, me, &messageChan)
 		for {
 			wsConn.WriteMessage(websocket.TextMessage, []byte(<-messageChan))
 		}
@@ -55,13 +55,12 @@ func ServeListenedNotifications(
 }
 
 func checkNotifications(
-	dbConn *mongo.Database,
+	svc *service.Service,
 	me *models.UserModel,
 	messageChan *chan string,
 ) {
 	var (
 		ctx           = context.TODO()
-		repository    = repositories.NewNotificationRepository(dbConn)
 		notifications []*models.NotificationModel
 		latestCheck   = time.Now()
 		messageBuff   string
@@ -70,11 +69,12 @@ func checkNotifications(
 
 	for {
 		time.Sleep(3 * time.Second)
-		if notifications, err = repository.ReadMany(ctx, bson.M{
+		if notifications, err = svc.Notification.GetMany(ctx, bson.M{
 			"$and": []bson.M{
 				{"owner.username": me.Username},
-				{"createdat": bson.M{"$gt": primitive.NewDateTimeFromTime(latestCheck)}}},
-		}, internalGin.CreateFindOptions(25, 1, "createdat", false)); err != nil {
+				{"createdat": bson.M{"$gt": primitive.NewDateTimeFromTime(latestCheck)}}}},
+			internalGin.CreateFindOptions(25, 1, "createdat", false),
+		); err != nil {
 			continue
 		}
 		messageBuff = fmt.Sprintf("There is %d new notification(s)", len(notifications))

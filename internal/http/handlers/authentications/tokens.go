@@ -1,6 +1,7 @@
 package authentications
 
 import (
+	"context"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -11,7 +12,8 @@ import (
 )
 
 func noteRevokeToken(
-	service *service.RevokedTokenService,
+	ctx context.Context,
+	svc *service.Service,
 	refreshClaims *jwt.CustomClaims,
 	user *models.UserModel,
 ) (err error) {
@@ -22,13 +24,12 @@ func noteRevokeToken(
 	}
 	revokeTokenData.Owner = user.ToCommonModel()
 
-	return service.CreateRevokedToken(revokeTokenData)
+	return svc.RevokedToken.SaveOne(ctx, revokeTokenData)
 }
 
-func createRevokeModelFromClaims(refreshClaims *jwt.CustomClaims) (
-	model *models.RevokedTokenModel,
-	err error,
-) {
+func createRevokeModelFromClaims(
+	refreshClaims *jwt.CustomClaims,
+) (model *models.RevokedTokenModel, err error) {
 	var (
 		revokeTokenUID primitive.ObjectID
 		expiresAtTime  = time.Unix(refreshClaims.ExpiresAt, 0)

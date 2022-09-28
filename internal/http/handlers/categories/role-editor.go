@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -31,26 +31,19 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetCategory(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.NewCategoryService(c, ctx, dbConn)
-			category         *models.CategoryModel
-			categoryUid      primitive.ObjectID
-			categoryUidParam = c.Param("category")
-			err              error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			category    *models.CategoryModel
+			categoryUid = c.Param("category")
+			err         error
 		)
 
 		defer cancel()
-		if categoryUid, err = primitive.ObjectIDFromHex(categoryUidParam); err != nil {
-			responses.NotFound(c, err)
-			return
-		}
-		if category, err = categoryService.GetCategory(bson.M{
-			"_id": bson.M{"$eq": categoryUid},
-		}); err != nil {
+		if category, err = svc.Category.GetOne(ctx, categoryUid); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -81,21 +74,22 @@ func GetCategory(
 // @Failure     500   {object} object{message=string}
 func GetCategories(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.NewCategoryService(c, ctx, dbConn)
-			categories      []*models.CategoryModel
-			queryParams     = readCommonQueryParams(c)
-			err             error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			categories  []*models.CategoryModel
+			queryParams = readCommonQueryParams(c)
+			err         error
 		)
 
 		defer cancel()
-		if categories, err = categoryService.GetCategories(bson.M{
-			"$and": queryParams,
-		}); err != nil {
+		if categories, err = svc.Category.GetMany(ctx,
+			bson.M{"$and": queryParams},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -125,21 +119,22 @@ func GetCategories(
 // @Failure     500   {object} object{message=string}
 func GetCategoriesStats(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.NewCategoryService(c, ctx, dbConn)
-			count           int64
-			queryParams     = readCommonQueryParams(c)
-			err             error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			count       int64
+			queryParams = readCommonQueryParams(c)
+			err         error
 		)
 
 		defer cancel()
-		if count, err = categoryService.GetCategoryCount(bson.M{
-			"$and": queryParams,
-		}); err != nil {
+		if count, err = svc.Category.Count(ctx, bson.M{
+			"$and": queryParams},
+			internalGin.GetCountOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -164,15 +159,15 @@ func GetCategoriesStats(
 // @Failure     500  {object} object{message=string}
 func CreateCategory(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.NewCategoryService(c, ctx, dbConn)
-			category        *models.CategoryModel
-			form            *forms.CreateCategoryForm
-			err             error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			category    *models.CategoryModel
+			form        *forms.CreateCategoryForm
+			err         error
 		)
 
 		defer cancel()
@@ -180,12 +175,12 @@ func CreateCategory(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(categoryService); err != nil {
+		if err = form.Validate(svc, ctx); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
 		category = form.ToCategoryModel()
-		if err = categoryService.CreateCategory(category); err != nil {
+		if err = svc.Category.SaveOne(ctx, category); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -213,12 +208,12 @@ func CreateCategory(
 // @Failure     500  {object} object{message=string}
 func UpdateCategory(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			updatedCategory  *models.CategoryModel
 			categoryUid      primitive.ObjectID
@@ -232,11 +227,11 @@ func UpdateCategory(
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = categoryService.GetCategory(bson.M{
+		if category, err = svc.Category.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": categoryUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": categoryUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -248,12 +243,12 @@ func UpdateCategory(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(categoryService, category); err != nil {
+		if err = form.Validate(svc, ctx, category); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
 		updatedCategory = form.ToCategoryModel(category)
-		if err = categoryService.UpdateCategory(updatedCategory); err != nil {
+		if err = svc.Category.UpdateOne(ctx, updatedCategory); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -276,12 +271,12 @@ func UpdateCategory(
 // @Failure     500 {object} object{message=string}
 func TrashCategory(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			categoryUid      primitive.ObjectID
 			categoryUidParam = c.Param("category")
@@ -293,11 +288,11 @@ func TrashCategory(
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = categoryService.GetCategory(bson.M{
+		if category, err = svc.Category.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": categoryUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": categoryUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -309,7 +304,7 @@ func TrashCategory(
 			responses.NoContent(c)
 			return
 		}
-		if err = categoryService.TrashCategory(category); err != nil {
+		if err = svc.Category.TrashOne(ctx, category); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -333,12 +328,12 @@ func TrashCategory(
 // @Failure     500 {object} object{message=string}
 func DetrashCategory(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			categoryUid      primitive.ObjectID
 			categoryUidParam = c.Param("category")
@@ -350,11 +345,11 @@ func DetrashCategory(
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = categoryService.GetCategory(bson.M{
+		if category, err = svc.Category.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": bson.M{"$eq": categoryUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": categoryUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -366,7 +361,7 @@ func DetrashCategory(
 			responses.NoContent(c)
 			return
 		}
-		if err = categoryService.DetrashCategory(category); err != nil {
+		if err = svc.Category.RestoreOne(ctx, category); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -389,12 +384,12 @@ func DetrashCategory(
 // @Failure     500 {object} object{message=string}
 func DeleteCategory(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService  = service.NewCategoryService(c, ctx, dbConn)
 			category         *models.CategoryModel
 			categoryUid      primitive.ObjectID
 			categoryUidParam = c.Param("category")
@@ -406,9 +401,9 @@ func DeleteCategory(
 			responses.IncorrectCategoryId(c, err)
 			return
 		}
-		if category, err = categoryService.GetCategory(bson.M{
-			"_id": bson.M{"$eq": categoryUid},
-		}); err != nil {
+		if category, err = svc.Category.GetOne(ctx, bson.M{
+			"_id": bson.M{"$eq": categoryUid}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -416,7 +411,7 @@ func DeleteCategory(
 			responses.NotFound(c, errors.New("category not found"))
 			return
 		}
-		if err = categoryService.DeleteCategory(category); err != nil {
+		if err = svc.Category.DeleteOne(ctx, category); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -19,22 +19,18 @@ import (
 
 func GeneratePosts(ctx context.Context) {
 	var (
-		dbConn            *mongo.Database
-		repository        *repositories.PostRepository
-		contentRepository *repositories.PostContentRepository
-		post              *models.PostModel
-		postContent       *models.PostContentModel
-		postId            primitive.ObjectID
-		now               = primitive.NewDateTimeFromTime(time.Now())
-		err               error
+		dbConn      *mongo.Database
+		post        *models.PostModel
+		postContent *models.PostContentModel
+		postId      primitive.ObjectID
+		now         = primitive.NewDateTimeFromTime(time.Now())
+		err         error
 	)
 
 	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 		log.Fatal(err)
 	}
 	defer dbConn.Client().Disconnect(ctx)
-	repository = repositories.NewPostRepository(dbConn)
-	contentRepository = repositories.NewPostContentRepository(dbConn)
 	for i := 0; i < 200; i++ {
 		postId = primitive.NewObjectID()
 		post = &models.PostModel{
@@ -59,13 +55,13 @@ func GeneratePosts(ctx context.Context) {
 			Content: lipsumMarkdown()}
 		if err = customMongo.Transaction(ctx, dbConn, false,
 			func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-				if sErr = repository.Save(
-					sCtx, post,
+				if sErr = repositories.SaveOnePost(
+					dbConn, sCtx, post,
 				); sErr != nil {
 					return sErr
 				}
-				if sErr = contentRepository.Save(
-					sCtx, postContent,
+				if sErr = repositories.SaveOnePostContent(
+					dbConn, sCtx, postContent,
 				); sErr != nil {
 					return sErr
 				}

@@ -8,10 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -27,29 +27,29 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetPublicCategory(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.NewCategoryService(c, ctx, dbConn)
-			category        *models.CategoryModel
-			categoryUid     interface{}
-			categoryParam   = c.Param("category")
-			err             error
+			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
+			category         *models.CategoryModel
+			categoryUidParam = c.Param("category")
+			categoryUid      interface{}
+			err              error
 		)
 
 		defer cancel()
-		if categoryUid, err = primitive.ObjectIDFromHex(categoryParam); err != nil {
+		if categoryUid, err = primitive.ObjectIDFromHex(categoryUidParam); err != nil {
 			categoryUid = nil
 		}
-		if category, err = categoryService.GetCategory(bson.M{
+		if category, err = svc.Category.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
 				{"$or": []bson.M{
 					{"_id": bson.M{"$eq": categoryUid}},
-					{"slug": bson.M{"$eq": categoryParam}}}}},
-		}); err != nil {
+					{"slug": bson.M{"$eq": categoryUidParam}}}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -77,20 +77,21 @@ func GetPublicCategory(
 // @Failure     500   {object} object{message=string}
 func GetPublicCategories(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			categoryService = service.NewCategoryService(c, ctx, dbConn)
-			categories      []*models.CategoryModel
-			err             error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			categories  []*models.CategoryModel
+			err         error
 		)
 
 		defer cancel()
-		if categories, err = categoryService.GetCategories(bson.M{
-			"deletedat": primitive.Null{},
-		}); err != nil {
+		if categories, err = svc.Category.GetMany(ctx, bson.M{
+			"deletedat": bson.M{"$eq": primitive.Null{}}},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

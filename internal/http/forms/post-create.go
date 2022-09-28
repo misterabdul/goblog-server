@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -25,13 +26,13 @@ type CreatePostForm struct {
 }
 
 func (form *CreatePostForm) Validate(
-	categoryService *service.CategoryService,
-	postService *service.PostService,
+	svc *service.Service,
+	ctx context.Context,
 ) (err error) {
-	if err = checkPostSlug(postService, form.Slug); err != nil {
+	if err = checkPostSlug(svc, ctx, form.Slug); err != nil {
 		return err
 	}
-	if form.realCategories, err = findCategories(categoryService, form.Categories); err != nil {
+	if form.realCategories, err = findCategories(svc, ctx, form.Categories); err != nil {
 		return err
 	}
 	if len(form.realCategories) == 0 {
@@ -82,16 +83,17 @@ func (form *CreatePostForm) ToPostModel(author *models.UserModel) (
 }
 
 func checkPostSlug(
-	postService *service.PostService,
+	svc *service.Service,
+	ctx context.Context,
 	formSlug string,
 ) (err error) {
 	var (
 		posts []*models.PostModel
 	)
 
-	if posts, err = postService.GetPosts(bson.M{
-		"slug": bson.M{"$eq": formSlug},
-	}); err != nil {
+	if posts, err = svc.Post.GetMany(ctx, bson.M{
+		"slug": bson.M{"$eq": formSlug}},
+	); err != nil {
 		return err
 	}
 	if len(posts) > 0 {
@@ -102,7 +104,8 @@ func checkPostSlug(
 }
 
 func findCategories(
-	categoryService *service.CategoryService,
+	svc *service.Service,
+	ctx context.Context,
 	formCategories []string,
 ) (categories []*models.CategoryModel, err error) {
 	var categoryUids []primitive.ObjectID
@@ -110,11 +113,11 @@ func findCategories(
 	if categoryUids, err = toObjectIdArray(formCategories); err != nil {
 		return nil, err
 	}
-	if categories, err = categoryService.GetCategories(bson.M{
+	if categories, err = svc.Category.GetMany(ctx, bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
-			{"_id": bson.M{"$in": categoryUids}}},
-	}); err != nil {
+			{"_id": bson.M{"$in": categoryUids}}}},
+	); err != nil {
 		return nil, err
 	}
 

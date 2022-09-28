@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -31,12 +31,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetPost(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postContent  *models.PostContentModel
 			postUid      primitive.ObjectID
@@ -49,9 +49,9 @@ func GetPost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, postContent, err = postService.GetPostWithContent(bson.M{
-			"_id": bson.M{"$eq": postUid},
-		}); err != nil {
+		if post, postContent, err = svc.Post.GetOneWithContent(ctx, bson.M{
+			"_id": bson.M{"$eq": postUid}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -82,21 +82,22 @@ func GetPost(
 // @Failure     500   {object} object{message=string}
 func GetPosts(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.NewPostService(c, ctx, dbConn)
 			posts       []*models.PostModel
 			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
 		defer cancel()
-		if posts, err = postService.GetPosts(bson.M{
-			"$and": queryParams,
-		}); err != nil {
+		if posts, err = svc.Post.GetMany(ctx, bson.M{
+			"$and": queryParams},
+			internalGin.GetFindOptionsPost(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -126,21 +127,22 @@ func GetPosts(
 // @Failure     500   {object} object{message=string}
 func GetPostsStats(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService = service.NewPostService(c, ctx, dbConn)
 			count       int64
 			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
 		defer cancel()
-		if count, err = postService.GetPostCount(bson.M{
-			"$and": queryParams,
-		}); err != nil {
+		if count, err = svc.Post.Count(ctx, bson.M{
+			"$and": queryParams},
+			internalGin.GetCountOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -161,12 +163,12 @@ func GetPostsStats(
 // @Failure     500 {object} object{message=string}
 func PublishPost(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postUid      primitive.ObjectID
 			postUidParam = c.Param("post")
@@ -178,11 +180,11 @@ func PublishPost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = postService.GetPost(bson.M{
+		if post, err = svc.Post.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": postUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": postUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -194,7 +196,7 @@ func PublishPost(
 			responses.NoContent(c)
 			return
 		}
-		if err = postService.PublishPost(post); err != nil {
+		if err = svc.Post.PublishOne(ctx, post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -215,12 +217,12 @@ func PublishPost(
 // @Failure     500 {object} object{message=string}
 func DepublishPost(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postUid      primitive.ObjectID
 			postUidParam = c.Param("post")
@@ -232,11 +234,11 @@ func DepublishPost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = postService.GetPost(bson.M{
+		if post, err = svc.Post.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": postUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": postUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -248,7 +250,7 @@ func DepublishPost(
 			responses.NoContent(c)
 			return
 		}
-		if err = postService.DepublishPost(post); err != nil {
+		if err = svc.Post.RestoreOne(ctx, post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -274,13 +276,12 @@ func DepublishPost(
 // @Failure     500 {object} object{message=string}
 func UpdatePost(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel        = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService        = service.NewPostService(c, ctx, dbConn)
-			categoryService    = service.NewCategoryService(c, ctx, dbConn)
 			post               *models.PostModel
 			updatedPost        *models.PostModel
 			postContent        *models.PostContentModel
@@ -296,11 +297,11 @@ func UpdatePost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, postContent, err = postService.GetPostWithContent(bson.M{
+		if post, postContent, err = svc.Post.GetOneWithContent(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": postUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": postUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -312,19 +313,15 @@ func UpdatePost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if err = form.Validate(categoryService, postService, post); err != nil {
+		if err = form.Validate(svc, ctx, post); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if updatedPost, updatedPostContent, err = form.ToPostModel(
-			post, postContent,
-		); err != nil {
+		if updatedPost, updatedPostContent, err = form.ToPostModel(post, postContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = postService.UpdatePost(
-			updatedPost, updatedPostContent,
-		); err != nil {
+		if err = svc.Post.UpdateOneWithContent(ctx, updatedPost, updatedPostContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -348,12 +345,12 @@ func UpdatePost(
 // @Failure     500 {object} object{message=string}
 func TrashPost(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postUid      primitive.ObjectID
 			postUidParam = c.Param("post")
@@ -365,11 +362,11 @@ func TrashPost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = postService.GetPost(bson.M{
+		if post, err = svc.Post.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": postUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": postUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -381,7 +378,7 @@ func TrashPost(
 			responses.NoContent(c)
 			return
 		}
-		if err = postService.TrashPost(post); err != nil {
+		if err = svc.Post.TrashOne(ctx, post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -406,12 +403,12 @@ func TrashPost(
 // @Failure     500 {object} object{message=string}
 func DetrashPost(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postUid      primitive.ObjectID
 			postUidParam = c.Param("post")
@@ -423,11 +420,11 @@ func DetrashPost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, err = postService.GetPost(bson.M{
+		if post, err = svc.Post.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": bson.M{"$eq": postUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": postUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -435,7 +432,7 @@ func DetrashPost(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if err = postService.DetrashPost(post); err != nil {
+		if err = svc.Post.RestoreOne(ctx, post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -459,12 +456,12 @@ func DetrashPost(
 // @Failure     500 {object} object{message=string}
 func DeletePost(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			postService  = service.NewPostService(c, ctx, dbConn)
 			post         *models.PostModel
 			postContent  *models.PostContentModel
 			postUid      primitive.ObjectID
@@ -477,9 +474,9 @@ func DeletePost(
 			responses.IncorrectPostId(c, err)
 			return
 		}
-		if post, postContent, err = postService.GetPostWithContent(bson.M{
-			"_id": bson.M{"$eq": postUid},
-		}); err != nil {
+		if post, postContent, err = svc.Post.GetOneWithContent(ctx, bson.M{
+			"_id": bson.M{"$eq": postUid}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -487,7 +484,7 @@ func DeletePost(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if err = postService.DeletePost(post, postContent); err != nil {
+		if err = svc.Post.DeleteOneWithContent(ctx, post, postContent); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

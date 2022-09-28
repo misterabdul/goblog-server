@@ -12,29 +12,21 @@ import (
 	"github.com/misterabdul/goblog-server/internal/database/models"
 )
 
-type CategoryRepository struct {
-	collection *mongo.Collection
-}
-
-func NewCategoryRepository(
-	dbConn *mongo.Database,
-) *CategoryRepository {
-
-	return &CategoryRepository{
-		collection: dbConn.Collection("categories")}
-}
+const categoryCollection = "categories"
 
 // Get single category
-func (r *CategoryRepository) ReadOne(
+func ReadOneCategory(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (category *models.CategoryModel, err error) {
-	var _category models.CategoryModel
+	var (
+		collection = dbConn.Collection(categoryCollection)
+		_category  models.CategoryModel
+	)
 
-	if err = r.collection.FindOne(
-		ctx, filter, opts...,
-	).Decode(&_category); err != nil {
+	if err = collection.FindOne(ctx, filter, opts...).Decode(&_category); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -45,19 +37,19 @@ func (r *CategoryRepository) ReadOne(
 }
 
 // Get multiple categories
-func (r *CategoryRepository) ReadMany(
+func ReadManyCategories(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (categories []*models.CategoryModel, err error) {
 	var (
-		category *models.CategoryModel
-		cursor   *mongo.Cursor
+		collection = dbConn.Collection(categoryCollection)
+		cursor     *mongo.Cursor
+		category   *models.CategoryModel
 	)
 
-	if cursor, err = r.collection.Find(
-		ctx, filter, opts...,
-	); err != nil {
+	if cursor, err = collection.Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -72,32 +64,34 @@ func (r *CategoryRepository) ReadMany(
 	return categories, nil
 }
 
-// Count total categories
-func (r *CategoryRepository) Count(
+// Count categories
+func CountCategories(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.CountOptions,
 ) (count int64, err error) {
+	var collection = dbConn.Collection(categoryCollection)
 
-	return r.collection.CountDocuments(
-		ctx, filter, opts...,
-	)
+	return collection.CountDocuments(
+		ctx, filter, opts...)
 }
 
 // Save new category
-func (r *CategoryRepository) Save(
+func SaveOneCategory(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	category *models.CategoryModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var (
+		collection = dbConn.Collection(categoryCollection)
 		insRes     *mongo.InsertOneResult
 		insertedID primitive.ObjectID
 		ok         bool
 	)
 
-	if insRes, err = r.collection.InsertOne(
-		ctx, category,
-	); err != nil {
+	if insRes, err = collection.InsertOne(ctx, category, opts...); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -111,23 +105,31 @@ func (r *CategoryRepository) Save(
 }
 
 // Update category
-func (r *CategoryRepository) Update(
+func UpdateOneCategory(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	category *models.CategoryModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
-	_, err = r.collection.UpdateByID(
-		ctx, category.UID, bson.M{"$set": category})
+	var collection = dbConn.Collection(categoryCollection)
+
+	_, err = collection.UpdateOne(
+		ctx, bson.M{"_id": category.UID}, bson.M{"$set": category}, opts...)
 
 	return err
 }
 
 // Delete category
-func (r *CategoryRepository) Delete(
+func DeleteOneCategory(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	category *models.CategoryModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
-	_, err = r.collection.DeleteOne(
-		ctx, bson.M{"_id": category.UID})
+	var collection = dbConn.Collection(categoryCollection)
+
+	_, err = collection.DeleteOne(
+		ctx, bson.M{"_id": category.UID}, opts...)
 
 	return err
 }

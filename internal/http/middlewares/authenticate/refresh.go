@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
@@ -24,19 +23,17 @@ const (
 
 func AuthenticateRefresh(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			revokedTokenService = service.NewRevokedTokenService(c, ctx, dbConn)
-			userService         = service.NewUserService(c, ctx, dbConn)
-			refreshToken        string
-			refreshClaims       *jwt.CustomClaims
-			revoked             bool
-			userUid             primitive.ObjectID
-			me                  *models.UserModel
-			err                 error
+			ctx, cancel   = context.WithTimeout(context.Background(), maxCtxDuration)
+			refreshToken  string
+			refreshClaims *jwt.CustomClaims
+			revoked       bool
+			userUid       primitive.ObjectID
+			me            *models.UserModel
+			err           error
 		)
 
 		defer cancel()
@@ -50,7 +47,7 @@ func AuthenticateRefresh(
 			c.Abort()
 			return
 		}
-		if revoked, err = checkRevokedToken(revokedTokenService, refreshClaims); err != nil {
+		if revoked, err = checkRevokedToken(svc, ctx, refreshClaims); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
@@ -65,11 +62,11 @@ func AuthenticateRefresh(
 			c.Abort()
 			return
 		}
-		if me, err = userService.GetUser(bson.M{
+		if me, err = svc.User.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": userUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": userUid}}}},
+		); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return
@@ -86,7 +83,8 @@ func AuthenticateRefresh(
 }
 
 func checkRevokedToken(
-	revokedTokenService *service.RevokedTokenService,
+	svc *service.Service,
+	ctx context.Context,
 	refreshClaims *jwt.CustomClaims,
 ) (noted bool, err error) {
 	var (
@@ -97,7 +95,7 @@ func checkRevokedToken(
 	if tokenUid, err = primitive.ObjectIDFromHex(refreshClaims.Id); err != nil {
 		return false, err
 	}
-	if revokedTokenData, err = revokedTokenService.GetRevokedToken(bson.M{
+	if revokedTokenData, err = svc.RevokedToken.GetOne(ctx, bson.M{
 		"_id": tokenUid,
 	}); err != nil {
 		return false, err

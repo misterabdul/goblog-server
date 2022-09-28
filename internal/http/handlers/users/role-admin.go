@@ -8,13 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -32,12 +32,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetUser(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.NewUserService(c, ctx, dbConn)
 			user         *models.UserModel
 			userUid      primitive.ObjectID
 			userUidParam = c.Param("user")
@@ -49,9 +49,9 @@ func GetUser(
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = userService.GetUser(bson.M{
-			"_id": bson.M{"$eq": userUid},
-		}); err != nil {
+		if user, err = svc.User.GetOne(ctx, bson.M{
+			"_id": bson.M{"$eq": userUid}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -81,21 +81,22 @@ func GetUser(
 // @Failure     500   {object} object{message=string}
 func GetUsers(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.NewUserService(c, ctx, dbConn)
 			users       []*models.UserModel
 			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
 		defer cancel()
-		if users, err = userService.GetUsers(bson.M{
-			"$and": queryParams,
-		}); err != nil {
+		if users, err = svc.User.GetMany(ctx, bson.M{
+			"$and": queryParams},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -124,21 +125,22 @@ func GetUsers(
 // @Failure     500   {object} object{message=string}
 func GetUsersStats(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.NewUserService(c, ctx, dbConn)
 			count       int64
 			queryParams = readCommonQueryParams(c)
 			err         error
 		)
 
 		defer cancel()
-		if count, err = userService.GetUserCount(bson.M{
-			"$and": queryParams,
-		}); err != nil {
+		if count, err = svc.User.Count(ctx, bson.M{
+			"$and": queryParams},
+			internalGin.GetCountOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -163,12 +165,12 @@ func GetUsersStats(
 // @Failure     500  {object} object{message=string}
 func CreateUser(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService = service.NewUserService(c, ctx, dbConn)
 			me          *models.UserModel
 			newUser     *models.UserModel
 			form        *forms.CreateUserForm
@@ -184,7 +186,7 @@ func CreateUser(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(userService, me); err != nil {
+		if err = form.Validate(svc, ctx, me); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -192,7 +194,7 @@ func CreateUser(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = userService.CreateUser(newUser); err != nil {
+		if err = svc.User.SaveOne(ctx, newUser); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -220,12 +222,12 @@ func CreateUser(
 // @Failure     500  {object} object{message=string}
 func UpdateUser(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.NewUserService(c, ctx, dbConn)
 			me           *models.UserModel
 			user         *models.UserModel
 			userUid      primitive.ObjectID
@@ -243,11 +245,11 @@ func UpdateUser(
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = userService.GetUser(bson.M{
+		if user, err = svc.User.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": primitive.Null{}},
-				{"_id": bson.M{"$eq": userUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": userUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -259,7 +261,7 @@ func UpdateUser(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if err = form.Validate(userService, me, user); err != nil {
+		if err = form.Validate(svc, ctx, me, user); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -267,7 +269,7 @@ func UpdateUser(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = userService.UpdateUser(user); err != nil {
+		if err = svc.User.UpdateOne(ctx, user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -291,12 +293,12 @@ func UpdateUser(
 // @Failure     500 {object} object{message=string}
 func TrashUser(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.NewUserService(c, ctx, dbConn)
 			user         *models.UserModel
 			userUid      primitive.ObjectID
 			userUidParam = c.Param("user")
@@ -308,11 +310,11 @@ func TrashUser(
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = userService.GetUser(bson.M{
+		if user, err = svc.User.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": userUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": userUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -320,7 +322,7 @@ func TrashUser(
 			responses.NotFound(c, errors.New("user not found"))
 			return
 		}
-		if err = userService.TrashUser(user); err != nil {
+		if err = svc.User.TrashOne(ctx, user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -345,12 +347,12 @@ func TrashUser(
 // @Failure     500 {object} object{message=string}
 func DetrashUser(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.NewUserService(c, ctx, dbConn)
 			user         *models.UserModel
 			userUid      primitive.ObjectID
 			userUidParam = c.Param("user")
@@ -362,11 +364,11 @@ func DetrashUser(
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = userService.GetUser(bson.M{
+		if user, err = svc.User.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": bson.M{"$eq": userUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": userUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -374,7 +376,7 @@ func DetrashUser(
 			responses.NotFound(c, errors.New("user not found"))
 			return
 		}
-		if err = userService.DetrashUser(user); err != nil {
+		if err = svc.User.RestoreOne(ctx, user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -398,12 +400,12 @@ func DetrashUser(
 // @Failure     500 {object} object{message=string}
 func DeleteUser(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.NewUserService(c, ctx, dbConn)
 			user         *models.UserModel
 			userUid      primitive.ObjectID
 			userUidParam = c.Param("user")
@@ -415,9 +417,9 @@ func DeleteUser(
 			responses.IncorrectUserId(c, err)
 			return
 		}
-		if user, err = userService.GetUser(bson.M{
-			"_id": bson.M{"$eq": userUid},
-		}); err != nil {
+		if user, err = svc.User.GetOne(ctx, bson.M{
+			"_id": bson.M{"$eq": userUid}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -425,7 +427,7 @@ func DeleteUser(
 			responses.NotFound(c, errors.New("user not found"))
 			return
 		}
-		if err = userService.DeleteUser(user); err != nil {
+		if err = svc.User.DeleteOne(ctx, user); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

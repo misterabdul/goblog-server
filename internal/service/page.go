@@ -4,66 +4,52 @@ import (
 	"context"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/database/repositories"
-	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	customMongo "github.com/misterabdul/goblog-server/pkg/mongo"
 )
 
-type PageService struct {
-	c                 *gin.Context
-	ctx               context.Context
-	dbConn            *mongo.Database
-	repository        *repositories.PageRepository
-	contentRepository *repositories.PageContentRepository
+type page struct {
+	dbConn *mongo.Database
 }
 
-func NewPageService(
-	c *gin.Context,
-	ctx context.Context,
+func newPageService(
 	dbConn *mongo.Database,
-) *PageService {
+) (service *page) {
 
-	return &PageService{
-		c:                 c,
-		ctx:               ctx,
-		dbConn:            dbConn,
-		repository:        repositories.NewPageRepository(dbConn),
-		contentRepository: repositories.NewPageContentRepository(dbConn)}
+	return &page{dbConn: dbConn}
 }
 
 // Get single page
-func (s *PageService) GetPage(filter interface{}) (
-	page *models.PageModel,
-	err error,
-) {
+func (s *page) GetOne(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.FindOneOptions,
+) (page *models.PageModel, err error) {
 
-	return s.repository.ReadOne(
-		s.ctx, filter)
+	return repositories.ReadOnePage(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Get single page with its content
-func (s *PageService) GetPageWithContent(filter interface{}) (
-	page *models.PageModel,
-	content *models.PageContentModel,
-	err error,
-) {
-	if page, err = s.repository.ReadOne(
-		s.ctx, filter,
-	); err != nil {
+func (s *page) GetOneWithContent(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.FindOneOptions,
+) (page *models.PageModel, content *models.PageContentModel, err error) {
+	if page, err = repositories.ReadOnePage(s.dbConn, ctx, filter, opts...); err != nil {
 		return nil, nil, err
 	}
 	if page == nil {
 		return nil, nil, nil
 	}
-	if content, err = s.contentRepository.ReadOne(
-		s.ctx, bson.M{
-			"_id": bson.M{"$eq": page.UID}},
+	if content, err = repositories.ReadOnePageContent(s.dbConn, ctx,
+		bson.M{"_id": bson.M{"$eq": page.UID}}, opts...,
 	); err != nil {
 		return page, nil, err
 	}
@@ -72,30 +58,33 @@ func (s *PageService) GetPageWithContent(filter interface{}) (
 }
 
 // Get multiple pages
-func (s *PageService) GetPages(filter interface{}) (
-	pages []*models.PageModel,
-	err error,
-) {
+func (s *page) GetMany(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.FindOptions,
+) (pages []*models.PageModel, err error) {
 
-	return s.repository.ReadMany(
-		s.ctx, filter,
-		internalGin.GetFindOptions(s.c))
+	return repositories.ReadManyPages(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Get total pages count
-func (s *PageService) GetPageCount(filter interface{}) (
-	count int64, err error,
-) {
+func (s *page) Count(
+	ctx context.Context,
+	filter interface{},
+	opts ...*options.CountOptions,
+) (count int64, err error) {
 
-	return s.repository.Count(
-		s.ctx, filter,
-		internalGin.GetCountOptions(s.c))
+	return repositories.CountPages(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Create new page with its content
-func (s *PageService) CreatePage(
+func (s *page) SaveOneWithContent(
+	ctx context.Context,
 	page *models.PageModel,
 	content *models.PageContentModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
@@ -105,15 +94,15 @@ func (s *PageService) CreatePage(
 	page.DeletedAt = nil
 	content.UID = page.UID
 
-	return customMongo.Transaction(s.ctx, s.dbConn, false,
+	return customMongo.Transaction(ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if sErr = s.repository.Save(
-				sCtx, page,
+			if sErr = repositories.SaveOnePage(
+				dbConn, sCtx, page, opts...,
 			); sErr != nil {
 				return sErr
 			}
-			if sErr = s.contentRepository.Save(
-				sCtx, content,
+			if sErr = repositories.SaveOnePageContent(
+				dbConn, sCtx, content, opts...,
 			); sErr != nil {
 				return sErr
 			}
@@ -123,45 +112,51 @@ func (s *PageService) CreatePage(
 }
 
 // Mark the page published
-func (s *PageService) PublishPage(
+func (s *page) PublishOne(
+	ctx context.Context,
 	page *models.PageModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	page.PublishedAt = now
 
-	return s.repository.Update(
-		s.ctx, page)
+	return repositories.UpdateOnePage(
+		s.dbConn, ctx, page, opts...)
 }
 
 // Remove published mark from the page
-func (s *PageService) DepublishPage(
+func (s *page) DepublishOne(
+	ctx context.Context,
 	page *models.PageModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	page.PublishedAt = nil
 
-	return s.repository.Update(
-		s.ctx, page)
+	return repositories.UpdateOnePage(
+		s.dbConn, ctx, page, opts...)
 }
 
 // Update page
-func (s *PageService) UpdatePage(
+func (s *page) UpdateOneWithContent(
+	ctx context.Context,
 	page *models.PageModel,
 	content *models.PageContentModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	page.UpdatedAt = now
 
-	return customMongo.Transaction(s.ctx, s.dbConn, false,
+	return customMongo.Transaction(ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if sErr = s.repository.Update(
-				sCtx, page,
+			if sErr = repositories.UpdateOnePage(
+				dbConn, sCtx, page, opts...,
 			); sErr != nil {
 				return sErr
 			}
-			if sErr = s.contentRepository.Update(
-				sCtx, content,
+			if sErr = repositories.UpdateOnePageContent(
+				dbConn, sCtx, content, opts...,
 			); sErr != nil {
 				return sErr
 			}
@@ -171,42 +166,48 @@ func (s *PageService) UpdatePage(
 }
 
 // Delete page to trash
-func (s *PageService) TrashPage(
+func (s *page) TrashOne(
+	ctx context.Context,
 	page *models.PageModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	page.DeletedAt = now
 
-	return s.repository.Update(
-		s.ctx, page)
+	return repositories.UpdateOnePage(
+		s.dbConn, ctx, page, opts...)
 }
 
 // Restore page from trash
-func (s *PageService) DetrashPage(
+func (s *page) RestoreOne(
+	ctx context.Context,
 	page *models.PageModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	page.DeletedAt = nil
 
-	return s.repository.Update(
-		s.ctx, page)
+	return repositories.UpdateOnePage(
+		s.dbConn, ctx, page, opts...)
 }
 
 // Permanently delete page
-func (s *PageService) DeletePage(
+func (s *page) DeleteOneWithContent(
+	ctx context.Context,
 	page *models.PageModel,
 	content *models.PageContentModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
 
-	return customMongo.Transaction(s.ctx, s.dbConn, false,
+	return customMongo.Transaction(ctx, s.dbConn, false,
 		func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-			if sErr = s.repository.Delete(
-				sCtx, page,
+			if sErr = repositories.DeleteOnePage(
+				dbConn, sCtx, page, opts...,
 			); sErr != nil {
 				return sErr
 			}
-			if sErr = s.contentRepository.Delete(
-				sCtx, content,
+			if sErr = repositories.DeleteOnePageContent(
+				dbConn, sCtx, content, opts...,
 			); sErr != nil {
 				return sErr
 			}

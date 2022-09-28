@@ -18,19 +18,17 @@ import (
 
 func GenerateUsers(ctx context.Context) {
 	var (
-		dbConn     *mongo.Database
-		repository *repositories.UserRepository
-		user       *models.UserModel
-		userId     primitive.ObjectID
-		now        = primitive.NewDateTimeFromTime(time.Now())
-		err        error
+		dbConn *mongo.Database
+		user   *models.UserModel
+		userId primitive.ObjectID
+		now    = primitive.NewDateTimeFromTime(time.Now())
+		err    error
 	)
 
 	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 		log.Fatal(err)
 	}
 	defer dbConn.Client().Disconnect(ctx)
-	repository = repositories.NewUserRepository(dbConn)
 	for i := 0; i < 200; i++ {
 		userId = primitive.NewObjectID()
 		user = &models.UserModel{
@@ -50,9 +48,7 @@ func GenerateUsers(ctx context.Context) {
 		}
 		if err = customMongo.Transaction(ctx, dbConn, false,
 			func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-				if sErr = repository.Save(
-					sCtx, user,
-				); sErr != nil {
+				if sErr = repositories.SaveOneUser(dbConn, sCtx, user); sErr != nil {
 					return sErr
 				}
 

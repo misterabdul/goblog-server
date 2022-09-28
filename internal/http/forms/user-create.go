@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -24,7 +25,8 @@ type CreateUserForm struct {
 }
 
 func (form *CreateUserForm) Validate(
-	postService *service.UserService,
+	svc *service.Service,
+	ctx context.Context,
 	creator *models.UserModel,
 ) (err error) {
 	if err = isProperRoles(form.Roles); err != nil {
@@ -33,10 +35,10 @@ func (form *CreateUserForm) Validate(
 	if strings.Compare(form.Password, form.PasswordConfirm) != 0 {
 		return errors.New("password confirm not same")
 	}
-	if err = checkUsername(postService, form.Username); err != nil {
+	if err = checkUsername(svc, ctx, form.Username); err != nil {
 		return err
 	}
-	if err = checkEmail(postService, form.Email); err != nil {
+	if err = checkEmail(svc, ctx, form.Email); err != nil {
 		return err
 	}
 
@@ -82,12 +84,13 @@ func isProperRoles(createdRoles []int) (err error) {
 }
 
 func checkUsername(
-	userService *service.UserService,
+	svc *service.Service,
+	ctx context.Context,
 	formUsername string,
 ) (err error) {
 	var users []*models.UserModel
 
-	if users, err = userService.GetUsers(bson.M{
+	if users, err = svc.User.GetMany(ctx, bson.M{
 		"username": bson.M{"$eq": formUsername},
 	}); err != nil {
 		return err
@@ -100,12 +103,13 @@ func checkUsername(
 }
 
 func checkEmail(
-	userService *service.UserService,
+	svc *service.Service,
+	ctx context.Context,
 	formEmail string,
 ) (err error) {
 	var users []*models.UserModel
 
-	if users, err = userService.GetUsers(bson.M{
+	if users, err = svc.User.GetMany(ctx, bson.M{
 		"email": bson.M{"$eq": formEmail},
 	}); err != nil {
 		return err

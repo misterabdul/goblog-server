@@ -9,7 +9,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
@@ -26,12 +25,11 @@ const (
 // Check the authentication status of given user.
 func Authenticate(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
-			userService  = service.NewUserService(c, ctx, dbConn)
 			me           *models.UserModel
 			accessClaims *jwt.CustomClaims
 			userUid      primitive.ObjectID
@@ -56,11 +54,11 @@ func Authenticate(
 			c.Abort()
 			return
 		}
-		if me, err = userService.GetUser(bson.M{
+		if me, err = svc.User.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": userUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": userUid}}}},
+		); err != nil {
 			responses.Unauthenticated(c, err)
 			c.Abort()
 			return

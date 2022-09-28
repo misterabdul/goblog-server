@@ -4,11 +4,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 // @Tags        Me
@@ -23,7 +23,7 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetMe(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
 		var (

@@ -6,29 +6,29 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	"github.com/misterabdul/goblog-server/internal/service"
 	"github.com/misterabdul/goblog-server/pkg/hash"
 )
 
 func VerifyPassword(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
-	return func(c *gin.Context) {
-		_, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
 
+	return func(c *gin.Context) {
 		var (
-			input *forms.PasswordConfirmForm
-			user  *models.UserModel
-			err   error
+			_, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			input     *forms.PasswordConfirmForm
+			user      *models.UserModel
+			err       error
 		)
 
+		defer cancel()
 		if input, err = requests.GetPasswordConfirmForm(c); err != nil || input.Password == "" {
 			responses.Basic(c, http.StatusUnprocessableEntity, gin.H{
 				"message": "you must provide your password"})
@@ -47,7 +47,6 @@ func VerifyPassword(
 			c.Abort()
 			return
 		}
-
 		c.Next()
 	}
 }

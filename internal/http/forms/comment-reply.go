@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -23,18 +24,18 @@ type CreateCommentReplyForm struct {
 }
 
 func (form *CreateCommentReplyForm) Validate(
-	postService *service.PostService,
-	commentService *service.CommentService,
+	svc *service.Service,
+	ctx context.Context,
 ) (parentComment *models.CommentModel, err error) {
 	var parentCommnetUid primitive.ObjectID
 
 	if parentCommnetUid, err = primitive.ObjectIDFromHex(form.ParentCommentUid); err != nil {
 		return nil, errors.New("invalid parent comment uid format")
 	}
-	if parentComment, err = findCommentForReply(commentService, parentCommnetUid); err != nil {
+	if parentComment, err = findCommentForReply(svc, ctx, parentCommnetUid); err != nil {
 		return nil, err
 	}
-	if _, err = findPostForComment(postService, parentComment.UID); err != nil {
+	if _, err = findPostForComment(svc, ctx, parentComment.UID); err != nil {
 		return nil, err
 	}
 	form.realParentCommentUid = parentComment.UID
@@ -66,14 +67,15 @@ func (form *CreateCommentReplyForm) ToCommentReplyModel() (model *models.Comment
 }
 
 func findCommentForReply(
-	commentService *service.CommentService,
+	svc *service.Service,
+	ctx context.Context,
 	formCommentUid primitive.ObjectID,
 ) (comment *models.CommentModel, err error) {
-	if comment, err = commentService.GetComment(bson.M{
+	if comment, err = svc.Comment.GetOne(ctx, bson.M{
 		"$and": []bson.M{
 			{"deletedat": bson.M{"$eq": primitive.Null{}}},
-			{"_id": bson.M{"$eq": formCommentUid}}},
-	}); err != nil {
+			{"_id": bson.M{"$eq": formCommentUid}}}},
+	); err != nil {
 		return nil, err
 	}
 	if comment == nil {

@@ -19,7 +19,6 @@ import (
 func GenerateCategories(ctx context.Context) {
 	var (
 		dbConn     *mongo.Database
-		repository *repositories.CategoryRepository
 		category   *models.CategoryModel
 		categoryId primitive.ObjectID
 		now        = primitive.NewDateTimeFromTime(time.Now())
@@ -30,7 +29,6 @@ func GenerateCategories(ctx context.Context) {
 		log.Fatal(err)
 	}
 	defer dbConn.Client().Disconnect(ctx)
-	repository = repositories.NewCategoryRepository(dbConn)
 	for i := 0; i < 200; i++ {
 		categoryId = primitive.NewObjectID()
 		category = &models.CategoryModel{
@@ -43,9 +41,7 @@ func GenerateCategories(ctx context.Context) {
 		}
 		if err = customMongo.Transaction(ctx, dbConn, false,
 			func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-				if sErr = repository.Save(
-					sCtx, category,
-				); sErr != nil {
+				if sErr = repositories.SaveOneCategory(dbConn, sCtx, category); sErr != nil {
 					return sErr
 				}
 

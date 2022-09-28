@@ -12,29 +12,21 @@ import (
 	"github.com/misterabdul/goblog-server/internal/database/models"
 )
 
-type NotificationRepository struct {
-	collection *mongo.Collection
-}
-
-func NewNotificationRepository(
-	dbConn *mongo.Database,
-) *NotificationRepository {
-
-	return &NotificationRepository{
-		collection: dbConn.Collection("notifications")}
-}
+const notificationCollection = "notifications"
 
 // Get single notification
-func (r NotificationRepository) ReadOne(
+func ReadOneNotification(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (notification *models.NotificationModel, err error) {
-	var _notification models.NotificationModel
+	var (
+		collection    = dbConn.Collection(notificationCollection)
+		_notification models.NotificationModel
+	)
 
-	if err = r.collection.FindOne(
-		ctx, filter, opts...,
-	).Decode(&_notification); err != nil {
+	if err = collection.FindOne(ctx, filter, opts...).Decode(&_notification); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -45,19 +37,19 @@ func (r NotificationRepository) ReadOne(
 }
 
 // Get multiple notifications
-func (r NotificationRepository) ReadMany(
+func ReadManyNotifications(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (notifications []*models.NotificationModel, err error) {
 	var (
+		collection   = dbConn.Collection(notificationCollection)
 		notification *models.NotificationModel
 		cursor       *mongo.Cursor
 	)
 
-	if cursor, err = r.collection.Find(
-		ctx, filter, opts...,
-	); err != nil {
+	if cursor, err = collection.Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -73,19 +65,20 @@ func (r NotificationRepository) ReadMany(
 }
 
 // Save new notification
-func (r NotificationRepository) Save(
+func SaveOneNotification(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	notification *models.NotificationModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var (
+		collection = dbConn.Collection(notificationCollection)
 		insRes     *mongo.InsertOneResult
 		insertedID primitive.ObjectID
 		ok         bool
 	)
 
-	if insRes, err = r.collection.InsertOne(
-		ctx, notification,
-	); err != nil {
+	if insRes, err = collection.InsertOne(ctx, notification, opts...); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -99,23 +92,31 @@ func (r NotificationRepository) Save(
 }
 
 // Update notification
-func (r NotificationRepository) Update(
+func UpdateOneNotification(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	notification *models.NotificationModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
-	_, err = r.collection.UpdateByID(
-		ctx, notification.UID, bson.M{"$set": notification})
+	var collection = dbConn.Collection(notificationCollection)
+
+	_, err = collection.UpdateOne(
+		ctx, bson.M{"_id": notification.UID}, bson.M{"$set": notification}, opts...)
 
 	return err
 }
 
 // Delete notification
-func (r NotificationRepository) Delete(
+func DeleteOneNotification(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	notification *models.NotificationModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
-	_, err = r.collection.DeleteOne(
-		ctx, bson.M{"_id": notification.UID})
+	var collection = dbConn.Collection(notificationCollection)
+
+	_, err = collection.DeleteOne(
+		ctx, bson.M{"_id": notification.UID}, opts...)
 
 	return err
 }

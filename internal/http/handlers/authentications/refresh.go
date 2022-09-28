@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
@@ -28,19 +27,19 @@ import (
 // @Failure     500 {object} object{message=string}
 func Refresh(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel         = context.WithTimeout(context.Background(), maxCtxDuration)
-			revokedTokenService = service.NewRevokedTokenService(c, ctx, dbConn)
-			oldRefreshClaims    *jwt.CustomClaims
-			me                  *models.UserModel
-			newAccessClaims     *jwt.CustomClaims
-			newAccessToken      string
-			newRefreshClaims    *jwt.CustomClaims
-			newRefreshToken     string
-			err                 error
+			ctx, cancel      = context.WithTimeout(context.Background(), maxCtxDuration)
+			oldRefreshClaims *jwt.CustomClaims
+			me               *models.UserModel
+			newAccessClaims  *jwt.CustomClaims
+			newAccessToken   string
+			newRefreshClaims *jwt.CustomClaims
+			newRefreshToken  string
+			err              error
 		)
 
 		defer cancel()
@@ -52,7 +51,7 @@ func Refresh(
 			responses.Unauthenticated(c, err)
 			return
 		}
-		if err = noteRevokeToken(revokedTokenService, oldRefreshClaims, me); err != nil {
+		if err = noteRevokeToken(ctx, svc, oldRefreshClaims, me); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

@@ -8,12 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/forms"
 	"github.com/misterabdul/goblog-server/internal/http/requests"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -29,13 +29,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetPublicComment(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel     = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService  = service.NewCommentService(c, ctx, dbConn)
-			postService     = service.NewPostService(c, ctx, dbConn)
 			comment         *models.CommentModel
 			post            *models.PostModel
 			commentUid      primitive.ObjectID
@@ -48,11 +47,11 @@ func GetPublicComment(
 			responses.NotFound(c, err)
 			return
 		}
-		if comment, err = commentService.GetComment(bson.M{
+		if comment, err = svc.Comment.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": commentUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": commentUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -60,12 +59,12 @@ func GetPublicComment(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = postService.GetPost(bson.M{
+		if post, err = svc.Post.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": bson.M{"$eq": comment.PostUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": comment.PostUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -90,32 +89,31 @@ func GetPublicComment(
 // @Failure     500 {object} object{message=string}
 func GetPublicPostComments(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.NewCommentService(c, ctx, dbConn)
-			postService    = service.NewPostService(c, ctx, dbConn)
-			comments       []*models.CommentModel
-			post           *models.PostModel
-			postUid        interface{}
-			postParam      = c.Param("post")
-			err            error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			comments    []*models.CommentModel
+			post        *models.PostModel
+			postUid     interface{}
+			postParam   = c.Param("post")
+			err         error
 		)
 
 		defer cancel()
 		if postUid, err = primitive.ObjectIDFromHex(postParam); err != nil {
 			postUid = nil
 		}
-		if post, err = postService.GetPost(bson.M{
+		if post, err = svc.Post.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
 					{"_id": bson.M{"$eq": postUid}},
-					{"slug": bson.M{"$eq": postParam}}}}},
-		}); err != nil {
+					{"slug": bson.M{"$eq": postParam}}}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -123,12 +121,13 @@ func GetPublicPostComments(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if comments, err = commentService.GetComments(bson.M{
+		if comments, err = svc.Comment.GetMany(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"parentcommentuid": bson.M{"$eq": primitive.Null{}}},
-				{"postuid": bson.M{"$eq": post.UID}}},
-		}, true); err != nil {
+				{"postuid": bson.M{"$eq": post.UID}}}},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -154,19 +153,18 @@ func GetPublicPostComments(
 // @Failure     500 {object} object{message=string}
 func GetPublicCommentReplies(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.NewCommentService(c, ctx, dbConn)
-			postService    = service.NewPostService(c, ctx, dbConn)
-			replies        []*models.CommentModel
-			comment        *models.CommentModel
-			post           *models.PostModel
-			commentUid     interface{}
-			commentParam   = c.Param("comment")
-			err            error
+			ctx, cancel  = context.WithTimeout(context.Background(), maxCtxDuration)
+			replies      []*models.CommentModel
+			comment      *models.CommentModel
+			post         *models.PostModel
+			commentUid   interface{}
+			commentParam = c.Param("comment")
+			err          error
 		)
 
 		defer cancel()
@@ -174,11 +172,11 @@ func GetPublicCommentReplies(
 			responses.NotFound(c, errors.New("incorrent comment id format"))
 			return
 		}
-		if comment, err = commentService.GetComment(bson.M{
+		if comment, err = svc.Comment.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"_id": bson.M{"$eq": commentUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": commentUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -186,12 +184,12 @@ func GetPublicCommentReplies(
 			responses.NotFound(c, errors.New("comment not found"))
 			return
 		}
-		if post, err = postService.GetPost(bson.M{
+		if post, err = svc.Post.GetOne(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				{"_id": bson.M{"$eq": comment.PostUid}}},
-		}); err != nil {
+				{"_id": bson.M{"$eq": comment.PostUid}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -199,12 +197,13 @@ func GetPublicCommentReplies(
 			responses.NotFound(c, errors.New("post not found"))
 			return
 		}
-		if replies, err = commentService.GetComments(bson.M{
+		if replies, err = svc.Comment.GetMany(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"postuid": bson.M{"$eq": post.UID}},
-				{"parentcommentuid": bson.M{"$eq": comment.UID}}},
-		}, true); err != nil {
+				{"parentcommentuid": bson.M{"$eq": comment.UID}}}},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -232,17 +231,16 @@ func GetPublicCommentReplies(
 // @Failure     500  {object} object{message=string}
 func CreatePublicPostComment(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.NewCommentService(c, ctx, dbConn)
-			postService    = service.NewPostService(c, ctx, dbConn)
-			comment        *models.CommentModel
-			post           *models.PostModel
-			form           *forms.CreateCommentForm
-			err            error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			comment     *models.CommentModel
+			post        *models.PostModel
+			form        *forms.CreateCommentForm
+			err         error
 		)
 
 		defer cancel()
@@ -250,7 +248,7 @@ func CreatePublicPostComment(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if post, err = form.Validate(postService); err != nil {
+		if post, err = form.Validate(svc, ctx); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -258,7 +256,7 @@ func CreatePublicPostComment(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = commentService.CreateComment(comment, post); err != nil {
+		if err = svc.Comment.SaveOne(ctx, comment, post); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -282,17 +280,16 @@ func CreatePublicPostComment(
 // @Failure     500  {object} object{message=string}
 func CreatePublicCommentReply(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
-			ctx, cancel    = context.WithTimeout(context.Background(), maxCtxDuration)
-			commentService = service.NewCommentService(c, ctx, dbConn)
-			postService    = service.NewPostService(c, ctx, dbConn)
-			reply          *models.CommentModel
-			comment        *models.CommentModel
-			form           *forms.CreateCommentReplyForm
-			err            error
+			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			reply       *models.CommentModel
+			comment     *models.CommentModel
+			form        *forms.CreateCommentReplyForm
+			err         error
 		)
 
 		defer cancel()
@@ -300,7 +297,7 @@ func CreatePublicCommentReply(
 			responses.FormIncorrect(c, err)
 			return
 		}
-		if comment, err = form.Validate(postService, commentService); err != nil {
+		if comment, err = form.Validate(svc, ctx); err != nil {
 			responses.FormIncorrect(c, err)
 			return
 		}
@@ -308,7 +305,7 @@ func CreatePublicCommentReply(
 			responses.InternalServerError(c, err)
 			return
 		}
-		if err = commentService.CreateCommentReply(reply, comment); err != nil {
+		if err = svc.Comment.SaveOneReply(ctx, reply, comment); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}

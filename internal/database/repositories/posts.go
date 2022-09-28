@@ -12,41 +12,24 @@ import (
 	"github.com/misterabdul/goblog-server/internal/database/models"
 )
 
-type PostRepository struct {
-	collection *mongo.Collection
-}
-
-type PostContentRepository struct {
-	collection *mongo.Collection
-}
-
-func NewPostRepository(
-	dbConn *mongo.Database,
-) *PostRepository {
-
-	return &PostRepository{
-		collection: dbConn.Collection("posts")}
-}
-
-func NewPostContentRepository(
-	dbConn *mongo.Database,
-) *PostContentRepository {
-
-	return &PostContentRepository{
-		collection: dbConn.Collection("postContents")}
-}
+const (
+	postCollection        = "posts"
+	postContentCollection = "postContents"
+)
 
 // Get single post
-func (r PostRepository) ReadOne(
+func ReadOnePost(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
 ) (post *models.PostModel, err error) {
-	var _post models.PostModel
+	var (
+		collection = dbConn.Collection(postCollection)
+		_post      models.PostModel
+	)
 
-	if err = r.collection.FindOne(
-		ctx, filter, opts...,
-	).Decode(&_post); err != nil {
+	if err = collection.FindOne(ctx, filter, opts...).Decode(&_post); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -57,7 +40,8 @@ func (r PostRepository) ReadOne(
 }
 
 // Get single post content
-func (r PostContentRepository) ReadOne(
+func ReadOnePostContent(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOneOptions,
@@ -65,11 +49,12 @@ func (r PostContentRepository) ReadOne(
 	postContent *models.PostContentModel,
 	err error,
 ) {
-	var _postContent models.PostContentModel
+	var (
+		collection   = dbConn.Collection(postContentCollection)
+		_postContent models.PostContentModel
+	)
 
-	if err = r.collection.FindOne(
-		ctx, filter, opts...,
-	).Decode(&_postContent); err != nil {
+	if err = collection.FindOne(ctx, filter, opts...).Decode(&_postContent); err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
 		}
@@ -80,19 +65,19 @@ func (r PostContentRepository) ReadOne(
 }
 
 // Get multiple posts
-func (r PostRepository) ReadMany(
+func ReadManyPosts(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.FindOptions,
 ) (posts []*models.PostModel, err error) {
 	var (
-		post   *models.PostModel
-		cursor *mongo.Cursor
+		collection = dbConn.Collection(postCollection)
+		post       *models.PostModel
+		cursor     *mongo.Cursor
 	)
 
-	if cursor, err = r.collection.Find(
-		ctx, filter, opts...,
-	); err != nil {
+	if cursor, err = collection.Find(ctx, filter, opts...); err != nil {
 		return nil, err
 	}
 	defer cursor.Close(ctx)
@@ -108,31 +93,33 @@ func (r PostRepository) ReadMany(
 }
 
 // Count total posts
-func (r PostRepository) Count(
+func CountPosts(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	filter interface{},
 	opts ...*options.CountOptions,
 ) (count int64, err error) {
+	var collection = dbConn.Collection(postCollection)
 
-	return r.collection.CountDocuments(
-		ctx, filter, opts...,
-	)
+	return collection.CountDocuments(
+		ctx, filter, opts...)
 }
 
 // Save new post
-func (r PostRepository) Save(
+func SaveOnePost(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	post *models.PostModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var (
+		collection = dbConn.Collection(postCollection)
 		insRes     *mongo.InsertOneResult
 		insertedID interface{}
 		ok         bool
 	)
 
-	if insRes, err = r.collection.InsertOne(
-		ctx, post,
-	); err != nil {
+	if insRes, err = collection.InsertOne(ctx, post, opts...); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -146,19 +133,20 @@ func (r PostRepository) Save(
 }
 
 // Save new post content
-func (r PostContentRepository) Save(
+func SaveOnePostContent(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	postContent *models.PostContentModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var (
+		collection = dbConn.Collection(postContentCollection)
 		insRes     *mongo.InsertOneResult
 		insertedID interface{}
 		ok         bool
 	)
 
-	if insRes, err = r.collection.InsertOne(
-		ctx, postContent,
-	); err != nil {
+	if insRes, err = collection.InsertOne(ctx, postContent, opts...); err != nil {
 		return err
 	}
 	if insertedID, ok = insRes.InsertedID.(primitive.ObjectID); !ok {
@@ -172,72 +160,77 @@ func (r PostContentRepository) Save(
 }
 
 // Update post
-func (r PostRepository) Update(
+func UpdateOnePost(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	post *models.PostModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
-	if _, err = r.collection.UpdateByID(
-		ctx, post.UID, bson.M{"$set": post},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(postCollection)
 
-	return nil
+	_, err = collection.UpdateOne(
+		ctx, bson.M{"_id": post.UID}, bson.M{"$set": post}, opts...)
+
+	return err
 }
 
-// Bulk update post
-func (r PostRepository) UpdatePostAuthor(
+// Bulk update post's author
+func UpdateManyPostAuthor(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	user *models.UserModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
-	if _, err = r.collection.UpdateMany(
-		ctx, bson.M{"author._id": bson.M{"$eq": user.UID}},
-		bson.M{"$set": bson.M{"author": user.ToCommonModel()}},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(postCollection)
 
-	return nil
+	_, err = collection.UpdateMany(ctx,
+		bson.M{"author._id": bson.M{"$eq": user.UID}},
+		bson.M{"$set": bson.M{"author": user.ToCommonModel()}}, opts...)
+
+	return err
 }
 
 // Update post content
-func (r PostContentRepository) Update(
+func UpdateOnePostContent(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	postContent *models.PostContentModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
-	if _, err = r.collection.UpdateByID(
-		ctx, postContent.UID, bson.M{"$set": postContent},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(postContentCollection)
 
-	return nil
+	_, err = collection.UpdateOne(
+		ctx, bson.M{"_id": postContent.UID}, bson.M{"$set": postContent}, opts...)
+
+	return err
 }
 
 // Delete post
-func (r PostRepository) Delete(
+func DeleteOnePost(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	post *models.PostModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
-	if _, err = r.collection.DeleteOne(
-		ctx, bson.M{"_id": post.UID},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(postContentCollection)
 
-	return nil
+	_, err = collection.DeleteOne(
+		ctx, bson.M{"_id": post.UID}, opts...)
+
+	return err
 }
 
 // Delete post content
-func (r PostContentRepository) Delete(
+func DeleteOnePostContent(
+	dbConn *mongo.Database,
 	ctx context.Context,
 	postContent *models.PostContentModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
-	if _, err = r.collection.DeleteOne(
-		ctx, bson.M{"_id": postContent.UID},
-	); err != nil {
-		return err
-	}
+	var collection = dbConn.Collection(postContentCollection)
+
+	_, err = collection.DeleteOne(
+		ctx, bson.M{"_id": postContent.UID}, opts...)
 
 	return err
 }

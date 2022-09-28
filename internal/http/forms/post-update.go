@@ -1,6 +1,7 @@
 package forms
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -25,14 +26,14 @@ type UpdatePostForm struct {
 }
 
 func (form *UpdatePostForm) Validate(
-	categoryService *service.CategoryService,
-	postService *service.PostService,
+	svc *service.Service,
+	ctx context.Context,
 	target *models.PostModel,
 ) (err error) {
-	if err = checkUpdatePostSlug(postService, form.Slug, target); err != nil {
+	if err = checkUpdatePostSlug(svc, ctx, form.Slug, target); err != nil {
 		return err
 	}
-	if form.realCategories, err = findCategories(categoryService, form.Categories); err != nil {
+	if form.realCategories, err = findCategories(svc, ctx, form.Categories); err != nil {
 		return err
 	}
 
@@ -88,19 +89,18 @@ func (form *UpdatePostForm) ToPostModel(
 }
 
 func checkUpdatePostSlug(
-	postService *service.PostService,
+	svc *service.Service,
+	ctx context.Context,
 	formSlug string,
 	target *models.PostModel,
 ) (err error) {
-	var (
-		posts []*models.PostModel
-	)
+	var posts []*models.PostModel
 
-	if posts, err = postService.GetPosts(bson.M{
+	if posts, err = svc.Post.GetMany(ctx, bson.M{
 		"$and": []bson.M{
 			{"_id": bson.M{"$ne": target.UID}},
-			{"slug": bson.M{"$eq": formSlug}}},
-	}); err != nil {
+			{"slug": bson.M{"$eq": formSlug}}}},
+	); err != nil {
 		return err
 	}
 	if len(posts) > 0 {

@@ -4,55 +4,52 @@ import (
 	"context"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/database/repositories"
-	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 )
 
-type RevokedTokenService struct {
-	c          *gin.Context
-	ctx        context.Context
-	dbConn     *mongo.Database
-	repository *repositories.RevokedTokenRepository
+type revokedToken struct {
+	dbConn *mongo.Database
 }
 
-func NewRevokedTokenService(
-	c *gin.Context,
-	ctx context.Context,
+func newRevokedTokenService(
 	dbConn *mongo.Database,
-) *RevokedTokenService {
+) *revokedToken {
 
-	return &RevokedTokenService{
-		c:          c,
-		ctx:        ctx,
-		dbConn:     dbConn,
-		repository: repositories.NewRevokedTokenRepository(dbConn)}
+	return &revokedToken{dbConn: dbConn}
 }
 
 // Get single revoked tokens
-func (s *RevokedTokenService) GetRevokedToken(
+func (s *revokedToken) GetOne(
+	ctx context.Context,
 	filter interface{},
+	opts ...*options.FindOneOptions,
 ) (revokedToken *models.RevokedTokenModel, err error) {
-	return s.repository.ReadOne(
-		s.ctx, filter)
+
+	return repositories.ReadOneRevokedToken(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Get multiple revoked tokens
-func (s *RevokedTokenService) GetRevokedTokens(
+func (s *revokedToken) GetMany(
+	ctx context.Context,
 	filter interface{},
+	opts ...*options.FindOptions,
 ) (revokedTokens []*models.RevokedTokenModel, err error) {
-	return s.repository.ReadMany(
-		s.ctx, filter,
-		internalGin.GetFindOptions(s.c))
+
+	return repositories.ReadManyRevokedTokens(
+		s.dbConn, ctx, filter, opts...)
 }
 
 // Create new revoked token
-func (s *RevokedTokenService) CreateRevokedToken(
+func (s *revokedToken) SaveOne(
+	ctx context.Context,
 	revokedToken *models.RevokedTokenModel,
+	opts ...*options.InsertOneOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
@@ -60,49 +57,57 @@ func (s *RevokedTokenService) CreateRevokedToken(
 	revokedToken.UpdatedAt = now
 	revokedToken.DeletedAt = nil
 
-	return s.repository.Save(
-		s.ctx, revokedToken)
+	return repositories.SaveOneRevokedToken(
+		s.dbConn, ctx, revokedToken, opts...)
 }
 
 // Update revoked token
-func (s *RevokedTokenService) UpdateRevokedToken(
+func (s *revokedToken) UpdateOne(
+	ctx context.Context,
 	revokedToken *models.RevokedTokenModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	revokedToken.UpdatedAt = now
 
-	return s.repository.Update(
-		s.ctx, revokedToken)
+	return repositories.UpdateOneRevokedToken(
+		s.dbConn, ctx, revokedToken, opts...)
 }
 
 // Delete revoked to trash
-func (s *RevokedTokenService) TrashRevokedToken(
+func (s *revokedToken) TrashRevokedToken(
+	ctx context.Context,
 	revokedToken *models.RevokedTokenModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	var now = primitive.NewDateTimeFromTime(time.Now())
 
 	revokedToken.DeletedAt = now
 
-	return s.repository.Update(
-		s.ctx, revokedToken)
+	return repositories.UpdateOneRevokedToken(
+		s.dbConn, ctx, revokedToken, opts...)
 }
 
 // Restore revoked token from trash
-func (s *RevokedTokenService) DetrashRevokedToken(
+func (s *revokedToken) DetrashRevokedToken(
+	ctx context.Context,
 	revokedToken *models.RevokedTokenModel,
+	opts ...*options.UpdateOptions,
 ) (err error) {
 	revokedToken.DeletedAt = nil
 
-	return s.repository.Update(
-		s.ctx, revokedToken)
+	return repositories.UpdateOneRevokedToken(
+		s.dbConn, ctx, revokedToken, opts...)
 }
 
 // Permanently delete revoked token
-func (s *RevokedTokenService) DeleteRevokedToken(
+func (s *revokedToken) DeleteRevokedToken(
+	ctx context.Context,
 	revokedToken *models.RevokedTokenModel,
+	opts ...*options.DeleteOptions,
 ) (err error) {
 
-	return s.repository.Delete(
-		s.ctx, revokedToken)
+	return repositories.DeleteOneRevokedToken(
+		s.dbConn, ctx, revokedToken, opts...)
 }

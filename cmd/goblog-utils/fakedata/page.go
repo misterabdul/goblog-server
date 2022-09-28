@@ -18,22 +18,18 @@ import (
 
 func GeneratePages(ctx context.Context) {
 	var (
-		dbConn            *mongo.Database
-		repository        *repositories.PageRepository
-		contentRepository *repositories.PageContentRepository
-		page              *models.PageModel
-		pageContent       *models.PageContentModel
-		pageId            primitive.ObjectID
-		now               = primitive.NewDateTimeFromTime(time.Now())
-		err               error
+		dbConn      *mongo.Database
+		page        *models.PageModel
+		pageContent *models.PageContentModel
+		pageId      primitive.ObjectID
+		now         = primitive.NewDateTimeFromTime(time.Now())
+		err         error
 	)
 
 	if dbConn, err = database.GetDBConnDefault(ctx); err != nil {
 		log.Fatal(err)
 	}
 	defer dbConn.Client().Disconnect(ctx)
-	repository = repositories.NewPageRepository(dbConn)
-	contentRepository = repositories.NewPageContentRepository(dbConn)
 	for i := 0; i < 200; i++ {
 		pageId = primitive.NewObjectID()
 		page = &models.PageModel{
@@ -53,14 +49,10 @@ func GeneratePages(ctx context.Context) {
 			Content: lipsumMarkdown()}
 		if err = customMongo.Transaction(ctx, dbConn, false,
 			func(sCtx context.Context, dbConn *mongo.Database) (sErr error) {
-				if sErr = repository.Save(
-					sCtx, page,
-				); sErr != nil {
+				if sErr = repositories.SaveOnePage(dbConn, sCtx, page); sErr != nil {
 					return sErr
 				}
-				if sErr = contentRepository.Save(
-					sCtx, pageContent,
-				); sErr != nil {
+				if sErr = repositories.SaveOnePageContent(dbConn, sCtx, pageContent); sErr != nil {
 					return sErr
 				}
 

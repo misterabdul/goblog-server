@@ -6,27 +6,26 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/middlewares/authenticate"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	"github.com/misterabdul/goblog-server/internal/service"
 )
 
 func Authorize(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 	level string,
 ) (handler gin.HandlerFunc) {
 	return func(c *gin.Context) {
-		_, cancel := context.WithTimeout(context.Background(), maxCtxDuration)
-		defer cancel()
-
 		var (
-			me  *models.UserModel
-			err error
+			_, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
+			me        *models.UserModel
+			err       error
 		)
 
+		defer cancel()
 		if me, err = authenticate.GetAuthenticatedUser(c); err != nil {
 			responses.UnauthorizedAction(c, err)
 			c.Abort()

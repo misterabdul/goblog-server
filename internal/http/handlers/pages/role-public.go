@@ -9,10 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
 
 	"github.com/misterabdul/goblog-server/internal/database/models"
 	"github.com/misterabdul/goblog-server/internal/http/responses"
+	internalGin "github.com/misterabdul/goblog-server/internal/pkg/gin"
 	"github.com/misterabdul/goblog-server/internal/service"
 )
 
@@ -28,12 +28,12 @@ import (
 // @Failure     500 {object} object{message=string}
 func GetPublicPage(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.NewPageService(c, ctx, dbConn)
 			page        *models.PageModel
 			pageContent *models.PageContentModel
 			pageUid     interface{}
@@ -45,13 +45,13 @@ func GetPublicPage(
 		if pageUid, err = primitive.ObjectIDFromHex(pageParam); err != nil {
 			pageUid = nil
 		}
-		if page, pageContent, err = pageService.GetPageWithContent(bson.M{
+		if page, pageContent, err = svc.Page.GetOneWithContent(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
 				{"$or": []bson.M{
-					{"_id": bson.M{"$eq": pageUid}}}}},
-		}); err != nil {
+					{"_id": bson.M{"$eq": pageUid}}}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -76,12 +76,12 @@ func GetPublicPage(
 // @Failure     500  {object} object{message=string}
 func GetPublicPageBySlug(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.NewPageService(c, ctx, dbConn)
 			page        *models.PageModel
 			pageContent *models.PageContentModel
 			pageSlug    interface{}
@@ -93,12 +93,12 @@ func GetPublicPageBySlug(
 		if pageSlug, err = url.Parse(pageParam); err != nil {
 			pageSlug = nil
 		}
-		if page, pageContent, err = pageService.GetPageWithContent(bson.M{
+		if page, pageContent, err = svc.Page.GetOneWithContent(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
 				{"publishedat": bson.M{"$ne": primitive.Null{}}},
-				{"slug": bson.M{"$eq": pageSlug}}},
-		}); err != nil {
+				{"slug": bson.M{"$eq": pageSlug}}}},
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -127,22 +127,23 @@ func GetPublicPageBySlug(
 // @Failure     500   {object} object{message=string}
 func GetPublicPages(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
+
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.NewPageService(c, ctx, dbConn)
 			pages       []*models.PageModel
 			err         error
 		)
 
 		defer cancel()
-		if pages, err = pageService.GetPages(bson.M{
+		if pages, err = svc.Page.GetMany(ctx, bson.M{
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
-		}); err != nil {
+				{"publishedat": bson.M{"$ne": primitive.Null{}}}}},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
@@ -172,25 +173,25 @@ func GetPublicPages(
 // @Failure     500   {object} object{message=string}
 func SearchPublicPages(
 	maxCtxDuration time.Duration,
-	dbConn *mongo.Database,
+	svc *service.Service,
 ) (handler gin.HandlerFunc) {
 
 	return func(c *gin.Context) {
 		var (
 			ctx, cancel = context.WithTimeout(context.Background(), maxCtxDuration)
-			pageService = service.NewPageService(c, ctx, dbConn)
 			searchQuery = c.Query("q")
 			pages       []*models.PageModel
 			err         error
 		)
 
 		defer cancel()
-		if pages, err = pageService.GetPages(bson.M{
+		if pages, err = svc.Page.GetMany(ctx, bson.M{
 			"$text": bson.M{"$search": searchQuery},
 			"$and": []bson.M{
 				{"deletedat": bson.M{"$eq": primitive.Null{}}},
-				{"publishedat": bson.M{"$ne": primitive.Null{}}}},
-		}); err != nil {
+				{"publishedat": bson.M{"$ne": primitive.Null{}}}}},
+			internalGin.GetFindOptions(c),
+		); err != nil {
 			responses.InternalServerError(c, err)
 			return
 		}
